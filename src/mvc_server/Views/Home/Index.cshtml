@@ -1,0 +1,39 @@
+﻿@model IEnumerable<FileInfo>
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="text-left">
+    <h1 class="display-4">Index</h1>
+
+</div>
+<cache enabled="true">
+<div class="justify-content-start">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Modified</th>
+                <th>Size</th>
+            </tr>
+        </thead>
+        <tbody>
+
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <th scope="row"><img src="favicon.ico" width="16" /> </th>
+                    <td>@item.Name</td>
+                    <td>@item.LastWriteTime</td>
+                    <td>@item.Length</td>
+
+                </tr>
+            }
+
+
+        </tbody>
+    </table>
+</div>
+</cache>
