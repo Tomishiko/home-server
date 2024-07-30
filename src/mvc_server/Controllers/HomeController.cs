@@ -45,8 +45,8 @@ public class HomeController : Controller
         {
             PlayerPath = $"/api/video/{id}",
             SelectionId = id,
-            //Movies = _coreFS.GetMovies,
-            SelectionName = movies[id].Name 
+            Movies = _coreFS.GetMovies,
+            SelectionName = movies[id].Name
         };
         return View(model);
     }

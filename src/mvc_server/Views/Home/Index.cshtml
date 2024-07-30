@@ -8,32 +8,32 @@
 
 </div>
 <cache enabled="true">
-<div class="justify-content-start">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Modified</th>
-                <th>Size</th>
-            </tr>
-        </thead>
-        <tbody>
-
-
-            @foreach (var item in Model)
-            {
+    <div class="justify-content-start">
+        <table class="table table-striped">
+            <thead>
                 <tr>
-                    <th scope="row"><img src="favicon.ico" width="16" /> </th>
-                    <td>@item.Name</td>
-                    <td>@item.LastWriteTime</td>
-                    <td>@item.Length</td>
-
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Modified</th>
+                    <th>Size</th>
                 </tr>
-            }
+            </thead>
+            <tbody>
 
 
-        </tbody>
-    </table>
-</div>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <th scope="row"><img src="favicon.ico" width="16" /> </th>
+                        <td><a href="#">@item.Name</a></td>
+                        <td>@item.LastWriteTime</td>
+                        <td>@item.Length B</td>
+
+                    </tr>
+                }
+
+
+            </tbody>
+        </table>
+    </div>
 </cache>

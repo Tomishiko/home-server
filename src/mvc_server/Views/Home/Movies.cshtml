@@ -21,31 +21,29 @@
     <div class="row">
 
         <div class="media-left col-xs-12 col-sm-6 col-md-8">
-            <video width="100%" controls src="@Model.PlayerPath">
+            <video id="player"  playsinline width="100%" controls src="@Model.PlayerPath">
                 Your browser does not support the video tag.
             </video>
         </div>
-        <cache>
-            <div class="list-group col-xs-6 col-md-4">
-                <h4 class="display-5 top-0">List</h4>
-                @* <a href="#" class="list-group-item active">
-                Cras justo odio
-                </a> *@
-                @{
-                    int i = 0;
-                    if (Model.Movies is not null)
+        <div class="list-group col-xs-6 col-md-4">
+            <h4 class="display-5 top-0">List</h4>
+            @* <a href="#" class="list-group-item active">
+            Cras justo odio
+            </a> *@
+            @{
+                int i = 0;
+                if (Model.Movies is not null)
+                {
+                    foreach (var item in Model.Movies)
                     {
-                        foreach (var item in Model.Movies)
-                        {
-                            <a asp-action="Movies" asp-route-id="@i" class="list-group-item">@item.Name</a>
-                            i++;
-                        }
+                        <a asp-action="Movies" asp-route-id="@i" class="list-group-item">@item.Name</a>
+                        i++;
                     }
-
                 }
 
+            }
 
-            </div>
-        </cache>
+
+        </div>
     </div>
 </div>

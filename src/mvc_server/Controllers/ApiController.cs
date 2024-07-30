@@ -12,10 +12,10 @@ public class ApiController : Controller
         this.coreFS = coreFS;
     }
     [Route("api/video/{id}")]
-    public IResult GetVideo(int id)
+    public IActionResult GetVideo(int id)
     {
         var videos = coreFS.GetMovies;
         var fs = videos[id].OpenRead();
-        return Results.File(fs, contentType: "video/mp4", enableRangeProcessing: true);
+        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: videos[id].Name);
     }
 }
