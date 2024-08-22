@@ -1,4 +1,5 @@
-﻿@model IEnumerable<FileInfo>
+﻿@using mvc_server.Helpers;
+@model IEnumerable<FileInfo>
 @{
     ViewData["Title"] = "Index";
 }
@@ -12,7 +13,6 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Name</th>
                     <th>Modified</th>
                     <th>Size</th>
@@ -20,17 +20,21 @@
             </thead>
             <tbody>
 
+                @{
+                    int i = 0;
+                    foreach (var item in Model)
+                    {
 
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <th scope="row"><img src="favicon.ico" width="16" /> </th>
-                        <td><a href="#">@item.Name</a></td>
-                        <td>@item.LastWriteTime</td>
-                        <td>@item.Length B</td>
+                        <tr>
+                            <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
+                            <td>@item.LastWriteTime</td>
+                            <td>@(Utility.BytesToStringOptimized(item.Length))</td>
 
-                    </tr>
+                        </tr>
+                        i++;
+                    }
                 }
+
 
 
             </tbody>

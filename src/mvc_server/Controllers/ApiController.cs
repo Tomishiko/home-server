@@ -18,4 +18,11 @@ public class ApiController : Controller
         var fs = videos[id].OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: videos[id].Name);
     }
+    [Route("api/file/{id}")]
+    public IActionResult GetFile(int id)
+    {
+        var files = coreFS.GetFiles;
+        var fs = files[id].OpenRead();
+        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: files[id].Name);
+    }
 }
