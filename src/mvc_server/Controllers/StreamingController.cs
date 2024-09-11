@@ -5,9 +5,12 @@ using Microsoft.Net.Http.Headers;
 using mvc_server.Helpers;
 using mvc_server.Service;
 using System.Text.Json;
+using Microsoft.Win32.SafeHandles;
 using System.IO;
 using System.Text.Json.Serialization;
 using mvc_server.Models;
+using System.Web;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 
 namespace mvc_server.Controllers;
@@ -19,9 +22,11 @@ public class StremingController : ControllerBase
     private StreamedFileCompositor _fileCompositor;
     private string _uniqueID;
     private int _currentPart;
-    public StremingController(StreamedFileCompositor compositor)
+    private readonly ILogger<StremingController> _logger;
+    public StremingController(StreamedFileCompositor compositor, ILogger<StremingController> logger)
     {
         _fileCompositor = compositor;
+        _logger = logger;
     }
 
 
@@ -47,6 +52,8 @@ public class StremingController : ControllerBase
             var reader = new MultipartReader(boundary, HttpContext.Request.Body);
 
             var section = await reader.ReadNextSectionAsync();
+            int bytesRead = 0;
+
             do
             {
                 //TODO: Optimize this routing
@@ -71,11 +78,13 @@ public class StremingController : ControllerBase
 
                 if (_fileCompositor.StreamedFiles.TryGetValue(_uniqueID, out file))
                 {
-                    var filePart = section.AsFileSection();
-                    await filePart.FileStream.CopyToAsync(file.Stream);
+                    byte[] buffer = new byte[file.PartSize];
+                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, (int)file.PartSize);
+                    RandomAccess.Write(file.Stream, buffer, _currentPart * file.PartSize);
+                    //await filePart.FileStream.CopyToAsync(file.Stream);
 
                 }
-                if (_currentPart == file?.TotalFileParts)
+                if (_currentPart == file?.TotalFileParts - 1)
                 {
                     file.Stream.Close();
                     _fileCompositor.StreamedFiles.Remove(_uniqueID);
@@ -88,33 +97,67 @@ public class StremingController : ControllerBase
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 
+            _logger.LogInformation($"File part accepted read:");
             return Ok(new { Count = count, Size = Helpers.Utility.BytesToStringOptimized(totalSize) });
 
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Error while streaming file");
             return BadRequest($"Error: {exception.Message}");
         }
     }
 
-    [HttpPost]
-    public IActionResult HandShake(string fileName, int totalParts, int partSize)
+    [HttpPost("handshake")]
+    public IActionResult Handshake(string fileName, int totalParts, int partSize)
     {
         if (string.IsNullOrEmpty(fileName) || totalParts < 1 || partSize <= 64)
             return BadRequest();
-
-        var streamedFile = new StreamedFile
+        try
         {
-            FileName = fileName,
-            PartSize = partSize,
-            TotalFileParts = totalParts,
-            Stream = new FileStream($"wwwroot/files/{fileName}", FileMode.Append, FileAccess.Write, FileShare.Write)
-        };
+            var encodeFileName = HttpUtility.HtmlEncode(fileName);
+            // var streamedFile = new StreamedFile
+            // {
+            //     FileName = fileName,
+            //     PartSize = partSize,
+            //     TotalFileParts = totalParts,
+            //     Stream = new FileStream($"wwwroot/files/{encodeFileName}",
+            //                             FileMode.Append,
+            //                             FileAccess.Write,
+            //                             FileShare.Write,
+            //                             0),
+            //     Created = DateTime.Now
+            // };
 
-        var UniqueID = Guid.NewGuid().ToString();
-        _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
+            var streamedFile = new StreamedFile
+            {
+                FileName = fileName,
+                PartSize = partSize,
+                TotalFileParts = totalParts,
+                Stream = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
+                            FileMode.CreateNew,
+                            FileAccess.Write,
+                            FileShare.Write,
+                            preallocationSize: totalParts * partSize),
+                Created = DateTime.Now
+            };
 
-        return Ok(UniqueID);
+
+            var UniqueID = Guid.NewGuid().ToString();
+            _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
+            _logger.LogInformation($"handshake OK {fileName}");
+            return Ok(UniqueID);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while handshake");
+            return BadRequest($"Check the handshake data {ex.Message}");
+        }
+
+
+
+
     }
 
 }
