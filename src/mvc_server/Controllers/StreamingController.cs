@@ -20,8 +20,7 @@ namespace mvc_server.Controllers;
 public class StremingController : ControllerBase
 {
     private StreamedFileCompositor _fileCompositor;
-    private string _uniqueID;
-    private int _currentPart;
+    private FileMeta fileMeta;
     private readonly ILogger<StremingController> _logger;
     public StremingController(StreamedFileCompositor compositor, ILogger<StremingController> logger)
     {
@@ -65,9 +64,8 @@ public class StremingController : ControllerBase
                     if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition) && contentDisposition.Name == "meta")
                     {
                         var formData = await section.AsFormDataSection().GetValueAsync();
-                        (_uniqueID, _currentPart) = JsonSerializer.Deserialize<(string, int)>(
-                            formData,
-                            new JsonSerializerOptions { IncludeFields = true });
+
+                        fileMeta = JsonSerializer.Deserialize<FileMeta>(formData);
 
                     }
                     section = await reader.ReadNextSectionAsync();
@@ -76,18 +74,18 @@ public class StremingController : ControllerBase
 
                 StreamedFile file;
 
-                if (_fileCompositor.StreamedFiles.TryGetValue(_uniqueID, out file))
+                if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
                     byte[] buffer = new byte[file.PartSize];
                     await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, (int)file.PartSize);
-                    RandomAccess.Write(file.Stream, buffer, _currentPart * file.PartSize);
+                    RandomAccess.Write(file.Stream, buffer, fileMeta.currentPart * file.PartSize);
                     //await filePart.FileStream.CopyToAsync(file.Stream);
 
                 }
-                if (_currentPart == file?.TotalFileParts - 1)
+                if (fileMeta.currentPart == file?.TotalFileParts - 1)
                 {
                     file.Stream.Close();
-                    _fileCompositor.StreamedFiles.Remove(_uniqueID);
+                    _fileCompositor.StreamedFiles.Remove(fileMeta.uid);
                 }
 
 
@@ -109,36 +107,25 @@ public class StremingController : ControllerBase
     }
 
     [HttpPost("handshake")]
-    public IActionResult Handshake(string fileName, int totalParts, int partSize)
+    public IActionResult Handshake(string fileName, long fileSize, int totalParts, int expectedPartSize)
     {
-        if (string.IsNullOrEmpty(fileName) || totalParts < 1 || partSize <= 64)
+        if (string.IsNullOrEmpty(fileName) || fileSize < 1 || expectedPartSize <= 64)
             return BadRequest();
         try
         {
             var encodeFileName = HttpUtility.HtmlEncode(fileName);
-            // var streamedFile = new StreamedFile
-            // {
-            //     FileName = fileName,
-            //     PartSize = partSize,
-            //     TotalFileParts = totalParts,
-            //     Stream = new FileStream($"wwwroot/files/{encodeFileName}",
-            //                             FileMode.Append,
-            //                             FileAccess.Write,
-            //                             FileShare.Write,
-            //                             0),
-            //     Created = DateTime.Now
-            // };
 
             var streamedFile = new StreamedFile
             {
                 FileName = fileName,
-                PartSize = partSize,
+                PartSize = expectedPartSize,
+                FileSize = fileSize,
                 TotalFileParts = totalParts,
                 Stream = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
                             FileMode.CreateNew,
                             FileAccess.Write,
                             FileShare.Write,
-                            preallocationSize: totalParts * partSize),
+                            preallocationSize: fileSize),
                 Created = DateTime.Now
             };
 
@@ -159,5 +146,24 @@ public class StremingController : ControllerBase
 
 
     }
+    [HttpPost("abort")]
+    public IActionResult AbortStreaming(string uid)
+    {
+        if (!_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out var file))
+            return BadRequest("Identifier does not exist");
 
+        file.Stream.Close();
+        var fileInf = new FileInfo(Path.Combine("wwwroot", "files", file.FileName));
+        fileInf.Delete();
+        _fileCompositor.StreamedFiles.Remove(uid);
+
+        return Ok(file.FileName);
+
+    }
+    private class FileMeta
+    {
+        public string uid { get; set; }
+        public int currentPart { get; set; }
+        public int bytesRead { get; set; }
+    }
 }
