@@ -116,7 +116,6 @@ public class FileStreamingTest
                 try
                 {
                     var result = client.PostAsync(requestUri, content).Result;
-                    int a = 0;
                     if (result.IsSuccessStatusCode)
                         return true;
                     else
@@ -126,10 +125,15 @@ public class FileStreamingTest
                 catch (Exception ex)
                 {
                     // log error  
+                    using (var formContent = new StringContent(uID))
+                    {
+                        var result = client.PostAsync("api/streming/handshake", formContent).Result;
+                    }
+
                     return false;
                 }
             }
-            return true;
+
         }
     }
 
