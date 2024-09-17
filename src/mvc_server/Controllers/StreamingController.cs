@@ -17,12 +17,12 @@ namespace mvc_server.Controllers;
 //TODO: here is a good article on chunks upload
 //https://www.c-sharpcorner.com/article/upload-large-files-to-mvc-webapi-using-partitioning/
 [Route("api/[controller]")]
-public class StremingController : ControllerBase
+public class StreamingController : ControllerBase
 {
     private StreamedFileCompositor _fileCompositor;
     private FileMeta fileMeta;
-    private readonly ILogger<StremingController> _logger;
-    public StremingController(StreamedFileCompositor compositor, ILogger<StremingController> logger)
+    private readonly ILogger<StreamingController> _logger;
+    public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger)
     {
         _fileCompositor = compositor;
         _logger = logger;
@@ -76,8 +76,8 @@ public class StremingController : ControllerBase
 
                 if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
-                    byte[] buffer = new byte[file.PartSize];
-                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, (int)file.PartSize);
+                    byte[] buffer = new byte[fileMeta.bytesRead];
+                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
                     RandomAccess.Write(file.Stream, buffer, fileMeta.currentPart * file.PartSize);
                     //await filePart.FileStream.CopyToAsync(file.Stream);
 

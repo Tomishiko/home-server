@@ -58,27 +58,66 @@
     </form>
 
     @section Scripts {
+
         <script>
             "use strict";
+            const chunkSize = 1024 * 512;
 
-            async function AJAXSubmit(oFormElement) {
-                const formData = new FormData(oFormElement);
+            $('#file').on("change", function () {
 
-                try {
-                    const response = await fetch(oFormElement.action, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': getCookie('RequestVerificationToken')
-                        },
-                        body: formData
-                    });
+                var uid = "";
+                const input = $("#file")
+                const file = input.prop('files')[0];
 
-                    oFormElement.elements.namedItem("result").value =
-                        'Result: ' + response.status + ' ' + response.statusText;
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            }
+                var numberofChunks = Math.ceil(file.size / chunkSize);
+                var start = 0;
+                var chunkCounter = 0;
+                var chunkEnd = start + chunkSize;
+
+                var request = $.post("api/streaming/handshake",
+                    {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        totalParts: numberofChunks,
+                        expectedPartSize: chunkSize
+                    }
+                );
+                request.done(function (data) {
+                    uid = data;
+                    const req = new XMLHttpRequest();
+
+                    while (chunkCounter < numberofChunks) {
+                        req.open("POST", "api/streaming/uploadlarge", false);
+                        console.log("created chunk: ", chunkCounter);
+                        let form = new FormData();
+                        let meta = {
+                            "uid": uid,
+                            "currentPart": chunkCounter,
+                            "bytesRead": chunkEnd - start
+                        }
+                        form.append("meta", JSON.stringify(meta));
+
+                        let chunk = file.slice(start, chunkEnd);
+                        if (chunkCounter == 551) {
+                            let a = 21;
+                        }
+
+                        form.append("file", chunk);
+                        req.send(form);
+                        chunkCounter++;
+                        start = chunkEnd;
+                        chunkEnd = Math.min(start + chunkSize, file.size);
+
+                    }
+                });
+                request.fail(function () {
+                    alert("error while handshake");
+                });
+
+
+            });
+
+
 
             function getCookie(name) {
                 var value = "; " + document.cookie;
