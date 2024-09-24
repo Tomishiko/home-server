@@ -8,6 +8,31 @@
     <h1 class="display-4">Index</h1>
 
 </div>
+
+@* <dl>
+<dt>
+<label for="file">Upload File</label>
+</dt>
+<dd>
+<input id="file" type="file" name="file" />
+</dd>
+</dl> *@
+<div class="row g-3">
+
+
+    <div class="col-auto w-auto">
+        <input class="form-control" type="file" id="file">
+    </div>
+    <div class="col-auto ">
+        <button id="submitBtn" class="btn btn-primary">Upload</button>
+    </div>
+
+</div>
+<div class="progress" style="width: 320px;margin-top: 10px;">
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0"
+        aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+
+</div>
 <div class="justify-content-start">
     <table class="table table-striped">
         <thead>
@@ -28,7 +53,6 @@
                         <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
                         <td>@item.LastWriteTime</td>
                         <td>@(Utility.BytesToStringOptimized(item.Length))</td>
-
                     </tr>
                     i++;
                 }
@@ -39,47 +63,102 @@
         </tbody>
     </table>
 
-    <form id="uploadForm" asp-controller="Streaming" asp-action="UploadFile" method="post" enctype="multipart/form-data"
-        onsubmit="AJAXSubmit(this);return false;">
-        <dl>
-            <dt>
-                <label for="file">File</label>
-            </dt>
-            <dd>
-                <input id="file" type="file" name="file" />
-            </dd>
-        </dl>
-
-        <input class="btn" type="submit" value="Upload" />
-
-        <div style="margin-top:15px">
-            <output form="uploadForm" name="result"></output>
-        </div>
-    </form>
 
     @section Scripts {
+
         <script>
+            $(".progress").hide();
             "use strict";
+            const chunkSize = 1024 * 512;
+            var start = 0;
+            var chunkCounter = -1;
+            var chunkEnd = 0;
+            var uid = "";
+            $('#submitBtn').on("click", StreamFile);
 
-            async function AJAXSubmit(oFormElement) {
-                const formData = new FormData(oFormElement);
 
-                try {
-                    const response = await fetch(oFormElement.action, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': getCookie('RequestVerificationToken')
-                        },
-                        body: formData
-                    });
 
-                    oFormElement.elements.namedItem("result").value =
-                        'Result: ' + response.status + ' ' + response.statusText;
-                } catch (error) {
-                    console.error('Error:', error);
-                }
+            async function StreamFile() {
+
+
+                const input = $("#file");
+                if (input.prop('files').length == 0)
+                    return;
+                const file = input.prop('files')[0];
+                var chunksSent = 0;
+                var numberofChunks = Math.ceil(file.size / chunkSize);
+                $('.progress').show();
+
+                var request = $.post("api/streaming/handshake",
+                    {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        totalParts: numberofChunks,
+                        expectedPartSize: chunkSize
+                    }
+                );
+                request.done(async function (data) {
+
+                    uid = data;
+                    //createChunk();
+                    while (chunkCounter < numberofChunks) {
+
+                        chunkCounter++;
+                        start = chunkEnd;
+                        chunkEnd = Math.min(start + chunkSize, file.size);
+                        const chunk = file.slice(start, chunkEnd);
+                        const form = new FormData();
+                        const meta = {
+                            "uid": uid,
+                            "currentPart": chunkCounter,
+                            "bytesRead": chunkEnd - start
+                        }
+                        form.append("meta", JSON.stringify(meta));
+                        form.append("file", chunk);
+                        PostData("api/streaming/uploadlarge", form);
+
+                    }
+
+                    async function PostData(link, data) {
+                        var oReq = new XMLHttpRequest();
+                        oReq.open('POST', link, true);
+                        oReq.onload = () => {
+                            if (oReq.status === 200) {
+                                chunksSent++;
+                                let progr = Math.round((chunksSent / numberofChunks) * 100).toString();
+                                let bar = $('.progress-bar');
+
+                                bar.css("width", progr.toString() + "%");
+                                bar.attr("aria-valuenow", progr);
+                                $("text-status").text(progr);
+                                if (chunksSent === numberofChunks) {
+                                    $(".progress").hide();
+                                    bar.css('width', "0%");
+                                    bar.attr("aria-valuenow", 0);
+
+                                }
+
+                            }
+                        }
+                        oReq.send(data);
+
+                    }
+
+                });
+
+                request.fail(function () {
+                    alert("error while handshake");
+                });
+
+
             }
-
+            async function sendAbortion(uid) {
+                var request = $.post('api/streaming/abort',
+                    {
+                        'uid': uid
+                    }
+                );
+            }
             function getCookie(name) {
                 var value = "; " + document.cookie;
                 var parts = value.split("; " + name + "=");

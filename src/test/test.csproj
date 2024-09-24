@@ -22,6 +22,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Heplers\" />
+  </ItemGroup>
+
   <!-- <ItemGroup>
     <ProjectReference Include="..\mvc_server\mvc_server.csproj" />
   </ItemGroup> -->

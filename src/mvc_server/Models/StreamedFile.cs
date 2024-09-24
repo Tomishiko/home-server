@@ -5,6 +5,7 @@ namespace mvc_server.Models;
 
 public class StreamedFile
 {
+    public long FileSize { get; set; }
     public int TotalFileParts { get; set; }
     public int CurrentFilePart { get; set; }
     public string FileName { get; set; }
