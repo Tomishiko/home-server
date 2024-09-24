@@ -84,6 +84,7 @@ public class StreamingController : ControllerBase
                 }
                 if (fileMeta.currentPart == file?.TotalFileParts - 1)
                 {
+                    await Task.Delay(5000);
                     file.Stream.Close();
                     _fileCompositor.StreamedFiles.Remove(fileMeta.uid);
                 }
