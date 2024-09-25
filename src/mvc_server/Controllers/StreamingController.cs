@@ -12,10 +12,8 @@ using mvc_server.Models;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.Formatters;
 
-
 namespace mvc_server.Controllers;
-//TODO: here is a good article on chunks upload
-//https://www.c-sharpcorner.com/article/upload-large-files-to-mvc-webapi-using-partitioning/
+
 [Route("api/[controller]")]
 public class StreamingController : ControllerBase
 {
@@ -55,7 +53,6 @@ public class StreamingController : ControllerBase
 
             do
             {
-                //TODO: Optimize this routing
 
 
                 ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition);
@@ -84,7 +81,7 @@ public class StreamingController : ControllerBase
                 }
                 if (fileMeta.currentPart == file?.TotalFileParts - 1)
                 {
-                    await Task.Delay(5000);
+                    await Task.Delay(5000);// TODO: #5 add mechanism to track parts which are still written to file
                     file.Stream.Close();
                     _fileCompositor.StreamedFiles.Remove(fileMeta.uid);
                 }
