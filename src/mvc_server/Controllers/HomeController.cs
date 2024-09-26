@@ -32,6 +32,7 @@ public class HomeController : Controller
         var model = new MovieModel
         {
             Movies = _coreFS.GetMovies,
+            SelectionId = -1
         };
         return View(model);
 
