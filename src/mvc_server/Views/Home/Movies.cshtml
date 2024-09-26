@@ -1,32 +1,11 @@
 ﻿@model MovieModel
-@{
-    ViewData["Title"] = "Theatre";
-}
-<div class="container-fluid">
-    <div class="row">
-        <cache>
-            <div class="col-sm-2">
-                <h1 class="display-4">
-                    @ViewData["Title"]
-                </h1>
-            </div>
-        </cache>
-        <div class="col-sm-10 align-content-center">
-            <h3 class="display-6">@Model.SelectionName</h3>
-        </div>
-    </div>
 
-</div>
+<h4 class="display-6 top-0">List</h4>
+
 <div class="container-fluid">
     <div class="row">
 
-        <div class="media-left col-xs-12 col-sm-6 col-md-8">
-            <video id="player"  playsinline width="100%" controls src="@Model.PlayerPath">
-                Your browser does not support the video tag.
-            </video>
-        </div>
-        <div class="list-group col-xs-6 col-md-4">
-            <h4 class="display-5 top-0">List</h4>
+        <div class="list-group col-md-4">
             @* <a href="#" class="list-group-item active">
             Cras justo odio
             </a> *@
@@ -36,13 +15,21 @@
                 {
                     foreach (var item in Model.Movies)
                     {
-                        <a asp-action="Movies" asp-route-id="@i" class="list-group-item">@item.Name</a>
+                        <a asp-action="Movies" asp-route-id="@i"
+                            class="list-group-item text-wrap text-truncate @(i==Model.SelectionId? "active":"")"
+                            style="font-size: 18px; ">@item.Name</a>
                         i++;
                     }
                 }
 
             }
 
+
+        </div>
+        <div class="container-xxl col-md-8">
+            <video id="player" playsinline controls src=@Model.PlayerPath>
+                Your browser does not support the video tag.
+            </video>
 
         </div>
     </div>

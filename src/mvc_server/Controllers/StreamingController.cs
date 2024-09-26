@@ -11,11 +11,10 @@ using System.Text.Json.Serialization;
 using mvc_server.Models;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.Formatters;
-
+using mvc_server.Interfaces;
 
 namespace mvc_server.Controllers;
-//TODO: here is a good article on chunks upload
-//https://www.c-sharpcorner.com/article/upload-large-files-to-mvc-webapi-using-partitioning/
+
 [Route("api/[controller]")]
 public class StreamingController : ControllerBase
 {
@@ -55,7 +54,6 @@ public class StreamingController : ControllerBase
 
             do
             {
-                //TODO: Optimize this routing
 
 
                 ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition);
@@ -72,31 +70,23 @@ public class StreamingController : ControllerBase
                     continue;
                 }
 
-                StreamedFile file;
+                IStreamedFile file;
 
                 if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
                     byte[] buffer = new byte[fileMeta.bytesRead];
                     await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
                     RandomAccess.Write(file.Stream, buffer, fileMeta.currentPart * file.PartSize);
+                    file.PartsWritten++;
                     //await filePart.FileStream.CopyToAsync(file.Stream);
 
                 }
-                if (fileMeta.currentPart == file?.TotalFileParts - 1)
-                {
-                    await Task.Delay(5000);
-                    file.Stream.Close();
-                    _fileCompositor.StreamedFiles.Remove(fileMeta.uid);
-                }
-
-
                 //totalSize += await SaveFileAsync(section, subDirectory);
 
                 //count++;
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 
-            _logger.LogInformation($"File part accepted read:");
             return Ok(new { Count = count, Size = Helpers.Utility.BytesToStringOptimized(totalSize) });
 
         }
@@ -115,9 +105,12 @@ public class StreamingController : ControllerBase
         try
         {
             var encodeFileName = HttpUtility.HtmlEncode(fileName);
+            var UniqueID = Guid.NewGuid().ToString();
+
 
             var streamedFile = new StreamedFile
             {
+                Id = UniqueID,
                 FileName = fileName,
                 PartSize = expectedPartSize,
                 FileSize = fileSize,
@@ -129,11 +122,10 @@ public class StreamingController : ControllerBase
                             preallocationSize: fileSize),
                 Created = DateTime.Now
             };
+            streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
 
-
-            var UniqueID = Guid.NewGuid().ToString();
             _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
-            _logger.LogInformation($"handshake OK {fileName}");
+            _logger.LogInformation($"FileHandle opened(OK) Filename: {fileName}, Filesize:{streamedFile.FileSize}");
             return Ok(UniqueID);
 
         }

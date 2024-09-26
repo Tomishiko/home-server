@@ -25,13 +25,14 @@ public class HomeController : Controller
 
         return View(files);
     }
-    [Route("/movies", Name = "HomeMovies")]
+    [Route("/movies")]
     public IActionResult Movies()
     {
 
         var model = new MovieModel
         {
             Movies = _coreFS.GetMovies,
+            SelectionId = -1
         };
         return View(model);
 
@@ -49,6 +50,15 @@ public class HomeController : Controller
             SelectionName = movies[id].Name
         };
         return View(model);
+    }
+
+    public IActionResult Player(int movieId)
+    {
+        var movies = _coreFS.GetMovies;
+
+        ViewData["MediaLink"] = $"/api/video/{movieId}";
+        ViewData["Title"] = Path.GetFileNameWithoutExtension(movies[movieId].Name);
+        return View();
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
