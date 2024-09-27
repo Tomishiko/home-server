@@ -1,6 +1,5 @@
 using Microsoft.Extensions.FileProviders;
 using mvc_server.Helpers;
-using mvc_server.Service;
 using mvc_server.Services;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;

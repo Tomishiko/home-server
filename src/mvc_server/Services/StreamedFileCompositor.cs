@@ -2,7 +2,7 @@ using System;
 using mvc_server.Interfaces;
 using mvc_server.Models;
 
-namespace mvc_server.Service;
+namespace mvc_server.Services;
 
 public class StreamedFileCompositor
 {
