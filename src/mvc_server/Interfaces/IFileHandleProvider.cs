@@ -7,5 +7,6 @@ public interface IFileHandleProvider
 {
     public SafeFileHandle FileHandle { get; }
     public void Close();
+    public bool IsClosed { get; }
 
 }

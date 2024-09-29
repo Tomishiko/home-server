@@ -3,6 +3,7 @@ using mvc_server.Services;
 using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
+using mvc_server.Interfaces;
 namespace test
 {
     public class FileCompositorTest
@@ -10,27 +11,35 @@ namespace test
         [Fact]
         public void FileStreamDisposedAfterFilesFinalPartIsReached()
         {
+            //Arrange
             var loggerMoq = new Mock<ILogger<StreamedFileCompositor>>();
-
-            var streamMoq = new Mock<SafeFileHandle>();
+            var streamMoq = new Mock<IFileHandleProvider>();
             bool handleClosed = false;
-            //streamMoq.Setup(s => s.Close()).Callback(() => handleClosed = true);
+            streamMoq.Setup(s => s.Close()).Callback(() => handleClosed = true);
             var comp = new StreamedFileCompositor(loggerMoq.Object);
-
+            var uid = Guid.NewGuid().ToString();
             var fileExample = new StreamedFile
             {
                 FileName = "file",
                 FileSize = 1L,
-                Id = "1",
-                TotalFileParts = 20,
-                Stream = streamMoq.Object,
+                Id = uid,
+                TotalFileParts = 10,
+                fileHandleProvider = streamMoq.Object,
 
             };
-            comp.StreamedFiles.Add("1",fileExample);
-            comp.StreamedFiles["1"].PartsWritten = 20;
+            comp.StreamedFiles.Add(uid, fileExample);
+            fileExample.CloseEvent += comp.CloseEventHandler;
 
-            Assert.True(fileExample.Stream.IsClosed);
-            Assert.Empty(comp.StreamedFiles);
+            //Handle should be active while final part is not reached
+            for (int i = 0; i < 10; i++)
+            {
+                Assert.False(handleClosed);
+                Assert.True(comp.StreamedFiles.ContainsKey(uid));
+                comp.StreamedFiles[uid].PartsWritten++;
+            }
+
+            Assert.True(handleClosed);
+            Assert.False(comp.StreamedFiles.ContainsKey(uid));
         }
     }
 }
