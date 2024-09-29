@@ -17,6 +17,7 @@ public class StreamedFile : IStreamedFile
     public long PartSize { get; init; }
 
     public SafeFileHandle GetFileHandle { get => fileHandleProvider.FileHandle; }
+    public bool IsClosed { get => fileHandleProvider.IsClosed; }
     public DateTime Created { get; init; }
     public int PartsWritten
     {
