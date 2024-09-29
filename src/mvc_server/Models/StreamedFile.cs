@@ -9,13 +9,14 @@ namespace mvc_server.Models;
 public class StreamedFile : IStreamedFile
 {
     private int _partsWritten = 0;
-
+    public IFileHandleProvider fileHandleProvider { private get; init; }
     public string Id { get; init; }
     public long FileSize { get; init; }
     public int TotalFileParts { get; init; }
     public string FileName { get; init; }
     public long PartSize { get; init; }
-    public SafeFileHandle Stream { get; init; }
+
+    public SafeFileHandle GetFileHandle { get => fileHandleProvider.FileHandle; }
     public DateTime Created { get; init; }
     public int PartsWritten
     {
@@ -25,14 +26,16 @@ public class StreamedFile : IStreamedFile
             _partsWritten = value;
             if (value == TotalFileParts)
             {
-                OnClose();
+                Close();
             }
         }
     }
     public event EventHandler<string>? CloseEvent;
-    private void OnClose()
+
+    public void Close()
     {
-        Stream.Close();
+        fileHandleProvider.Close();
         CloseEvent?.Invoke(this, Id);
     }
+
 }

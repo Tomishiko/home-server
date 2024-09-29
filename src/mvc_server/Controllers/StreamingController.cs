@@ -76,7 +76,7 @@ public class StreamingController : ControllerBase
                 {
                     byte[] buffer = new byte[fileMeta.bytesRead];
                     await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
-                    RandomAccess.Write(file.Stream, buffer, fileMeta.currentPart * file.PartSize);
+                    RandomAccess.Write(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
                     file.PartsWritten++;
                     //await filePart.FileStream.CopyToAsync(file.Stream);
 
@@ -107,7 +107,11 @@ public class StreamingController : ControllerBase
             var encodeFileName = HttpUtility.HtmlEncode(fileName);
             var UniqueID = Guid.NewGuid().ToString();
 
-
+            var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
+                            FileMode.CreateNew,
+                            FileAccess.Write,
+                            FileShare.Write,
+                            preallocationSize: fileSize);
             var streamedFile = new StreamedFile
             {
                 Id = UniqueID,
@@ -115,11 +119,7 @@ public class StreamingController : ControllerBase
                 PartSize = expectedPartSize,
                 FileSize = fileSize,
                 TotalFileParts = totalParts,
-                Stream = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
-                            FileMode.CreateNew,
-                            FileAccess.Write,
-                            FileShare.Write,
-                            preallocationSize: fileSize),
+                fileHandleProvider = new FileHandleProvider(fileHandle),
                 Created = DateTime.Now
             };
             streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
@@ -145,11 +145,9 @@ public class StreamingController : ControllerBase
         if (!_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out var file))
             return BadRequest("Identifier does not exist");
 
-        file.Stream.Close();
+        file.Close();
         var fileInf = new FileInfo(Path.Combine("wwwroot", "files", file.FileName));
         fileInf.Delete();
-        _fileCompositor.StreamedFiles.Remove(uid);
-
         return Ok(file.FileName);
 
     }
