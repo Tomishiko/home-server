@@ -23,44 +23,17 @@ public class HomeController : Controller
         {
             files[i] = new FileInfo(items[i]);
         }
-
+        //TODO:  file system caching
         return View(files);
     }
     [Route("/movies")]
     public IActionResult Movies()
     {
 
-        var model = new MovieModel
-        {
-            Movies = _coreFS.GetMovies,
-            SelectionId = -1
-        };
-        return View(model);
+        return View(_coreFS.GetMovies);
 
     }
-    [Route("/movies/{id:int}")]
-    public IActionResult Movies(int id)
-    {
 
-        var movies = _coreFS.GetMovies;
-        var model = new MovieModel
-        {
-            PlayerPath = $"/api/video/{id}",
-            SelectionId = id,
-            Movies = _coreFS.GetMovies,
-            SelectionName = movies[id].Name
-        };
-        return View(model);
-    }
-
-    public IActionResult Player(int movieId)
-    {
-        var movies = _coreFS.GetMovies;
-
-        ViewData["MediaLink"] = $"/api/video/{movieId}";
-        ViewData["Title"] = Path.GetFileNameWithoutExtension(movies[movieId].Name);
-        return View();
-    }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
