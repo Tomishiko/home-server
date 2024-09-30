@@ -1,22 +1,27 @@
 ﻿namespace mvc_server.Services;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 public class CoreFS : ICoreFS
 {
+    private const string filesRelativePath = @"wwwroot/files";
+    private const string moviesRelativePath = @"wwwroot/files/movies";
+    private StringBuilder crawler;
     private readonly DirectoryInfo files = new DirectoryInfo(filesRelativePath);
     private readonly DirectoryInfo movies = new DirectoryInfo(moviesRelativePath);
     private DateTime lastFileUpdate;
     private DateTime lastMovieUpdate;
     private FileInfo[] FilesInfo;
     private FileInfo[] MoviesInfo;
-    public const string filesRelativePath = @"wwwroot/files";
-    public const string moviesRelativePath = @"wwwroot/files/movies";
 
     public CoreFS()
     {
         this.lastFileUpdate = files.LastWriteTime;
         this.lastMovieUpdate = movies.LastWriteTime;
+        crawler = new StringBuilder(@"wwwroot/files");
+        UpdateFiles();
+        UpdateMovies();
     }
     private FileInfo[] GetElements(string dirPath)
     {
@@ -62,6 +67,7 @@ public class CoreFS : ICoreFS
     {
         get
         {
+            files.Refresh();
             if (this.lastFileUpdate != files.LastWriteTime)
                 return true;
             else
@@ -70,8 +76,10 @@ public class CoreFS : ICoreFS
     }
     public bool MovieUpdated
     {
+
         get
         {
+            movies.Refresh();
             if (this.lastMovieUpdate != movies.LastWriteTime)
                 return true;
             else
