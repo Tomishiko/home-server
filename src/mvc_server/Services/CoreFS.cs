@@ -2,30 +2,63 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 
+/// <summary>
+/// Represents the core file system service that manages hosted files.(cached)
+/// </summary>
 public class CoreFS : ICoreFS
 {
     private const string filesRelativePath = @"wwwroot/files";
     private const string moviesRelativePath = @"wwwroot/files/movies";
-    private StringBuilder crawler;
+    private readonly TimeSpan cacheTime = TimeSpan.FromMinutes(30);
     private readonly DirectoryInfo files = new DirectoryInfo(filesRelativePath);
     private readonly DirectoryInfo movies = new DirectoryInfo(moviesRelativePath);
+    private readonly IMemoryCache _memCache;
+    private StringBuilder crawler = new StringBuilder(@"wwwroot/files");
     private DateTime lastFileUpdate;
     private DateTime lastMovieUpdate;
-    private FileInfo[] FilesInfo;
-    private FileInfo[] MoviesInfo;
+    private FileSystemWatcher _indexWatcher = new FileSystemWatcher(filesRelativePath);
+    private FileSystemWatcher _movieWatcher = new FileSystemWatcher(moviesRelativePath);
 
-    public CoreFS()
+    public CoreFS(IMemoryCache memCache)
     {
         this.lastFileUpdate = files.LastWriteTime;
         this.lastMovieUpdate = movies.LastWriteTime;
-        crawler = new StringBuilder(@"wwwroot/files");
-        UpdateFiles();
-        UpdateMovies();
+        this._memCache = memCache;
+        SetWatchers();
     }
+
+    private void SetWatchers()
+    {
+        _indexWatcher.EnableRaisingEvents = true;
+        _indexWatcher.NotifyFilter = NotifyFilters.LastWrite;
+        _indexWatcher.Changed += OnFilesChanged;
+        _movieWatcher.NotifyFilter = NotifyFilters.Size;
+
+
+        _movieWatcher.EnableRaisingEvents = true;
+        _movieWatcher.NotifyFilter = NotifyFilters.LastWrite;
+        _movieWatcher.NotifyFilter = NotifyFilters.Size;
+        _movieWatcher.Changed += OnFilesChanged;
+
+    }
+
+    private void OnFilesChanged(object sender, FileSystemEventArgs e)
+    {
+        if (sender is FileSystemWatcher watcher)
+        {
+            var path = watcher.Path;
+            if (_memCache.TryGetValue(path, out _))
+                _memCache.Set(path, GetElements(path), cacheTime);
+        }
+
+
+    }
+
     private FileInfo[] GetElements(string dirPath)
     {
-        string[] items = Directory.GetFiles(dirPath);
+        string[] items = Directory.GetFileSystemEntries(dirPath);
         FileInfo[] files = new FileInfo[items.Length];
         for (int i = 0; i < items.Length; i++)
         {
@@ -33,58 +66,29 @@ public class CoreFS : ICoreFS
         }
         return files;
     }
-    private void UpdateFiles()
-    {
-        this.FilesInfo = GetElements("wwwroot/files");
-
-    }
-    private void UpdateMovies()
-    {
-        this.MoviesInfo = GetElements("wwwroot/files/movies");
-    }
-    public FileInfo[] GetFiles
+    public IEnumerable<FileInfo> GetIndexFiles
     {
         get
         {
-            files.Refresh();
-            return files.GetFiles();
+            if (!_memCache.TryGetValue<FileInfo[]>(filesRelativePath, out var temp))
+            {
+                temp = GetElements(filesRelativePath);
+                _memCache.Set(filesRelativePath, temp, cacheTime);
+            }
+            return temp;
         }
     }
-    public FileInfo[] GetMovies
+    public IEnumerable<FileInfo> GetMovies
     {
         get
         {
-            //if (MovieUpdated)
-            //{
-            //UpdateMovies();
-            //}
-            movies.Refresh();
 
-            return movies.GetFiles();
+            if (!_memCache.TryGetValue<FileInfo[]>(moviesRelativePath, out var temp))
+            {
+                temp = GetElements(moviesRelativePath);
+                _memCache.Set(moviesRelativePath, temp, cacheTime);
+            }
+            return temp;
         }
     }
-    public bool FileUpdated
-    {
-        get
-        {
-            files.Refresh();
-            if (this.lastFileUpdate != files.LastWriteTime)
-                return true;
-            else
-                return false;
-        }
-    }
-    public bool MovieUpdated
-    {
-
-        get
-        {
-            movies.Refresh();
-            if (this.lastMovieUpdate != movies.LastWriteTime)
-                return true;
-            else
-                return false;
-        }
-    }
-
 }

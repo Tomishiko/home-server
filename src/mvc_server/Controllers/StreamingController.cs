@@ -87,7 +87,7 @@ public class StreamingController : ControllerBase
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 
-            return Ok(new { Count = count, Size = Helpers.Utility.BytesToStringOptimized(totalSize) });
+            return Ok(new { Count = count, Size = Utility.BytesToStringOptimized(totalSize) });
 
         }
         catch (Exception exception)

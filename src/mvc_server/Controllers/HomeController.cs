@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using mvc_server.Models;
 using mvc_server.Models;
 using mvc_server.Services;
@@ -17,21 +18,12 @@ public class HomeController : Controller
     }
     public IActionResult Index()
     {
-        string[] items = Directory.GetFiles("wwwroot/files");
-        FileInfo[] files = new FileInfo[items.Length];
-        for (int i = 0; i < items.Length; i++)
-        {
-            files[i] = new FileInfo(items[i]);
-        }
-        //TODO:  file system caching
-        return View(files);
+        return View(_coreFS.GetIndexFiles);
     }
     [Route("/movies")]
     public IActionResult Movies()
     {
-
         return View(_coreFS.GetMovies);
-
     }
 
 
