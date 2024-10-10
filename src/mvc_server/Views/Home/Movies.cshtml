@@ -18,7 +18,7 @@
                 }
             }
         </ul>
-        <div class="container-xxl col-md-8">
+        <div class="col-md-8 ">
             <video id="player" playsinline controls src="">
                 Your browser does not support the video tag.
             </video>
@@ -36,6 +36,9 @@
             $('#player').attr('src', vidsrc);
 
 
-        })
+        });
+        $(document).ready(function () {
+            $(".plyr__video-wrapper").addClass("ratio ratio-16x9")
+        });
     </script>
 }
