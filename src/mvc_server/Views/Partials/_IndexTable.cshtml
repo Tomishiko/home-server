@@ -1,0 +1,39 @@
+﻿@model IEnumerable<FileInfo>
+<table class="table table-responsive table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Size</th>
+            <th scope="col">EXT</th>
+            <th scope="col">Modified</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @{
+            int i = 0;
+            foreach (var item in Model)
+            {
+
+                <tr>
+                    @if ((item.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                    {
+                        <td ondblclick="FetchTable('@item.Name')">[@item.Name]</td>
+                        <td>[DIR]</td>
+                    }
+                    else
+                    {
+                        <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
+                        <td>@Utility.BytesToStringOptimized(item.Length)</td>
+
+                    }
+                    <td>@item.Extension</td>
+                    <td>@item.LastWriteTime</td>
+
+
+                </tr>
+                i++;
+            }
+        }
+    </tbody>
+</table>

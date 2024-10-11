@@ -56,7 +56,7 @@ public class CoreFS : ICoreFS
 
     }
 
-    private FileInfo[] GetElements(string dirPath)
+    public FileInfo[] GetElements(string dirPath)
     {
         string[] items = Directory.GetFileSystemEntries(dirPath);
         FileInfo[] files = new FileInfo[items.Length];

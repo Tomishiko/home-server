@@ -25,7 +25,11 @@ public class HomeController : Controller
     {
         return View(_coreFS.GetMovies);
     }
-
+    [HttpPost("/partial")]
+    public IActionResult PartialTable(string name) //TODO: make it index based
+    {
+        return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements("wwwroot/files/" + name));
+    }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
