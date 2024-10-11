@@ -3,25 +3,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
 using mvc_server.Helpers;
-using mvc_server.Service;
+using mvc_server.Services;
 using System.Text.Json;
+using Microsoft.Win32.SafeHandles;
 using System.IO;
 using System.Text.Json.Serialization;
 using mvc_server.Models;
-
+using System.Web;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using mvc_server.Interfaces;
 
 namespace mvc_server.Controllers;
-//TODO: here is a good article on chunks upload
-//https://www.c-sharpcorner.com/article/upload-large-files-to-mvc-webapi-using-partitioning/
+
 [Route("api/[controller]")]
-public class StremingController : ControllerBase
+public class StreamingController : ControllerBase
 {
     private StreamedFileCompositor _fileCompositor;
-    private string _uniqueID;
-    private int _currentPart;
-    public StremingController(StreamedFileCompositor compositor)
+    private FileMeta fileMeta;
+    private readonly ILogger<StreamingController> _logger;
+    public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger)
     {
         _fileCompositor = compositor;
+        _logger = logger;
     }
 
 
@@ -47,9 +50,10 @@ public class StremingController : ControllerBase
             var reader = new MultipartReader(boundary, HttpContext.Request.Body);
 
             var section = await reader.ReadNextSectionAsync();
+            int bytesRead = 0;
+
             do
             {
-                //TODO: Optimize this routing
 
 
                 ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition);
@@ -58,63 +62,99 @@ public class StremingController : ControllerBase
                     if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition) && contentDisposition.Name == "meta")
                     {
                         var formData = await section.AsFormDataSection().GetValueAsync();
-                        (_uniqueID, _currentPart) = JsonSerializer.Deserialize<(string, int)>(
-                            formData,
-                            new JsonSerializerOptions { IncludeFields = true });
+
+                        fileMeta = JsonSerializer.Deserialize<FileMeta>(formData);
 
                     }
                     section = await reader.ReadNextSectionAsync();
                     continue;
                 }
 
-                StreamedFile file;
+                IStreamedFile file;
 
-                if (_fileCompositor.StreamedFiles.TryGetValue(_uniqueID, out file))
+                if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
-                    var filePart = section.AsFileSection();
-                    await filePart.FileStream.CopyToAsync(file.Stream);
+                    byte[] buffer = new byte[fileMeta.bytesRead];
+                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
+                    RandomAccess.Write(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    file.PartsWritten++;
+                    //await filePart.FileStream.CopyToAsync(file.Stream);
 
                 }
-                if (_currentPart == file?.TotalFileParts)
-                {
-                    file.Stream.Close();
-                    _fileCompositor.StreamedFiles.Remove(_uniqueID);
-                }
-
-
                 //totalSize += await SaveFileAsync(section, subDirectory);
 
                 //count++;
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 
-            return Ok(new { Count = count, Size = Helpers.Utility.BytesToStringOptimized(totalSize) });
+            return Ok(new { Count = count, Size = Utility.BytesToStringOptimized(totalSize) });
 
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Error while streaming file");
             return BadRequest($"Error: {exception.Message}");
         }
     }
 
-    [HttpPost]
-    public IActionResult HandShake(string fileName, int totalParts, int partSize)
+    [HttpPost("handshake")]
+    public IActionResult Handshake(string fileName, long fileSize, int totalParts, int expectedPartSize)
     {
-        if (string.IsNullOrEmpty(fileName) || totalParts < 1 || partSize <= 64)
+        if (string.IsNullOrEmpty(fileName) || fileSize < 1 || expectedPartSize <= 64)
             return BadRequest();
-
-        var streamedFile = new StreamedFile
+        try
         {
-            FileName = fileName,
-            PartSize = partSize,
-            TotalFileParts = totalParts,
-            Stream = new FileStream($"wwwroot/files/{fileName}", FileMode.Append, FileAccess.Write, FileShare.Write)
-        };
+            var encodeFileName = HttpUtility.HtmlEncode(fileName);
+            var UniqueID = Guid.NewGuid().ToString();
 
-        var UniqueID = Guid.NewGuid().ToString();
-        _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
+            var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
+                            FileMode.CreateNew,
+                            FileAccess.Write,
+                            FileShare.Write,
+                            preallocationSize: fileSize);
+            var streamedFile = new StreamedFile
+            {
+                Id = UniqueID,
+                FileName = fileName,
+                PartSize = expectedPartSize,
+                FileSize = fileSize,
+                TotalFileParts = totalParts,
+                fileHandleProvider = new FileHandleProvider(fileHandle),
+                Created = DateTime.Now
+            };
+            streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
 
-        return Ok(UniqueID);
+            _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
+            _logger.LogInformation($"FileHandle opened(OK) Filename: {fileName}, Filesize:{streamedFile.FileSize}");
+            return Ok(UniqueID);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while handshake");
+            return BadRequest($"Check the handshake data {ex.Message}");
+        }
+
+
+
+
     }
+    [HttpPost("abort")]
+    public IActionResult AbortStreaming(string uid)
+    {
+        if (!_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out var file))
+            return BadRequest("Identifier does not exist");
 
+        file.Close();
+        var fileInf = new FileInfo(Path.Combine("wwwroot", "files", file.FileName));
+        fileInf.Delete();
+        return Ok(file.FileName);
+
+    }
+    private class FileMeta
+    {
+        public string uid { get; set; }
+        public int currentPart { get; set; }
+        public int bytesRead { get; set; }
+    }
 }

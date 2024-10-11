@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+using mvc_server.Models;
 using mvc_server.Models;
 using mvc_server.Services;
 
@@ -16,40 +18,14 @@ public class HomeController : Controller
     }
     public IActionResult Index()
     {
-        string[] items = Directory.GetFiles("wwwroot/files");
-        FileInfo[] files = new FileInfo[items.Length];
-        for (int i = 0; i < items.Length; i++)
-        {
-            files[i] = new FileInfo(items[i]);
-        }
-
-        return View(files);
+        return View(_coreFS.GetIndexFiles);
     }
-    [Route("/movies", Name = "HomeMovies")]
+    [Route("/movies")]
     public IActionResult Movies()
     {
-
-        var model = new MovieModel
-        {
-            Movies = _coreFS.GetMovies,
-        };
-        return View(model);
-
+        return View(_coreFS.GetMovies);
     }
-    [Route("/movies/{id:int}")]
-    public IActionResult Movies(int id)
-    {
 
-        var movies = _coreFS.GetMovies;
-        var model = new MovieModel
-        {
-            PlayerPath = $"/api/video/{id}",
-            SelectionId = id,
-            Movies = _coreFS.GetMovies,
-            SelectionName = movies[id].Name
-        };
-        return View(model);
-    }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
