@@ -16,6 +16,7 @@ public interface IStreamedFile
     DateTime Created { get; }
     event EventHandler<string>? CloseEvent;
     int PartsWritten { get; set; }
+    void IncrementPartsWrittenLocked();
 
 
 }
