@@ -12,6 +12,7 @@ using mvc_server.Models;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using mvc_server.Interfaces;
+using System.Diagnostics;
 
 namespace mvc_server.Controllers;
 
@@ -74,10 +75,19 @@ public class StreamingController : ControllerBase
 
                 if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
-                    byte[] buffer = new byte[fileMeta.bytesRead];
-                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
-                    RandomAccess.Write(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
-                    file.PartsWritten++;
+                    var stopWatch = new Stopwatch();
+                    stopWatch.Start();
+                    //byte[] buffer = new byte[fileMeta.bytesRead]; //TODO: Consider using Span<> or Memory<>
+                    //await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
+                    Memory<byte> buffer = new Memory<byte>(new byte[fileMeta.bytesRead]);
+                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer);
+                    //RandomAccess.Write(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    await RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    stopWatch.Stop();
+                    
+                    file.IncrementPartsWrittenLocked();//TODO fix increment, have to lock(interlock) variable
+
+
                     //await filePart.FileStream.CopyToAsync(file.Stream);
 
                 }
