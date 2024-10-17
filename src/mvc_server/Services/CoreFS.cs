@@ -15,11 +15,13 @@ public class CoreFS : ICoreFS
     private readonly DirectoryInfo files = new DirectoryInfo(filesRelativePath);
     private readonly DirectoryInfo movies = new DirectoryInfo(moviesRelativePath);
     private readonly IMemoryCache _memCache;
-    private StringBuilder crawler = new StringBuilder(@"wwwroot/files");
+    public StringBuilder crawler = new StringBuilder(@"wwwroot/files");
     private DateTime lastFileUpdate;
     private DateTime lastMovieUpdate;
     private FileSystemWatcher _indexWatcher = new FileSystemWatcher(filesRelativePath);
     private FileSystemWatcher _movieWatcher = new FileSystemWatcher(moviesRelativePath);
+    public StringBuilder Crawler { get => crawler; }
+
 
     public CoreFS(IMemoryCache memCache)
     {
@@ -91,4 +93,5 @@ public class CoreFS : ICoreFS
             return temp;
         }
     }
+
 }

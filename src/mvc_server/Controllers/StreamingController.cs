@@ -5,12 +5,8 @@ using Microsoft.Net.Http.Headers;
 using mvc_server.Helpers;
 using mvc_server.Services;
 using System.Text.Json;
-using Microsoft.Win32.SafeHandles;
-using System.IO;
-using System.Text.Json.Serialization;
 using mvc_server.Models;
 using System.Web;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using mvc_server.Interfaces;
 
 namespace mvc_server.Controllers;
@@ -74,16 +70,18 @@ public class StreamingController : ControllerBase
 
                 if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
-                    byte[] buffer = new byte[fileMeta.bytesRead];
-                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
-                    RandomAccess.Write(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
-                    file.PartsWritten++;
-                    //await filePart.FileStream.CopyToAsync(file.Stream);
+                    //byte[] buffer = new byte[fileMeta.bytesRead]; //TODO: Consider using Span<> or Memory<>
+                    //await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
+                    Memory<byte> buffer = new Memory<byte>(new byte[fileMeta.bytesRead]);
+                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer);
+                    
+                    //RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    await RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    
+                    file.IncrementPartsWrittenLocked();
+
 
                 }
-                //totalSize += await SaveFileAsync(section, subDirectory);
-
-                //count++;
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 

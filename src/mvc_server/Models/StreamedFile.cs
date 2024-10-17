@@ -31,6 +31,14 @@ public class StreamedFile : IStreamedFile
             }
         }
     }
+    public void IncrementPartsWrittenLocked()
+    {
+        Interlocked.Increment(ref _partsWritten);
+        if(_partsWritten == TotalFileParts)
+        {
+            Close();
+        }
+    }
     public event EventHandler<string>? CloseEvent;
 
     public void Close()
