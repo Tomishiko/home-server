@@ -18,6 +18,7 @@ public class HomeController : Controller
     }
     public IActionResult Index()
     {
+        ViewData["Breadcrumbs"] = _coreFS.Crawler;
         return View(_coreFS.GetIndexFiles);
     }
     [Route("/movies")]
@@ -26,9 +27,19 @@ public class HomeController : Controller
         return View(_coreFS.GetMovies);
     }
     [HttpPost("/partial")]
-    public IActionResult PartialTable(string name) //TODO: make it index based
+    public IActionResult PartialTableLoad(int id, string folder) //TODO: make it index based; make separate controller for partials
     {
-        return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements("wwwroot/files/" + name));
+        //TODO: add folder string verification
+        var fs = _coreFS as CoreFS;
+        if (id < 0)
+        {
+            folder = folder.Remove(folder.LastIndexOf('/'));
+        }
+        var currDir = fs.GetElements(folder);
+        //fs.crawler.Append($"/{currDir[id].Name}");
+        var newFolder = $"{folder}/{currDir[id].Name}";
+        ViewData["Breadcrumbs"] = newFolder;
+        return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements(newFolder));
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

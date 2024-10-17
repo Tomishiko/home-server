@@ -4,6 +4,7 @@
     ViewData["Title"] = "Index";
 }
 @* TODO: #4 add antiforgery token for this page *@
+
 <div style="padding-top: 8px; padding-bottom: 16px;">
     <div class="row g-3">
 
@@ -23,7 +24,7 @@
     </div>
 </div>
 <div class="container-list-group-horizontal" id="table-container">
-    @await Html.PartialAsync("/Views/Partials/_IndexTable.cshtml", Model)
+    @await Html.PartialAsync("/Views/Partials/_IndexTable.cshtml", Model, ViewData)
 </div>
 @section Scripts {
 
@@ -128,10 +129,11 @@
             var parts = value.split("; " + name + "=");
             if (parts.length == 2) return parts.pop().split(";").shift();
         }
-        function FetchTable(name) {
+        function FetchTable(id) {
             var request = $.post('partial',
                 {
-                    'name': name
+                    'id': id,
+                    'folder': $('#breadcrumbs').html()
                 }
             );
             request.done(function (data) {
@@ -141,5 +143,6 @@
                 alert('failed to get table data');
             })
         }
+
     </script>
 }
