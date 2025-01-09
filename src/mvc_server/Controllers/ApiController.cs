@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using mvc_server.Models;
 using mvc_server.Services;
 using System.Web;
 
@@ -16,7 +17,7 @@ public class ApiController : ControllerBase
         this.coreFS = coreFS;
         this._logger = logger;
     }
-    [Route("video/{id}")]
+    [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
     {
         var videos = coreFS.GetMovies;
@@ -24,7 +25,7 @@ public class ApiController : ControllerBase
         var fs = file.OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
     }
-    [Route("file/{id}")]
+    [HttpGet("file/{id}")]
     public IActionResult GetFile(int id)
     {
         var files = coreFS.GetIndexFiles;
@@ -32,6 +33,13 @@ public class ApiController : ControllerBase
 
         var fs = file.OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
+    }
+    [HttpPost("auth")]
+    public IActionResult Authentication([FromBody]AuthModel auth){
+        if(auth is {Name:"TestName",Password:"TestPwd"}){
+            return Ok(new{AccesToken = "token"});
+        }
+        return Unauthorized();
     }
 
 
