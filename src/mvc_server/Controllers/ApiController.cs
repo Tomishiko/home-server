@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using mvc_server.Models;
 using mvc_server.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 using System.Web;
 
 namespace mvc_server.Controllers;
@@ -33,13 +35,6 @@ public class ApiController : ControllerBase
 
         var fs = file.OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
-    }
-    [HttpPost("auth")]
-    public IActionResult Authentication([FromBody]AuthModel auth){
-        if(auth is {Name:"TestName",Password:"TestPwd"}){
-            return Ok(new{AccesToken = "token"});
-        }
-        return Unauthorized();
     }
 
 

@@ -1,12 +1,8 @@
-using Microsoft.Extensions.FileProviders;
-using mvc_server.Helpers;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication;
 using mvc_server.Services;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 
 namespace mvc_server;
 
@@ -21,6 +17,7 @@ public static class Program
 
         builder.Services.AddSingleton<StreamedFileCompositor>();
         builder.Services.AddSingleton<ICoreFS, CoreFS>();
+        builder.Services.AddSingleton<JWTGen>();
 
         //TODO: AntiForgery token
         // builder.Services.AddRazorPages(options =>
@@ -35,6 +32,23 @@ public static class Program
         //                     new DisableFormValueModelBindingAttribute());
         //             });
         // });
+        var jwtIssuer = builder.Configuration.GetSection("JWT:issuer").Get<string>();
+        var jwtKey = builder.Configuration.GetSection("JWT:key").Get<string>();
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+         .AddJwtBearer(options =>
+         {
+             options.TokenValidationParameters = new TokenValidationParameters
+             {
+                 ValidateIssuer = true,
+                 ValidateAudience = true,
+                 ValidateLifetime = true,
+                 ValidateIssuerSigningKey = true,
+                 ValidIssuer = jwtIssuer,
+                 ValidAudience = jwtIssuer,
+                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+             };
+         });
 
         var app = builder.Build();
 
@@ -46,6 +60,7 @@ public static class Program
             app.UseHsts();
         }
 
+        app.UseAuthentication();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
