@@ -1,6 +1,11 @@
 using mvc_server.Controllers;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using mvc_server.Models;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Primitives;
 
 [ApiController]
 public class AuthenticationController : Controller
@@ -8,7 +13,8 @@ public class AuthenticationController : Controller
     private ILogger<AuthenticationController> _logger;
     private IConfiguration _config;
     private JWTGen _tokenGen;
-    public AuthenticationController(ILogger<AuthenticationController> logger, IConfiguration config, JWTGen tokenGen)
+    public AuthenticationController(ILogger<AuthenticationController> logger,
+            IConfiguration config, JWTGen tokenGen)
     {
         _logger = logger;
         _config = config;
@@ -16,24 +22,44 @@ public class AuthenticationController : Controller
     }
 
     [HttpPost("auth")]
-    public IActionResult Authentication([FromForm] AuthModel auth)
+    async public Task<IActionResult> Authentication([FromForm] AuthModel auth)
     {
-        if (Request.ContentType != "application/x-www-form-urlencoded")
-            return BadRequest(new { Error = "Invalid request" });
 
-        if (auth is { Name: "admin", Password: "admin" })//TODO add checking from DB
+        if (auth is not { Name: "admin", Password: "admin" })//TODO add checking from DB
+            return Unauthorized();
+
+        string token = _tokenGen.GenerateNewToken(auth.Name);
+        _logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
+        if (HttpContext.Request.Headers.Accept.Any(x => x.Contains("application/json")))
+            return Ok(new
+            {
+                access_token = token,
+                expires_in = _config["JWT:expiration"],
+                type = "Bearer"
+            });
+        else
         {
-            string token = _tokenGen.GenerateNewToken(auth.Name);
-            return Ok(new{
-                        access_token = token,
-                        expires_in = _config["JWT:expiration"],
-                        type = "Bearer"
-                    });
+            HttpContext.Response.Cookies.Append("AspNet.Id", token, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddMinutes(double.Parse(_config["JWT:expiration"])),
+                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                HttpOnly = true
+            });
+
+            if (Request.Cookies.TryGetValue("returnUrl", out string returnUrl))
+            {
+                Response.Cookies.Delete("returnUrl");
+                return Redirect(returnUrl);
+            }
+            else
+                return Redirect("/");
         }
-        return Unauthorized();
+
     }
     [HttpGet("login")]
-    public async Task<IActionResult> Login(){
+    public async Task<IActionResult> Login()
+    {
         return View("Login");
     }
 

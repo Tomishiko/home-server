@@ -4,6 +4,7 @@ using mvc_server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Web;
+using Microsoft.AspNetCore.Authorization;
 
 namespace mvc_server.Controllers;
 
@@ -28,6 +29,7 @@ public class ApiController : ControllerBase
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
     }
     [HttpGet("file/{id}")]
+    [Authorize]
     public IActionResult GetFile(int id)
     {
         var files = coreFS.GetIndexFiles;

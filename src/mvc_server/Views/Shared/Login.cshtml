@@ -1,0 +1,43 @@
+<div class="text-center">
+    <h2 class="" >Login</h2>
+</div>
+<div class="container">
+    <form id="loginform" method="post" asp-controller="Authentication" asp-action="Authentication">
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Username</label>
+            <input type="username" class="form-control" name="Name" id="exampleInputEmail1"
+                aria-describedby="emailHelp">
+        </div>
+        <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label">Password</label>
+            <input type="password" class="form-control" name="Password" id="exampleInputPassword1">
+        </div>
+        <div class="text-center" style="margin-top: 32px;">
+            <button type="submit" class="btn btn-dark border-secondary  btn-lg " >Log in</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const form = document.querySelector("#loginform");
+    async function login() {
+        const formData = new FormData(form);
+        try {
+            const response = await fetch("/auth", {
+                method: "POST",
+                // Set the FormData instance as the request body
+                body: formData,
+            });
+            //var data = await response.json();
+            //console.log(data);
+
+            //document.cookie = 'AspNet.Id='+ data.access_token;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    //form.addEventListener("submit", (event) => {
+    //    event.preventDefault();
+    //    login();
+    //});
+</script>

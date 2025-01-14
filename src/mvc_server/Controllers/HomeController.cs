@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using mvc_server.Models;
@@ -22,6 +24,7 @@ public class HomeController : Controller
         return View(_coreFS.GetIndexFiles);
     }
     [Route("/movies")]
+    [Authorize]
     public IActionResult Movies()
     {
         return View(_coreFS.GetMovies);
