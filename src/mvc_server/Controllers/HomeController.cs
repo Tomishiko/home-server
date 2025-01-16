@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.OutputCaching;
 using mvc_server.Models;
 using mvc_server.Models;
 using mvc_server.Services;
+using System.Security.Claims;
 
 namespace mvc_server.Controllers;
 
@@ -27,6 +28,7 @@ public class HomeController : Controller
     [Authorize]
     public IActionResult Movies()
     {
+        //User.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "manager")
         return View(_coreFS.GetMovies);
     }
 

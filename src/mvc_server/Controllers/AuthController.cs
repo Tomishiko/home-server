@@ -1,4 +1,5 @@
 using mvc_server.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using mvc_server.Models;
@@ -14,7 +15,7 @@ public class AuthenticationController : Controller
     private IConfiguration _config;
     private JWTGen _tokenGen;
     public AuthenticationController(ILogger<AuthenticationController> logger,
-            IConfiguration config, JWTGen tokenGen)
+            IConfiguration config, JWTGen tokenGen, IAuthorizationService authservice)
     {
         _logger = logger;
         _config = config;

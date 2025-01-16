@@ -25,13 +25,21 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="nav-underline navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass("Index")" aria-current="page" asp-area=""
+                            <a class="nav-link @Html.ActiveClass(" Index")" aria-current="page" asp-area=""
                                 asp-controller="Home" asp-action="Index">Index</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass("Movies")" asp-area="" asp-controller="Home"
+                            <a class="nav-link @Html.ActiveClass(" Movies")" asp-area="" asp-controller="Home"
                                 asp-action="Movies">Movies</a>
                         </li>
+                        @{
+                            if(User.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "manager"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link">Manege</a>
+                                </li>
+                            }
+                        }
                     </ul>
                 </div>
             </div>
