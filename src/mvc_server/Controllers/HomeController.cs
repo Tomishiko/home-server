@@ -32,6 +32,12 @@ public class HomeController : Controller
         return View(_coreFS.GetMovies);
     }
 
+    [Authorize]
+    public IActionResult Manage()
+    {
+        return View();
+    }
+
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()

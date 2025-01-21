@@ -12,18 +12,18 @@ namespace mvc_server.Controllers;
 [Route("api")]
 public class ApiController : ControllerBase
 {
-    private readonly ICoreFS coreFS;
+    private readonly ICoreFS _coreFs;
     private readonly ILogger<ApiController> _logger;
 
     public ApiController(ICoreFS coreFS, ILogger<ApiController> logger)
     {
-        this.coreFS = coreFS;
+        this._coreFs = coreFS;
         this._logger = logger;
     }
     [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
     {
-        var videos = coreFS.GetMovies;
+        var videos = _coreFs.GetMovies;
         var file = videos.ToArray()[id];
         var fs = file.OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
@@ -32,7 +32,7 @@ public class ApiController : ControllerBase
     [Authorize]
     public IActionResult GetFile(int id)
     {
-        var files = coreFS.GetIndexFiles;
+        var files = _coreFs.GetIndexFiles;
         var file = files.ToArray()[id];
 
         var fs = file.OpenRead();

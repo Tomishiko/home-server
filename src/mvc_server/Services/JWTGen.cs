@@ -1,34 +1,39 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using mvc_server.Models;
 using mvc_server.Services;
 public class JWTGen
 {
-    private IConfiguration _config;
+    private IOptions<JWT> _jwtOptions;
     private JwtSecurityTokenHandler _handler;
-    public JWTGen(IConfiguration config)
+    public JWTGen(IOptions<JWT> jwtOptions)
     {
-        _config = config;
+        _jwtOptions = jwtOptions;
         _handler = new JwtSecurityTokenHandler();
     }
     public string GenerateNewToken(string username)
     {
-
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:key"]));
+        var jwt = _jwtOptions.Value;
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        IEnumerable<Claim> claims = [new Claim("name", username)];
+        IEnumerable<Claim> claims = [new Claim("name", username),new Claim("role", "manager")];
+        //if(username == "admin")
+        //{
+        //    claims.Append(new Claim("role", "manager"));
+        //}
         double expires;
-        if (!double.TryParse(_config["JWT:expiration"], out expires))
+        if (!double.TryParse(jwt.expiration, out expires))
             expires = 120.0;
 
-        var Sectoken = new JwtSecurityToken(_config["JWT:issuer"],
-          _config["JWT:issuer"],
+        var sectoken = new JwtSecurityToken(jwt.issuer,
+          jwt.issuer,
           claims,
           expires: DateTime.Now.AddMinutes(expires),
           signingCredentials: credentials);
-        return _handler.WriteToken(Sectoken);
+        return _handler.WriteToken(sectoken);
     }
 
 }
