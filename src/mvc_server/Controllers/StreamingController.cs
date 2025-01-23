@@ -8,6 +8,7 @@ using System.Text.Json;
 using mvc_server.Models;
 using System.Web;
 using mvc_server.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace mvc_server.Controllers;
 
@@ -25,6 +26,7 @@ public class StreamingController : ControllerBase
 
 
     [HttpPost("uploadlarge")]
+    [Authorize]
     [DisableFormValueModelBinding]
     [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
     [DisableRequestSizeLimit]
@@ -74,10 +76,10 @@ public class StreamingController : ControllerBase
                     //await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
                     Memory<byte> buffer = new Memory<byte>(new byte[fileMeta.bytesRead]);
                     await section.AsFileSection().FileStream.ReadExactlyAsync(buffer);
-                    
+
                     //RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
                     await RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
-                    
+
                     file.IncrementPartsWrittenLocked();
 
 

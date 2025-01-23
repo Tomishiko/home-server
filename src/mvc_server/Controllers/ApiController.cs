@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using mvc_server.Models;
 using mvc_server.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 using System.Web;
+using Microsoft.AspNetCore.Authorization;
 
 namespace mvc_server.Controllers;
 
@@ -8,26 +12,27 @@ namespace mvc_server.Controllers;
 [Route("api")]
 public class ApiController : ControllerBase
 {
-    private readonly ICoreFS coreFS;
+    private readonly ICoreFS _coreFs;
     private readonly ILogger<ApiController> _logger;
 
     public ApiController(ICoreFS coreFS, ILogger<ApiController> logger)
     {
-        this.coreFS = coreFS;
+        this._coreFs = coreFS;
         this._logger = logger;
     }
-    [Route("video/{id}")]
+    [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
     {
-        var videos = coreFS.GetMovies;
+        var videos = _coreFs.GetMovies;
         var file = videos.ToArray()[id];
         var fs = file.OpenRead();
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
     }
-    [Route("file/{id}")]
+    [HttpGet("file/{id}")]
+    [Authorize]
     public IActionResult GetFile(int id)
     {
-        var files = coreFS.GetIndexFiles;
+        var files = _coreFs.GetIndexFiles;
         var file = files.ToArray()[id];
 
         var fs = file.OpenRead();

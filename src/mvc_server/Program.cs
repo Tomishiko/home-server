@@ -1,12 +1,6 @@
-using Microsoft.Extensions.FileProviders;
-using mvc_server.Helpers;
 using mvc_server.Services;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using System.Net;
+using mvc_server.Extensions;
 
 namespace mvc_server;
 
@@ -15,12 +9,13 @@ public static class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
+        builder.Services.SetOptions();
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-
         builder.Services.AddSingleton<StreamedFileCompositor>();
         builder.Services.AddSingleton<ICoreFS, CoreFS>();
+        builder.Services.AddSingleton<JWTGen>();
+        builder.Services.SetAuthentication(builder.Configuration);
 
         //TODO: AntiForgery token
         // builder.Services.AddRazorPages(options =>
@@ -35,17 +30,37 @@ public static class Program
         //                     new DisableFormValueModelBindingAttribute());
         //             });
         // });
+        //var jwtIssuer = builder.Configuration.GetSection("JWT:issuer").Get<string>();
+        //var jwtKey = builder.Configuration.GetSection("JWT:key").Get<string>();
+
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Home/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
+        app.UseStatusCodePages(async context =>
+        {
+            var request = context.HttpContext.Request;
+            var response = context.HttpContext.Response;
+            if (response.StatusCode == (int)HttpStatusCode.Unauthorized //TODO change this retarded shit to check for ajax requests
+                    && request.Headers.Accept.Any(x => x.Contains("text/html")))
+            {
+                response.Cookies.Append("returnUrl", request.Path, new CookieOptions
+                {
+                    Secure = true,
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Strict
 
+                });
+                response.Redirect("/login");
+
+            }
+        });
+
+        app.UseAuthentication();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 

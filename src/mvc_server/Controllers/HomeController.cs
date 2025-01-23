@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using mvc_server.Models;
 using mvc_server.Models;
 using mvc_server.Services;
+using System.Security.Claims;
 
 namespace mvc_server.Controllers;
 
@@ -22,8 +26,10 @@ public class HomeController : Controller
         return View(_coreFS.GetIndexFiles);
     }
     [Route("/movies")]
+    [Authorize]
     public IActionResult Movies()
     {
+        //User.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "manager")
         return View(_coreFS.GetMovies);
     }
     [HttpPost("/partial")]
@@ -41,6 +47,12 @@ public class HomeController : Controller
         ViewData["Breadcrumbs"] = newFolder;
         return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements(newFolder));
     }
+    [Authorize]
+    public IActionResult Manage()
+    {
+        return View();
+    }
+
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
