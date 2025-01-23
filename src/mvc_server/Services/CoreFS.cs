@@ -5,7 +5,8 @@ using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
-/// Represents the core file system service that manages hosted files.(cached)
+/// Represents the core file system service that manages hosted files.
+/// Movies and index cached
 /// </summary>
 public class CoreFS : ICoreFS
 {
@@ -15,12 +16,10 @@ public class CoreFS : ICoreFS
     private readonly DirectoryInfo files = new DirectoryInfo(filesRelativePath);
     private readonly DirectoryInfo movies = new DirectoryInfo(moviesRelativePath);
     private readonly IMemoryCache _memCache;
-    public StringBuilder crawler = new StringBuilder(@"wwwroot/files");
     private DateTime lastFileUpdate;
     private DateTime lastMovieUpdate;
     private FileSystemWatcher _indexWatcher = new FileSystemWatcher(filesRelativePath);
     private FileSystemWatcher _movieWatcher = new FileSystemWatcher(moviesRelativePath);
-    public StringBuilder Crawler { get => crawler; }
 
 
     public CoreFS(IMemoryCache memCache)
