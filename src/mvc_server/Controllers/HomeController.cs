@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using mvc_server.Models;
@@ -18,10 +19,11 @@ public class HomeController : Controller
     }
     public IActionResult Index()
     {
-        ViewData["Breadcrumbs"] = _coreFS.Crawler;
+        ViewData["Breadcrumbs"] = "wwwroot/files";
         return View(_coreFS.GetIndexFiles);
     }
     [Route("/movies")]
+    [Authorize]
     public IActionResult Movies()
     {
         return View(_coreFS.GetMovies);
@@ -31,13 +33,10 @@ public class HomeController : Controller
     {
         //TODO: add folder string verification
         var fs = _coreFS as CoreFS;
-        if (id < 0)
-        {
-            folder = folder.Remove(folder.LastIndexOf('/'));
-        }
+        string? newFolder;
         var currDir = fs.GetElements(folder);
-        //fs.crawler.Append($"/{currDir[id].Name}");
-        var newFolder = $"{folder}/{currDir[id].Name}";
+        newFolder = (id == -1) ? folder.Remove(folder.LastIndexOf('/')) :
+                                $"{folder}/{currDir[id].Name}";
         ViewData["Breadcrumbs"] = newFolder;
         return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements(newFolder));
     }

@@ -9,6 +9,5 @@ public interface ICoreFS
     public IEnumerable<FileInfo> GetIndexFiles { get; }
     public IEnumerable<FileInfo> GetMovies { get; }
     public FileInfo[] GetElements(string dirName);
-    public StringBuilder Crawler { get; }
 
 }
