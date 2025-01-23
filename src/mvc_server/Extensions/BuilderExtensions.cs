@@ -32,6 +32,7 @@ public static class ServiceExtensions
                 {
                     OnMessageReceived = ctx =>
                     {
+                        Console.WriteLine($"{ctx.Request.Headers}");
                         if (ctx.Request.Headers["X-Requested-With"] != "XMLHttpRequest")
                         {
                             ctx.Request.Cookies.TryGetValue("AspNet.Id", out string token);
