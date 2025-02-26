@@ -48,13 +48,6 @@ public static class Program
             if (response.StatusCode == (int)HttpStatusCode.Unauthorized //TODO change this retarded shit to check for ajax requests
                     && request.Headers.Accept.Any(x => x.Contains("text/html")))
             {
-                response.Cookies.Append("returnUrl", request.Path, new CookieOptions
-                {
-                    Secure = true,
-                    HttpOnly = true,
-                    SameSite = SameSiteMode.Strict
-
-                });
                 response.Redirect("/login");
 
             }
