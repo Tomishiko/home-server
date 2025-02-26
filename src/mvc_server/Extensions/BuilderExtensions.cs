@@ -32,12 +32,10 @@ public static class ServiceExtensions
                 {
                     OnMessageReceived = ctx =>
                     {
-                        Console.WriteLine($"{ctx.Request.Headers}");
-                        if (ctx.Request.Headers["X-Requested-With"] != "XMLHttpRequest")
+                        if (string.IsNullOrEmpty(ctx.Token) && ctx.Request.Cookies.TryGetValue("AspNet.Id", out string? cookieToken))
                         {
-                            ctx.Request.Cookies.TryGetValue("AspNet.Id", out string token);
-                            if (!string.IsNullOrEmpty(token))
-                                ctx.Token = token;
+                            if (!string.IsNullOrEmpty(cookieToken))
+                                ctx.Token = cookieToken;
                         }
 
                         return Task.CompletedTask;

@@ -130,18 +130,28 @@
             if (parts.length == 2) return parts.pop().split(";").shift();
         }
         async function FetchTable(id) {
-            const postBody = {
-                'id': id,
-                'folder': $('#breadcrumbs').html()
-            }
+            const postBody = JSON.stringify({
+                id: id,
+                folder: $('#breadcrumbs').html()
+            })
 
             try {
                 const response = await fetch('/partial', {
                     method: 'POST',
-                    Accept: 'text/html',
-                    body: postBody
+                    body: postBody,
+                    headers: {
+                        "Accept": "text/html",
+                        "Content-type": "text/json",
+                    }
                 })
-                $('#table-container').html(response);
+                if(response.redirected){
+                    //window.location.replace(response.url);
+                    window.location.href=response.url;
+                    return;
+                }
+                response.text().then(function (string) {
+                    $('#table-container').html(string);
+                })
                 //var request = $.post('partial',
                 //    {
                 //        'id': id,
@@ -156,7 +166,7 @@
                 //})
 
             } catch (e) {
-
+                console.log(e);
             }
         }
 

@@ -40,6 +40,7 @@ public class AuthenticationController : Controller
             {
                 Expires = DateTimeOffset.UtcNow.AddMinutes(double.Parse(_config["JWT:expiration"])),
                 SameSite = SameSiteMode.Strict,
+                Domain = "192.168.1.2",
                 Secure = true,
                 HttpOnly = true
             });

@@ -32,21 +32,33 @@
                         <a class="nav-link @Html.ActiveClass("Movies")" asp-area="" asp-controller="Home"
                            asp-action="Movies">Movies</a>
                     </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Html.ActiveClass("TV")" asp-area="" asp-controller="Home"
+                           asp-action="TvPage">TV</a>
+                    </li>
                     @{
-                        if (User.Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link @Html.ActiveClass("Manage")" asp-area="" asp-controller="Home"
-                                   asp-action="Manage">Manager</a>
-                            </li>
-                        }
 
                         if (!User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item align-self-end">
+                            <li class="nav-item">
                                 <a class="nav-link  @Html.ActiveClass("Login")" asp-controller="Authentication"
                                    asp-action="Login">Log in</a>
 
+                            </li>
+                        }
+                        else
+                        {
+
+                            if (User.Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @Html.ActiveClass("Manage")" asp-area="" asp-controller="Home"
+                                       asp-action="Manage">Manager</a>
+                                </li>
+                            }
+                            <li class="nav-item">
+                                <a class="nav-link " asp-area="" >Usernamehere!!</a>
                             </li>
                         }
                     }
