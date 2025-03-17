@@ -1,0 +1,59 @@
+<div class="row g-3" id="highBar">
+    <input id="input" class="form-control" type="text" placeholder="movie url" name="url"></input>
+    <button id="okBtn" class="btn btn dark border-secondary" onclick="callPlayer()">Ok</button>
+</div>
+<div id="controlBar" class="d-flex justify-content-center">
+    <button id="contrlBtn" class="btn btn dark border-secondary" type="button"
+        onclick="mpvCommand('seek -10')">Backward</button>
+    <button id="contrlBtn" class="btn btn dark border-secondary" type="button" onclick="mpvCommand('cycle pause')">pause</button>
+    <button id="contrlBtn" class="btn btn dark border-secondary" type="button" onclick="mpvCommand('seek +10')">Forward</button>
+    <button id="contrlBtn" class="btn btn dark border-secondary" type="button" onclick="mpvCommand('stop')">Close</button>
+</div>
+<div>
+    <ul id="AnilibList" class="list-group">
+    </ul>
+
+    <button type="button" onclick="loadAnilib()" class="btn btn dark border-secondary">Load anilib</button>
+</div>
+
+
+
+<script>
+    async function callPlayer() {
+        var url = document.getElementById('input').value;
+        await fetch("/api/mpv", {
+            method: "POST",
+            body: url,
+        });
+    }
+
+    async function mpvCommand(cmd) {
+        await fetch("/api/mpv/command?" + new URLSearchParams({
+            cmd: cmd,
+        }).toString())
+    }
+
+</script>
+<style>
+    #highBar {
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
+
+    #input {
+        width: 85%;
+        margin-right: 4px;
+    }
+
+    #okBtn {
+        width: 10%;
+    }
+
+    #contrlBtn {
+        margin-right: 4px;
+    }
+
+    #AnilibList {
+        margin-top: 32px;
+    }
+</style>
