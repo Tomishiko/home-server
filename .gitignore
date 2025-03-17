@@ -121,6 +121,6 @@ src/.vscode
 # JetBrains Rider's auto generated files
 .idea/
 # user specific files
-src/mvc_server/wwwroot/files
-src/mvc_server/ScrapeScript
+src/web/wwwroot/files
+src/web/ScrapeScript
 ./deploy_local.sh
