@@ -11,6 +11,7 @@ public static class ServiceExtensions
     public static IServiceCollection SetOptions(this IServiceCollection services)
     {
         services.AddOptions<JWT>().BindConfiguration("JWT");
+        ser
         return services;
     }
     public static IServiceCollection SetAuthentication(this IServiceCollection services,IConfiguration config)
