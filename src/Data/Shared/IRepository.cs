@@ -1,4 +1,4 @@
-﻿namespace Data.Common;
+﻿namespace Data.Shared;
 
 public interface IRepository<T> where T : class
 {

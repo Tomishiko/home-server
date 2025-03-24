@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using core.Models;
+using Data.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Text.Json.Nodes;
@@ -15,10 +17,15 @@ public class PagesController : Controller
 {
     private readonly ILogger<PagesController> _logger;
     private readonly ICoreFS _coreFS;
-    public PagesController(ILogger<PagesController> logger, ICoreFS coreFS)
+    private readonly IRepository<User> _userRepo;
+    private readonly IRepository<Log> _logsRepo;
+
+    public PagesController(ILogger<PagesController> logger, ICoreFS coreFS,IRepository<User> userRepo, IRepository<Log> logsRepo)
     {
         _logger = logger;
         _coreFS = coreFS;
+        this._userRepo = userRepo;
+        this._logsRepo = logsRepo;
     }
     public IActionResult Index()
     {
@@ -48,7 +55,16 @@ public class PagesController : Controller
     [Authorize]
     public IActionResult Manage()
     {
+        ViewBag.Users = _userRepo.GetAll();
         return View();
+    }
+    [Authorize]
+    public IActionResult ManageUsers(){
+        return PartialView("/Views/Partials/_ManageUsers.cshtml",_userRepo.GetAll());
+    }
+    [Authorize]
+    public IActionResult ManageLogs(){
+        return PartialView("/Views/Partials/_ManageLogs.cshtml",_logsRepo.GetAll());
     }
 
     public IActionResult Tv()

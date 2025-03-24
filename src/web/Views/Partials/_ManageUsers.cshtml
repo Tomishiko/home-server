@@ -1,0 +1,33 @@
+@model IEnumerable<core.Models.User>
+@{
+    ViewData["Title"] = "User List";
+}
+
+    <h1>User List</h1>
+    <a href="@Url.Action("Create")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.id</td>
+                    <td>@user.uname</td>
+                    <td>@user.password</td>
+                    <td>
+                        <a href="@Url.Action("Edit", new { id = user.id })" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="@Url.Action("Delete", new { id = user.id })" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+

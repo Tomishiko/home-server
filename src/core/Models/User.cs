@@ -1,4 +1,4 @@
-namespace Data.Models;
+namespace core.Models;
 
 public class User
 {

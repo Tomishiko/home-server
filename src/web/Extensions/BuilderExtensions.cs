@@ -1,20 +1,30 @@
 ﻿using System.Text;
+using Data.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using web.Models;
+using Data.Core;
+using web.Services;
+using Microsoft.EntityFrameworkCore;
+using core.Services;
 
 namespace web.Extensions;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection SetOptions(this IServiceCollection services)
+    public static IServiceCollection SetServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddOptions<JWT>().BindConfiguration("JWT");
-        ser
+        services.AddSingleton<StreamedFileCompositor>();
+        services.AddSingleton<ICoreFS, CoreFS>();
+        services.AddSingleton<JWTGen>();
+        services.AddTransient<IMpvService, Mpv>();
+        services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(config.GetValue<string>("ConnectionString")));
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         return services;
     }
-    public static IServiceCollection SetAuthentication(this IServiceCollection services,IConfiguration config)
+    public static IServiceCollection SetAuthentication(this IServiceCollection services, IConfiguration config)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>

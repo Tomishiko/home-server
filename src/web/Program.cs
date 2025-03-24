@@ -1,5 +1,6 @@
 using web.Services;
 using core.Services;
+using Data.Core;
 using System.Net;
 using web.Extensions;
 
@@ -10,14 +11,11 @@ public static class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.SetOptions();
+        builder.Services.SetServices(builder.Configuration);
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        builder.Services.AddSingleton<StreamedFileCompositor>();
-        builder.Services.AddSingleton<ICoreFS, CoreFS>();
-        builder.Services.AddSingleton<JWTGen>();
-        builder.Services.AddTransient<IMpvService,Mpv>();
         builder.Services.SetAuthentication(builder.Configuration);
+        //builder.Services.AddScoped<Irepos>
 
         //TODO: AntiForgery token
         // builder.Services.AddRazorPages(options =>

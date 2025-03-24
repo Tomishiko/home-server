@@ -1,42 +1,135 @@
 ﻿@{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
+ViewBag.Title = "title";
+Layout = "_Layout";
 }
+<style>
+    /* Custom active link styling */
+    #sidebar-item.active {
+        background-color: #0056b3;
+        color: #ffffff !important;
+        font-weight: bolder;
+        border-radius: 0.375rem;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    #sidebar-item {
+        color: #dee2e6;
+    }
+
+    #content {
+        margin-top: 16px;
+    }
+
+    #transparent-button {
+        opacity: 0.5;
+    }
+
+    #transparent-button:hover {
+        /*background-color: rgba(200, 200, 200, 0.8);*/
+        opacity: 1;
+    }
+
+    .glassy-offcanvas {
+        background-color: rgba(33, 37, 41, 0.1) !important;
+        /* Dark blue with transparency */
+        backdrop-filter: blur(8px);
+    }
+
+
+    /* Custom styling for the close button */
+    .glassy-offcanvas .btn-close {
+        filter: invert(1) brightness(1.8);
+    }
+</style>
 
 <div class="container-fluid" style="margin-bottom: 20px">
-    <button class="btn btn-primary p-2 d-lg-none" type="button" data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasResponsive" aria-controls="offcanvasExample">
-        SideBar
+    <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive" aria-controls="offcanvasExample">
+        ==
     </button>
     <div class="row">
-        <aside class="col-lg-2 col-sm-1 w-25">
-            <div class="offcanvas-lg offcanvas-start " tabindex="-1" id="offcanvasResponsive"
-                 aria-labelledby="offcanvasExampleLabel">
+        <aside class="col-lg-2 col-sm-1 ">
+            <div class="glassy-offcanvas offcanvas-lg offcanvas-start " tabindex="-1" id="offcanvasResponsive"
+                aria-labelledby="offcanvasExampleLabel">
                 <div class="offcanvas-header">
                     <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-target="#offcanvasResponsive"  data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-target="#offcanvasResponsive"
+                        data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
                 <div class="offcanvas-body">
-                    <nav class="nav flex-column navbar-nav-scroll navbar-expand-lg ">
-                        <ul>
-                            @for (int i = 0; i < 35; i++)
-                            {
-                                <li>
-
-                                    <a class="nav-link active" aria-current="page" href="#">ActiveActiveActiveActive</a>
+                    <nav id="sidebar" class="d-md-block sidebar">
+                        <div class="position-sticky">
+                            <ul class="nav flex-column">
+                                <li class="nav-item"><a id="sidebar-item" class="nav-link active" aria-current="page"
+                                        href="/Pages/ManageUsers">User
+                                        Base</a></li>
+                                <li class="nav-item"><a id="sidebar-item" class="nav-link" aria-current="page"
+                                        href="/Pages/ManageLogs">Logs</a>
                                 </li>
-                            }
-                        </ul>
+                            </ul>
+                        </div>
                     </nav>
 
                 </div>
             </div>
         </aside>
-        <div class="col-lg-8 col-sm-12 align-self-start" style="display: grid">
-            @for (int i = 0; i < 10; i++)
-            {
-                <p>Content Content Contnt</p>
-            }
+        <div id="content" class="col-lg-10 col-sm-12 align-self-start">
         </div>
     </div>
 </div>
+@section Scripts{
+<script>
+    $('#sidebar-item.nav-link').on('click', function (e) {
+        e.preventDefault();
+        const current = $(this);
+        if (current.hasClass('active'))
+            return;
+        $("#sidebar-item.nav-link.active").removeClass('active');
+        current.addClass('active');
+        loadContent(current[0].href)
+
+    })
+    document.addEventListener("DOMContentLoaded", (event) => {
+        loadContent('/Pages/ManageUsers');
+    });
+    async function loadContent(path) {
+        try {
+            const response = await fetch(path, {
+                method: 'GET',
+                headers: {
+                    "Accept": "text/html",
+                    "Content-type": "text/json",
+                }
+            })
+            if (response.redirected) {
+                //window.location.replace(response.url);
+                window.location.href = response.url;
+                return;
+            }
+            response.text().then(function (string) {
+                $('#content').html(string);
+            });
+
+            //var request = $.post('partial',
+            //    {
+            //        'id': id,
+            //        'folder': $('#breadcrumbs').html()
+            //    }
+            //);
+            //request.done(function (data) {
+            //    $('#table-container').html(data);
+            //})
+            //request.fail(function () {
+            //    alert('failed to get table data');
+            //})
+
+        } catch (ex) {
+
+        }
+    }
+</script>
+
+}

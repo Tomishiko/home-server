@@ -1,5 +1,5 @@
-namespace Data.Core;
-using Data.Common;
+namespace Data.Shared;
+using Data.Core;
 using Microsoft.EntityFrameworkCore;
 
 public class Repository<T> : IRepository<T> where T : class
