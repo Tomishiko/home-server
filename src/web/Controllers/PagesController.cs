@@ -10,6 +10,7 @@ using web.Models;
 using web.Models;
 using web.Services;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace web.Controllers;
 
@@ -63,8 +64,9 @@ public class PagesController : Controller
         return PartialView("/Views/Partials/_ManageUsers.cshtml",_userRepo.GetAll());
     }
     [Authorize]
-    public IActionResult ManageLogs(){
-        return PartialView("/Views/Partials/_ManageLogs.cshtml",_logsRepo.GetAll());
+    public async Task<IActionResult> ManageLogs(){
+        return PartialView("/Views/Partials/_ManageLogs.cshtml",
+                await _logsRepo.Include(l=>l.User).ToListAsync());
     }
 
     public IActionResult Tv()

@@ -1,4 +1,7 @@
-﻿namespace Data.Shared;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Query;
+
+namespace Data.Shared;
 
 public interface IRepository<T> where T : class
 {
@@ -8,5 +11,7 @@ public interface IRepository<T> where T : class
     Task<T> GetByIdAsync(int id);
     Task<List<T>> GetAllAsync(CancellationToken cancellationToken);
     IEnumerable<T> GetAll();
+    IQueryable<T> Query();
+    IIncludableQueryable<T,TProperty> Include<TProperty>(Expression<Func<T,TProperty>> path)where TProperty:class;
 }
 

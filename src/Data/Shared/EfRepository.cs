@@ -1,6 +1,8 @@
 namespace Data.Shared;
+using System.Linq.Expressions;
 using Data.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 public class Repository<T> : IRepository<T> where T : class
 {
@@ -31,5 +33,9 @@ public class Repository<T> : IRepository<T> where T : class
     public Task<List<T>> GetAllAsync(CancellationToken cancellationToken) => _dbSet.ToListAsync(cancellationToken);
 
     public IEnumerable<T> GetAll() => _dbSet.ToList();
+    public IQueryable<T> Query() => _dbSet.AsQueryable();
+    public IIncludableQueryable<T,TProperty> Include<TProperty>(Expression<Func<T,TProperty>> path)where TProperty:class{
+        return _dbSet.Include(path);
+    }
 }
 

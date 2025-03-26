@@ -14,7 +14,7 @@ public class UnitTest1
         var users  = userRepository.GetAll();
         Console.WriteLine("First test");
         foreach(var user in users)
-            Console.WriteLine(user.uname);
+            Console.WriteLine(user.Uname);
 
     }
     [Fact]
@@ -23,11 +23,14 @@ public class UnitTest1
         var builder = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql("Host=localhost;Username=postgres;Database=myDB;Port=5432");
         var context = new ApplicationDbContext(builder.Options);
         IRepository<Log> logs  = new Repository<Log>(context);
-        var result = logs.GetAll();
+        var result = logs.Query().Include(l=>l.User).ToList();
         Console.WriteLine("second test");
         foreach(var val in result){
-            Console.WriteLine($"{val.User}  {val.Event}");
+            Console.WriteLine($" user:{val.User.Uname}  event:{val.Event}");
+            Assert.False(val.User == null);
+
         }
+
     }
 
 }

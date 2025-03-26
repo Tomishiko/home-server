@@ -1,6 +1,7 @@
 ﻿namespace Data.Core;
 using Microsoft.EntityFrameworkCore;
 using core.Models;
+using Data.Shared;
 
 public class ApplicationDbContext : DbContext
 {
@@ -14,23 +15,13 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>().ToTable("users");
+        modelBuilder.UseSnakeCaseNames();
+        modelBuilder.Entity<User>();
 
         modelBuilder.Entity<Log>()
-            .Property(l => l.Event)
-            .HasColumnName("event");
-        modelBuilder.Entity<Log>()
-            .Property(l => l.Time)
-            .HasColumnName("time");
-        modelBuilder.Entity<Log>().Property("Userid").HasColumnName("user_id");
-        modelBuilder.Entity<Log>()
-                    .ToTable("logs")
                     .HasNoKey()
-                    .HasOne(l=>l.User);
-
-
-
-
+                    .Navigation(l=>l.User)
+                    .UsePropertyAccessMode(PropertyAccessMode.Property);
 
     }
 
