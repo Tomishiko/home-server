@@ -1,10 +1,13 @@
+namespace core.Services;
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using web.Models;
-using web.Services;
+
+using core.Models;
+
 public class JWTGen
 {
     private IOptions<JWT> _jwtOptions;

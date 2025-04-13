@@ -1,16 +1,8 @@
 using System.Diagnostics;
-using core.Models;
-using Data.Shared;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 using web.Models;
-using web.Models;
-using web.Services;
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
+using core.Services;
 
 namespace web.Controllers;
 
@@ -18,15 +10,15 @@ public class PagesController : Controller
 {
     private readonly ILogger<PagesController> _logger;
     private readonly ICoreFS _coreFS;
-    private readonly IRepository<User> _userRepo;
-    private readonly IRepository<Log> _logsRepo;
+    private readonly IUserService _userService;
+    private readonly ILogService _logService;
 
-    public PagesController(ILogger<PagesController> logger, ICoreFS coreFS,IRepository<User> userRepo, IRepository<Log> logsRepo)
+    public PagesController(ILogger<PagesController> logger, ICoreFS coreFS, IUserService userService, ILogService logService)
     {
         _logger = logger;
         _coreFS = coreFS;
-        this._userRepo = userRepo;
-        this._logsRepo = logsRepo;
+        _userService = userService;
+        _logService = logService;
     }
     public IActionResult Index()
     {
@@ -56,17 +48,16 @@ public class PagesController : Controller
     [Authorize]
     public IActionResult Manage()
     {
-        ViewBag.Users = _userRepo.GetAll();
+        ViewBag.Users = _userService.GetAll();
         return View();
     }
     [Authorize]
     public IActionResult ManageUsers(){
-        return PartialView("/Views/Partials/_ManageUsers.cshtml",_userRepo.GetAll());
+        return PartialView("/Views/Partials/_ManageUsers.cshtml",_userService.GetAll());
     }
     [Authorize]
     public async Task<IActionResult> ManageLogs(){
-        return PartialView("/Views/Partials/_ManageLogs.cshtml",
-                await _logsRepo.Include(l=>l.User).ToListAsync());
+        return PartialView("/Views/Partials/_ManageLogs.cshtml",_logService.GetAll());
     }
 
     public IActionResult Tv()
@@ -78,5 +69,15 @@ public class PagesController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+    [HttpGet("login")]
+    public async Task<IActionResult> Login()
+    {
+        return View("Login");
+    }
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> SignIn(){
+        return View("AddUser");
     }
 }

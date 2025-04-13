@@ -25,6 +25,7 @@ Layout = "_Layout";
 
     #transparent-button {
         opacity: 0.5;
+        box-shadow: none;
     }
 
     #transparent-button:hover {
@@ -47,7 +48,7 @@ Layout = "_Layout";
 
 <div class="container-fluid" style="margin-bottom: 20px">
     <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
-        data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive" aria-controls="offcanvasExample">
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive">
         ==
     </button>
     <div class="row">
@@ -59,14 +60,17 @@ Layout = "_Layout";
                     <button type="button" class="btn-close btn-close-white" data-bs-target="#offcanvasResponsive"
                         data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
+                <!--offcanvas nabigation-->
                 <div class="offcanvas-body">
                     <nav id="sidebar" class="d-md-block sidebar">
                         <div class="position-sticky">
                             <ul class="nav flex-column">
                                 <li class="nav-item"><a id="sidebar-item" class="nav-link active" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
                                         href="/Pages/ManageUsers">User
                                         Base</a></li>
                                 <li class="nav-item"><a id="sidebar-item" class="nav-link" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
                                         href="/Pages/ManageLogs">Logs</a>
                                 </li>
                             </ul>
@@ -76,60 +80,36 @@ Layout = "_Layout";
                 </div>
             </div>
         </aside>
+        <!--Content-->
         <div id="content" class="col-lg-10 col-sm-12 align-self-start">
+        </div>
+        <!--Content-->
+
+        <!--Modal dialog-->
+        <div class="modal fade" id="modalConfirm" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm action</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>Modal body text goes here.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="confirm" class="btn btn-dark btn-outline-danger">Delete</button>
+                        <button type="button" class="btn btn-dark btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+            <!--Modal dialog-->
         </div>
     </div>
 </div>
 @section Scripts{
-<script>
-    $('#sidebar-item.nav-link').on('click', function (e) {
-        e.preventDefault();
-        const current = $(this);
-        if (current.hasClass('active'))
-            return;
-        $("#sidebar-item.nav-link.active").removeClass('active');
-        current.addClass('active');
-        loadContent(current[0].href)
-
-    })
-    document.addEventListener("DOMContentLoaded", (event) => {
-        loadContent('/Pages/ManageUsers');
-    });
-    async function loadContent(path) {
-        try {
-            const response = await fetch(path, {
-                method: 'GET',
-                headers: {
-                    "Accept": "text/html",
-                    "Content-type": "text/json",
-                }
-            })
-            if (response.redirected) {
-                //window.location.replace(response.url);
-                window.location.href = response.url;
-                return;
-            }
-            response.text().then(function (string) {
-                $('#content').html(string);
-            });
-
-            //var request = $.post('partial',
-            //    {
-            //        'id': id,
-            //        'folder': $('#breadcrumbs').html()
-            //    }
-            //);
-            //request.done(function (data) {
-            //    $('#table-container').html(data);
-            //})
-            //request.fail(function () {
-            //    alert('failed to get table data');
-            //})
-
-        } catch (ex) {
-
-        }
-    }
-</script>
-
+    <script src="~/js/manageSideBar.js"></script>
+    <script>
+        $('.modal-footer .btn-secondary').click(function (e) {
+            $('#modalConfirm') .modal('hide');
+        });
+    </script>
 }

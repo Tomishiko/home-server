@@ -1,7 +1,6 @@
-﻿namespace web.Services;
+﻿namespace core.Services;
+
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>

@@ -9,13 +9,11 @@
         <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../core/core.csproj" />
-        <ProjectReference Include="../Data/Data.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿namespace Data.Core;
 using Microsoft.EntityFrameworkCore;
-using core.Models;
 using Data.Shared;
+using Data.Models;
 
 public class ApplicationDbContext : DbContext
 {
@@ -10,19 +10,14 @@ public class ApplicationDbContext : DbContext
 
     }
 
-    public DbSet<User> Users { get; set; }
-    public DbSet<Log> Logs { get; set; }
+    public DbSet<UserEntity> Users { get; set; }
+    public DbSet<LogsEntity> Logs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.UseSnakeCaseNames();
-        modelBuilder.Entity<User>();
-
-        modelBuilder.Entity<Log>()
-                    .HasNoKey()
-                    .Navigation(l=>l.User)
-                    .UsePropertyAccessMode(PropertyAccessMode.Property);
-
+        //modelBuilder.UseSnakeCaseNames();
+        modelBuilder.Entity<UserEntity>();
+        modelBuilder.Entity<LogsEntity>();
     }
 
 }

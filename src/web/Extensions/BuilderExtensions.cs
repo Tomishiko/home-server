@@ -1,14 +1,16 @@
-﻿using System.Text;
+﻿namespace web.Extensions;
+
+using System.Text;
 using Data.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using web.Models;
 using Data.Core;
+using Microsoft.AspNetCore.Identity;
 using web.Services;
 using Microsoft.EntityFrameworkCore;
 using core.Services;
+using core.Models;
 
-namespace web.Extensions;
 
 public static class ServiceExtensions
 {
@@ -22,6 +24,10 @@ public static class ServiceExtensions
         services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(config.GetValue<string>("ConnectionString")));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ILogService, LogService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped(typeof(IPasswordHasher<>),typeof(PasswordHasher<>));
         return services;
     }
     public static IServiceCollection SetAuthentication(this IServiceCollection services, IConfiguration config)

@@ -1,6 +1,7 @@
-﻿using System.Text;
+﻿namespace core.Services;
 
-namespace web.Services;
+using System.Text;
+
 /// <summary>
 /// Provides methods to get info of hosted files in specified directories.
 /// </summary>

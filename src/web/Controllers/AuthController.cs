@@ -1,32 +1,45 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using web.Models;
-
 namespace web.Controllers;
+
+using Microsoft.AspNetCore.Mvc;
+using core.Services;
+using core.Models;
 
 [ApiController]
 public class AuthenticationController : Controller
 {
-    private ILogger<AuthenticationController> _logger;
-    private IConfiguration _config;
-    private JWTGen _tokenGen;
+    ILogger<AuthenticationController> _logger;
+    IConfiguration _config;
+    JWTGen _tokenGen;
+    IAuthService _authService;
+
     public AuthenticationController(ILogger<AuthenticationController> logger,
-        IConfiguration config, JWTGen tokenGen, IAuthorizationService authservice)
+        IConfiguration config, JWTGen tokenGen, IAuthService authService)
     {
         _logger = logger;
         _config = config;
         _tokenGen = tokenGen;
+        _authService = authService;
     }
 
     [HttpPost("auth")]
-    async public Task<IActionResult> Authentication([FromForm] AuthModel auth)
+    async public Task<IActionResult> Authentication([FromForm] User creds)
     {
+        _logger.LogInformation($"{creds}");
+        try
+        {
+            if (!_authService.Authenticate(creds))
+                return Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,"Info: Wasnt able to authenticate through DB");
+            return base.Problem("DB exception");
+        }
 
-        if (auth is not { Name: "admin", Password: "admin" })//TODO add checking from DB
-            return Unauthorized();
+        string token = _tokenGen.GenerateNewToken(creds.Uname);
+        //_logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
 
-        string token = _tokenGen.GenerateNewToken(auth.Name);
-        _logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
+        // If request was sent from the code - return standart JWT token resoinse
         if (HttpContext.Request.Headers.Accept.Any(x => x.Contains("application/json")))
             return Ok(new
             {
@@ -34,6 +47,7 @@ public class AuthenticationController : Controller
                 expires_in = _config["JWT:expiration"],
                 type = "Bearer"
             });
+        // If request is from the  browser - set cookie and redirect
         else
         {
             HttpContext.Response.Cookies.Append("AspNet.Id", token, new CookieOptions
@@ -52,11 +66,6 @@ public class AuthenticationController : Controller
                 return Redirect("/");
         }
 
-    }
-    [HttpGet("login")]
-    public async Task<IActionResult> Login()
-    {
-        return View("Login");
     }
 
 

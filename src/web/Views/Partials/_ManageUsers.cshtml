@@ -2,32 +2,63 @@
 @{
     ViewData["Title"] = "User List";
 }
+<style>
 
-    <h1>User List</h1>
-    <a href="@Url.Action("Create")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+    #editBtn{
+        font-size: 1 rem;
+    }
 
-    <table class="table table-bordered">
-        <thead>
+</style>
+
+<h1>User List</h1>
+<a href="@Url.Action("SignIn","Pages")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
             <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Password</th>
-                <th>Actions</th>
+                <td>@user.Id</td>
+                <td>@user.Uname</td>
+                <td>
+                <a href="@Url.Action("Edit","Manager",new {id= user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
+                <a href="@Url.Action("DeleteUser","Manager", new{id=user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model)
-            {
-                <tr>
-                    <td>@user.Id</td>
-                    <td>@user.Uname</td>
-                    <td>@user.Password</td>
-                    <td>
-                        <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-warning btn-sm">Edit</a>
-                        <a href="@Url.Action("Delete", new { id = user.Id })" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+        }
+    </tbody>
+</table>
+<script>
+    $('a.btn-outline-danger').bind('click',async function(e){
+        e.preventDefault();
+        const user = e.currentTarget.dataset.tag;
+        const modal = $('#modalConfirm');
+        const ref = e.currentTarget.href;
+        $('div.modal-body p').html(`Are you sure you want to DELETE ${user}?`);
+        const modalAccept = $('.modal-footer button#confirm');
+        modalAccept.off();
+        modalAccept.click(async function(btn){
+            try{
+               const response =  await fetch(ref);
+                if(response.ok){
+                   location.reload();
+                }
 
+            }catch(ex){
+                alert(ex);
+            }
+        })
+
+
+        modal.modal('show');
+    });
+
+
+</script>
