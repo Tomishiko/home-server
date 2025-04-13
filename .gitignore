@@ -67,7 +67,7 @@ _ReSharper*
 *.ncrunch*
 .*crunch*.local.xml
 
-# Installshield output folder 
+# Installshield output folder
 [Ee]xpress
 
 # DocProject is a documentation generator add-in
@@ -121,4 +121,6 @@ src/.vscode
 # JetBrains Rider's auto generated files
 .idea/
 # user specific files
-src/mvc_server/wwwroot/files
+src/web/wwwroot/files
+src/web/ScrapeScript
+./deploy_local.sh

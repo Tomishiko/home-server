@@ -1,9 +1,9 @@
-﻿using mvc_server.Models;
-using mvc_server.Services;
+﻿using web.Models;
+using web.Services;
 using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
-using mvc_server.Interfaces;
+using web.Interfaces;
 namespace test
 {
     public class FileCompositorTest

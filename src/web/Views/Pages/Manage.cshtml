@@ -1,0 +1,115 @@
+﻿@{
+ViewBag.Title = "title";
+Layout = "_Layout";
+}
+<style>
+    /* Custom active link styling */
+    #sidebar-item.active {
+        background-color: #0056b3;
+        color: #ffffff !important;
+        font-weight: bolder;
+        border-radius: 0.375rem;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    #sidebar-item {
+        color: #dee2e6;
+    }
+
+    #content {
+        margin-top: 16px;
+    }
+
+    #transparent-button {
+        opacity: 0.5;
+        box-shadow: none;
+    }
+
+    #transparent-button:hover {
+        /*background-color: rgba(200, 200, 200, 0.8);*/
+        opacity: 1;
+    }
+
+    .glassy-offcanvas {
+        background-color: rgba(33, 37, 41, 0.1) !important;
+        /* Dark blue with transparency */
+        backdrop-filter: blur(8px);
+    }
+
+
+    /* Custom styling for the close button */
+    .glassy-offcanvas .btn-close {
+        filter: invert(1) brightness(1.8);
+    }
+</style>
+
+<div class="container-fluid" style="margin-bottom: 20px">
+    <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive">
+        ==
+    </button>
+    <div class="row">
+        <aside class="col-lg-2 col-sm-1 ">
+            <div class="glassy-offcanvas offcanvas-lg offcanvas-start " tabindex="-1" id="offcanvasResponsive"
+                aria-labelledby="offcanvasExampleLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-target="#offcanvasResponsive"
+                        data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <!--offcanvas nabigation-->
+                <div class="offcanvas-body">
+                    <nav id="sidebar" class="d-md-block sidebar">
+                        <div class="position-sticky">
+                            <ul class="nav flex-column">
+                                <li class="nav-item"><a id="sidebar-item" class="nav-link active" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
+                                        href="/Pages/ManageUsers">User
+                                        Base</a></li>
+                                <li class="nav-item"><a id="sidebar-item" class="nav-link" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
+                                        href="/Pages/ManageLogs">Logs</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+
+                </div>
+            </div>
+        </aside>
+        <!--Content-->
+        <div id="content" class="col-lg-10 col-sm-12 align-self-start">
+        </div>
+        <!--Content-->
+
+        <!--Modal dialog-->
+        <div class="modal fade" id="modalConfirm" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm action</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>Modal body text goes here.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="confirm" class="btn btn-dark btn-outline-danger">Delete</button>
+                        <button type="button" class="btn btn-dark btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+            <!--Modal dialog-->
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <script src="~/js/manageSideBar.js"></script>
+    <script>
+        $('.modal-footer .btn-secondary').click(function (e) {
+            $('#modalConfirm') .modal('hide');
+        });
+    </script>
+}

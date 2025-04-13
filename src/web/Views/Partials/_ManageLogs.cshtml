@@ -1,0 +1,22 @@
+@model IEnumerable<core.Models.Log>
+
+<h2>Logs Table</h2>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Event</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+        <tr>
+            <td>@log.Uname</td>
+            <td>@log.Event</td>
+            <td>@log.Time.ToString("yyyy-MM-dd HH:mm:ss")</td>
+        </tr>
+        }
+    </tbody>
+</table>
