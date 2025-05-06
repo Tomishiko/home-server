@@ -29,7 +29,7 @@
             })
 
             //make sure menu closes on any click
-            $("html").click(function() {
+            $("html").on("click",function() {
                 $(settings.menuSelector).hide()
             })
         })
@@ -49,8 +49,6 @@
 })(jQuery, window)
 
 function setContext() {
-
-
     $("#partial_table tr").contextMenu({
         menuSelector: "#contextMenu",
         menuSelected: function(invokedOn, selectedMenu) {
@@ -59,6 +57,8 @@ function setContext() {
                     alert("download");
                     break;
                 case $("#contextMenu #print")[0]:
+                    alert("pirnt request");
+                    break;
                     var url = invokedOn.find('a').prop('href');
                     url = "/api/pfile" + url.substring(url.lastIndexOf('/'));
                     fetch(url + '?printParams=printingparams');

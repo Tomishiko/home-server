@@ -100,34 +100,42 @@ public class StreamingController : ControllerBase
 
     [HttpPost("handshake")]
     [Authorize]
-    public IActionResult Handshake(string fileName, long fileSize, int totalParts, int expectedPartSize)
+    public IActionResult Handshake([FromBody] FileHandshake requestModel)
     {
-        if (string.IsNullOrEmpty(fileName) || fileSize < 1 || expectedPartSize <= 64)
+        if (string.IsNullOrEmpty(requestModel.fileName) || requestModel.fileSize < 1 || requestModel.expectedPartSize <= 64)
+        {
+
+            _logger.LogWarning($"fname:{requestModel.fileName}, fsize:{requestModel.fileSize},expectedPartSize:{requestModel.expectedPartSize}");
             return BadRequest();
+        }
         try
         {
-            var encodeFileName = HttpUtility.HtmlEncode(fileName);
+            var encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
             var UniqueID = Guid.NewGuid().ToString();
 
             var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
                             FileMode.CreateNew,
                             FileAccess.Write,
                             FileShare.Write,
-                            preallocationSize: fileSize);
+                            preallocationSize: requestModel.fileSize);
             var streamedFile = new StreamedFile
             {
                 Id = UniqueID,
-                FileName = fileName,
-                PartSize = expectedPartSize,
-                FileSize = fileSize,
-                TotalFileParts = totalParts,
+                FileName = requestModel.fileName,
+                PartSize = requestModel.expectedPartSize,
+                FileSize = requestModel.fileSize,
+                TotalFileParts = requestModel.totalParts,
                 fileHandleProvider = new FileHandleProvider(fileHandle),
                 Created = DateTime.Now
             };
             streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
-
-            _fileCompositor.StreamedFiles.Add(UniqueID, streamedFile);
-            _logger.LogInformation($"FileHandle opened(OK) Filename: {fileName}, Filesize:{streamedFile.FileSize}");
+            // TODO: fix concurency here
+            // https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/
+            if (_fileCompositor.StreamedFiles.TryAdd(UniqueID, streamedFile))
+            {
+                // TODO: handle errors and existing uuids
+            }
+            _logger.LogInformation($"FileHandle opened(OK) Filename: {requestModel.fileName}, Filesize:{streamedFile.FileSize}");
             return Ok(UniqueID);
 
         }

@@ -18,8 +18,9 @@ public class ManagerController : Controller
         _logService = logService;
         _userService = userService;
     }
-    public async Task<IActionResult> AddUser(User user)
+    public async Task<IActionResult> AddUser([FromBody]User user)
     {
+        _logger.LogInformation($"Add user request {user.Uname}");
         await _userService.NewUserAsync(user);
         await _userService.SaveChangesAsync();
 

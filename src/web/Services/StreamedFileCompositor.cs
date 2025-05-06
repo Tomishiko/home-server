@@ -1,22 +1,24 @@
-using System;
 using web.Interfaces;
-using web.Models;
+using System.Collections.Concurrent;
+
 
 namespace web.Services;
 
 public class StreamedFileCompositor
 {
     private ILogger<StreamedFileCompositor> _logger;
-    public Dictionary<string, IStreamedFile> StreamedFiles;
+    public ConcurrentDictionary<string, IStreamedFile> StreamedFiles;
 
     public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger)
     {
         _logger = logger;
-        StreamedFiles = new Dictionary<string, IStreamedFile>();
+        StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
     }
     public void CloseEventHandler(object? sender, string id)
     {
-        StreamedFiles.Remove(id);
+        if(StreamedFiles.TryRemove(id,out _)){
+            // TODO: handle error of removing
+        }
         var file = (IStreamedFile)sender; // TODO move it to eventargs
         _logger.LogInformation($"File {file?.FileName} handle was closed. {file?.FileSize} bytes was written");
     }
