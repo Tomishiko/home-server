@@ -36,7 +36,7 @@ public class AuthenticationController : Controller
             return base.Problem("DB exception");
         }
 
-        string token = _tokenGen.GenerateNewToken(creds.Uname);
+        string token = _tokenGen.GenerateNewToken(creds.Uname,"manager");
         //_logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
 
         // If request was sent from the code - return standart JWT token resoinse

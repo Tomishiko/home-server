@@ -1,6 +1,6 @@
 import { post } from "jquery"
 
-interface User {
+export interface User {
     uname: string,
     password: string,
     email: string | null,
