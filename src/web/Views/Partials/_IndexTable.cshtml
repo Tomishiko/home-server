@@ -18,7 +18,7 @@
             int i = 0;
             if (!String.Equals(ViewData["Breadcrumbs"], "wwwroot/files"))
             {
-                <tr ondblclick="FetchTable(-1)">
+                <tr id="backBtn">
                     <td  style="padding-top: 0px; padding-bottom: 0px; font-size: 20px;">&#8629;</td>
                     <td></td>
                     <td></td>
@@ -31,7 +31,7 @@
 
                     @if ((item.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
                     {
-                        <tr ondblclick="FetchTable(@i)">
+                        <tr id="name" data-index="@i">
                             <td >[@item.Name]</td>
                             <td>[DIR]</td>
                             <td>@item.Extension</td>
@@ -55,4 +55,3 @@
         }
     </tbody>
 </table>
-

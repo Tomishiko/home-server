@@ -51,14 +51,6 @@ public class PagesController : Controller
         ViewBag.Users = _userService.GetAll();
         return View();
     }
-    [Authorize]
-    public IActionResult ManageUsers(){
-        return PartialView("/Views/Partials/_ManageUsers.cshtml",_userService.GetAll());
-    }
-    [Authorize]
-    public async Task<IActionResult> ManageLogs(){
-        return PartialView("/Views/Partials/_ManageLogs.cshtml",_logService.GetAll());
-    }
 
     public IActionResult Tv()
     {

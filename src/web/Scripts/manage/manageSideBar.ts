@@ -1,15 +1,16 @@
 // Sidebar interactivity
 $('#sidebar-item.nav-link').on('click', async function(e) {
     e.preventDefault();
-    const current = $(this);
+    const current = $(e.target);
     if (current.hasClass('active'))
         return;
     $("#sidebar-item.nav-link.active").removeClass('active');
-    await loadContent(current[0].href)
+    await loadContent(current.attr("href"))
     current.addClass('active');
 })
 document.addEventListener("DOMContentLoaded", () => {
-    loadContent('/Pages/ManageUsers');
+    const active = $('a#sidebar-item.active');
+    loadContent(active.prop('href'));
 });
 // Dynamic table render
 async function loadContent(path) {

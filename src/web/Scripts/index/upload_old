@@ -7,8 +7,7 @@ var chunkEnd = 0;
 var uid = "";
 $('#submitBtn').on("click", StreamFile);
 
-
-async function StreamFile() {
+async function oStreamFile() {
 
 
     const input = $("#file");
@@ -66,7 +65,7 @@ async function StreamFile() {
                         $(".progress").hide();
                         bar.css('width', "0%");
                         bar.attr("aria-valuenow", 0);
-                        location.reload(true);
+                        location.reload();
 
                     }
 

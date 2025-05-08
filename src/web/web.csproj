@@ -9,6 +9,10 @@
         <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.8.2">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
     </ItemGroup>

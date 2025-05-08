@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/web.styles.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/css/plyr.css"/>
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/video.js/7.8.1/video-js.min.css"/>
+        <!--<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/video.js/7.8.1/video-js.min.css"/>-->
     <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
 </head>
 
@@ -80,16 +80,7 @@
 </footer>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
-<script type="text/javascript">
-    $(function () {
-        $("a.selected")
-    })
-</script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/plyr.js"></script>
-<script>
-    const player = new Plyr('#player');
-</script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 

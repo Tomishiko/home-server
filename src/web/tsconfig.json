@@ -1,0 +1,20 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "sourceMap": false,
+    "target": "ES6",
+    "outDir": "wwwroot/js",
+    "allowJs": true
+
+  },
+  "include": [
+    "Scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "wwwroot"
+  ]
+}
