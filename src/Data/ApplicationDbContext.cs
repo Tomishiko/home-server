@@ -12,12 +12,13 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<UserEntity> Users { get; set; }
     public DbSet<LogsEntity> Logs { get; set; }
+    public DbSet<RolesEntity> Roles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        //modelBuilder.UseSnakeCaseNames();
         modelBuilder.Entity<UserEntity>();
         modelBuilder.Entity<LogsEntity>();
+        modelBuilder.Entity<RolesEntity>();
     }
 
 }

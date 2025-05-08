@@ -10,4 +10,9 @@ public class UserEntity : BaseEntity
 
     [Column("password")]
     public string Password { get; set; }
+
+    [ForeignKey(nameof(Role))]
+    public uint? role_id;
+
+    public RolesEntity? Role { get; set; }
 }

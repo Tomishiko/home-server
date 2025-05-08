@@ -22,7 +22,9 @@ public class UserService : IUserService
 
     public IEnumerable<User> GetAll()
     {
-        return _userRepo.Query().Select(u => new User(u.Uname, string.Empty,u.Id));
+        return _userRepo.Query()
+                .Include("Role")
+                .Select(u => new User(u.Uname, string.Empty,u.Role.Name,u.Id));
     }
 
     public async Task NewUserAsync(User user)

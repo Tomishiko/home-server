@@ -18,6 +18,7 @@
         <tr>
             <th>ID</th>
             <th>Username</th>
+            <th>Role</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -27,6 +28,7 @@
             <tr>
                 <td>@user.Id</td>
                 <td>@user.Uname</td>
+                <td>@user.Role</td>
                 <td>
                 <a href="@Url.Action("Edit","Manager",new {id= user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
                 <a href="@Url.Action("DeleteUser","Manager", new{id=user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
