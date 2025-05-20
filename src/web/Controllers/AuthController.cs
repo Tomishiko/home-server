@@ -2,6 +2,7 @@ namespace web.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
+using System.Diagnostics;
 using core.Models;
 
 [ApiController]
@@ -27,16 +28,16 @@ public class AuthenticationController : Controller
         _logger.LogInformation($"{creds}");
         try
         {
-            if (!_authService.Authenticate(creds))
+            if (!_authService.Authenticate(ref creds))
                 return Unauthorized();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,"Info: Wasnt able to authenticate through DB");
+            _logger.LogError(ex, "Info: Wasnt able to authenticate through DB");
             return base.Problem("DB exception");
         }
-
-        string token = _tokenGen.GenerateNewToken(creds.Uname,"manager");
+        Debug.Assert(creds.Role != null, "This field should be set in auth if succesfull");
+        string token = _tokenGen.GenerateNewToken(creds.Uname, creds.Role);
         //_logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
 
         // If request was sent from the code - return standart JWT token resoinse
