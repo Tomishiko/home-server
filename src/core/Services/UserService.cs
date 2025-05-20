@@ -26,7 +26,6 @@ public class UserService : IUserService
                 .Include("Role")
                 .Select(u => new User(u.Uname, string.Empty,u.Role.Name,u.Id));
     }
-
     public async Task NewUserAsync(User user)
     {
         ArgumentNullException.ThrowIfNull(user);
