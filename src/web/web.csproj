@@ -9,6 +9,7 @@
         <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.jQuery.Unobtrusive.Ajax" Version="3.2.6" />
         <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.8.2">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>

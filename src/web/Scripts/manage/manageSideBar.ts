@@ -8,10 +8,6 @@ $('#sidebar-item.nav-link').on('click', async function(e) {
     await loadContent(current.attr("href"))
     current.addClass('active');
 })
-document.addEventListener("DOMContentLoaded", () => {
-    const active = $('a#sidebar-item.active');
-    loadContent(active.prop('href'));
-});
 // Dynamic table render
 async function loadContent(path) {
     try {
@@ -35,3 +31,7 @@ async function loadContent(path) {
 
     }
 }
+//document.addEventListener("DOMContentLoaded", () => {
+
+    //loadContent($('a#sidebar-item.active').prop('href'));
+//});

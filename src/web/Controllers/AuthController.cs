@@ -26,16 +26,19 @@ public class AuthenticationController : Controller
     async public Task<IActionResult> Authentication([FromForm] User creds)
     {
         _logger.LogInformation($"{creds}");
+        AuthResult result;
         try
         {
-            if (!_authService.Authenticate(ref creds))
+            result = await _authService.AuthenticateAsync(creds);
+            if (!result.isSuccesful)
                 return Unauthorized();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Info: Wasnt able to authenticate through DB");
-            return base.Problem("DB exception");
+            return Problem("DB exception");
         }
+        creds = result.user;
         Debug.Assert(creds.Role != null, "This field should be set in auth if succesfull");
         string token = _tokenGen.GenerateNewToken(creds.Uname, creds.Role);
         //_logger.LogInformation($"{HttpContext.Request.Headers.Accept}");

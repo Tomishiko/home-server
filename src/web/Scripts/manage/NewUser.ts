@@ -6,7 +6,7 @@ export async function NewUser(username: string, password: string, role: string |
         let result = await PostUser({
             uname: username,
             password: password,
-            role: role,
+            role: role.toLowerCase(),
             email: email
         });
     } catch (ex) {

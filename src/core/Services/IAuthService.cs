@@ -9,5 +9,5 @@ public interface IAuthService
     ///<returns>True if user is in DB and passwords match, false othervise</returns>
     ///<exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is null</exception>
     ///<exception cref="InvalidOperationException">Thrown when there is more then one corresponding usernames</exception>
-    bool Authenticate(ref User user);
+    Task<AuthResult> AuthenticateAsync(User user);
 }

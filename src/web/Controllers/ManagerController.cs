@@ -3,9 +3,10 @@ using core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
+using core.utils.extensions;
 
 
-[Authorize(Roles="manager")]
+[Authorize(Roles = "manager")]
 public class ManagerController : Controller
 {
     IUserService _userService;
@@ -20,12 +21,19 @@ public class ManagerController : Controller
     }
     public async Task<IActionResult> AddUser([FromBody] User user)
     {
-        if (string.IsNullOrEmpty(user.Uname) ||
-           string.IsNullOrEmpty(user.Password))
+        if (user.Uname.IsNullOrEmpty() || user.Password.IsNullOrEmpty() ||
+                user.Role.IsNullOrEmpty())
             return BadRequest("Some requiered fields are empty");
         _logger.LogInformation($"Add user request {user.Uname}");
-        await _userService.NewUserAsync(user);
-        await _userService.SaveChangesAsync();
+        try
+        {
+
+            await _userService.NewUserAsync(user);
+            await _userService.SaveChangesAsync();
+        }
+        catch(Exception ex){
+            _logger.LogWarning(ex,"Unexpected error whle adding user to db");
+        }
 
         return Ok();
     }
@@ -39,10 +47,12 @@ public class ManagerController : Controller
 
         return result ? Ok() : BadRequest("Non existent user");
     }
-    public IActionResult ManageUsers(){
-        return PartialView("/Views/Partials/_ManageUsers.cshtml",_userService.GetAll());
+    public IActionResult ManageUsers()
+    {
+        return PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAll());
     }
-    public async Task<IActionResult> ManageLogs(){
-        return PartialView("/Views/Partials/_ManageLogs.cshtml",_logService.GetAll());
+    public async Task<IActionResult> ManageLogs()
+    {
+        return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetAll());
     }
 }

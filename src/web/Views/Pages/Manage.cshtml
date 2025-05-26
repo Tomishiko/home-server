@@ -1,7 +1,5 @@
-﻿@{
-ViewBag.Title = "title";
-Layout = "_Layout";
-}
+﻿@using core.Models
+@model IEnumerable<User>
 <style>
     /* Custom active link styling */
     #sidebar-item.active {
@@ -82,6 +80,7 @@ Layout = "_Layout";
         </aside>
         <!--Content-->
         <div id="content" class="col-lg-10 col-sm-12 align-self-start">
+            @await Html.PartialAsync("/Views/Partials/_ManageUsers.cshtml",Model)
         </div>
         <!--Content-->
 
@@ -105,11 +104,9 @@ Layout = "_Layout";
         </div>
     </div>
 </div>
-@section Scripts{
-    <script src="~/js/manage/manageSideBar.js"></script>
-    <script>
-        $('.modal-footer .btn-secondary').click(function (e) {
-            $('#modalConfirm') .modal('hide');
-        });
-    </script>
-}
+<script src="~/js/manage/manageSideBar.js"></script>
+<script>
+    $('.modal-footer .btn-secondary').click(function (e) {
+        $('#modalConfirm').modal('hide');
+    });
+</script>

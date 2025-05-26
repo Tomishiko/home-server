@@ -45,6 +45,19 @@ public class PagesController : Controller
         ViewData["Breadcrumbs"] = newFolder;
         return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements(newFolder));
     }
+    [HttpGet("/partial/index")]
+    public IActionResult PartialIndex(){
+
+        ViewData["Breadcrumbs"] = "wwwroot/files";
+        return PartialView("Index",_coreFS.GetIndexFiles);
+    }
+    [HttpGet("partial/manage")]
+    [Authorize]
+    public IActionResult PartialManage()
+    {
+        return PartialView("Manage",_userService.GetAll());
+    }
+
     [Authorize]
     public IActionResult Manage()
     {
