@@ -2,7 +2,6 @@ namespace core.Services;
 using core.Models;
 using Data.Shared;
 using Data.Models;
-using Microsoft.EntityFrameworkCore;
 
 
 public class LogService : ILogService
@@ -16,15 +15,13 @@ public class LogService : ILogService
 
     public IEnumerable<Log> GetAll()
     {
-        return _logsRepo.Query()
-            .Include("User")
-            .Select(u => new Log(u.Event, u.Time,u.User.Uname));
+        return _logsRepo.Query().Select(l => new Log(l.Event, l.Time,l.Uname));
     }
-    public void NewLog(Log log, uint? user_id)
+    public void NewLog(Log log)
     {
         _logsRepo.Add(new LogsEntity
         {
-            user_id = user_id,
+            Uname = log.Uname,
             Time = log.Time,
             Event = log.Event
         });

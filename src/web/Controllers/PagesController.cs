@@ -20,11 +20,6 @@ public class PagesController : Controller
         _userService = userService;
         _logService = logService;
     }
-    public IActionResult Index()
-    {
-        ViewData["Breadcrumbs"] = "wwwroot/files";
-        return View(_coreFS.GetIndexFiles);
-    }
     [Authorize]
     public IActionResult Movies()
     {
@@ -33,38 +28,6 @@ public class PagesController : Controller
     }
     [HttpPost("/partial")]
     [Authorize]
-    public IActionResult PartialTableLoad([FromBody] PartialTableModel body) //TODO: make it index based; make separate controller for partials
-    {
-
-        //TODO: add folder string verification
-        var fs = _coreFS as CoreFS;
-        string? newFolder;
-        var currDir = fs.GetElements(body.folder);
-        newFolder = (body.id == -1) ? body.folder.Remove(body.folder.LastIndexOf('/')) :
-                                $"{body.folder}/{currDir[body.id].Name}";
-        ViewData["Breadcrumbs"] = newFolder;
-        return PartialView("/Views/Partials/_IndexTable.cshtml", _coreFS.GetElements(newFolder));
-    }
-    [HttpGet("/partial/index")]
-    public IActionResult PartialIndex(){
-
-        ViewData["Breadcrumbs"] = "wwwroot/files";
-        return PartialView("Index",_coreFS.GetIndexFiles);
-    }
-    [HttpGet("partial/manage")]
-    [Authorize]
-    public IActionResult PartialManage()
-    {
-        return PartialView("Manage",_userService.GetAll());
-    }
-
-    [Authorize]
-    public IActionResult Manage()
-    {
-        ViewBag.Users = _userService.GetAll();
-        return View();
-    }
-
     public IActionResult Tv()
     {
         return View();
@@ -74,15 +37,5 @@ public class PagesController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
-    [HttpGet("login")]
-    public async Task<IActionResult> Login()
-    {
-        return View("Login");
-    }
-    [Authorize]
-    [HttpGet]
-    public async Task<IActionResult> SignIn(){
-        return View("AddUser");
     }
 }

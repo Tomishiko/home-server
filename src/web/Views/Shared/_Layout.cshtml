@@ -1,46 +1,46 @@
 ﻿<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 
+@{string path = Context.Request.Path.Value.ToLower();}
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Home Server</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/web.styles.css" asp-append-version="true" />
-    <!--<script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>-->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
 </head>
-
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Pages" asp-action="Index">Home Server</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Index" asp-action="Index">Home Server</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between" id="navbar-main">
                     <ul class="nav-underline navbar-nav d-flex">
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass(" Index")" data-ajax="true" data-ajax-mode="replace"
-                                data-ajax-update="#main" data-ajax-url='@Url.Action("PartialIndex","Pages")'
-                                data-ajax-method="GET" aria-current="page" asp-area="">Index</a>
+                            <a class='nav-link @(path =="/" ? "active":"")' data-ajax="true" data-ajax-mode="replace" data-ajax-update="main"
+                                data-ajax-url='@Url.Action("Index","Index")' data-ajax-method="GET"
+                                data-ajax-success="partialSuccess" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass(" Movies")" asp-area="" asp-controller="Pages"
-                                asp-action="Movies">Movies</a>
+                            <a class='nav-link @(path.StartsWith("/movies")? "active":"")' asp-area="" asp-controller="Pages" asp-action="Movies">Movies</a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass(" Tv")" asp-area="" asp-controller="Pages"
-                                asp-action="Tv">TV</a>
+                            <a class="nav-link" asp-area="" asp-controller="Pages" asp-action="Tv">TV</a>
                         </li>
                         @{
 
                         if (!User.Identity.IsAuthenticated)
                         {
                         <li class="nav-item">
-                            <a class="nav-link  @Html.ActiveClass(" Login")" asp-controller="Pages"
-                                asp-action="Login">Log in</a>
+                            <a class="nav-link" data-ajax="true" data-ajax-mode="replace"
+                                data-ajax-url='@Url.Action("Index","Login")' data-ajax-method="GET"
+                                asp-controller="Login" data-ajax-update="main" asp-action="Index">Log in</a>
 
                         </li>
                         }
@@ -50,9 +50,9 @@
                         if (User.Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
                         {
                         <li class="nav-item">
-                            <a class="nav-link @Html.ActiveClass(" Manage")" data-ajax="true" data-ajax-mode="replace"
-                                data-ajax-update="#main" data-ajax-url='@Url.Action("PartialManage","Pages")'
-                                data-ajax-method="GET" asp-area="">Manager</a>
+                            <a class='nav-link @(path.StartsWith("/manager")? "active":"")' data-ajax="true" data-ajax-mode="replace" data-ajax-update="#main"
+                                data-ajax-url='@Url.Action("Index","Manager")' data-ajax-method="GET"
+                                data-ajax-success="partialSuccess"asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
                         </li>
                         }
                         <li class="nav-item">
@@ -76,10 +76,16 @@
             &copy; 2024 - Home Server - <a href="http://192.168.1.1">Router</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ajax-unobtrusive/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ajax-unobtrusive/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
     <script src="~/js/shared/navbar.js"></script>
+    <script src="~/js/shared/navigation.js"></script>
 
+    <script>
+        $('nav a.nav-link').on('click',function(){
+            $('#navbar-main').collapse('hide');
+        })
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

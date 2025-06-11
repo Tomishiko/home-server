@@ -19,7 +19,7 @@ public class StreamedFileCompositor
         if(StreamedFiles.TryRemove(id,out _)){
             // TODO: handle error of removing
         }
-        var file = (IStreamedFile)sender; // TODO move it to eventargs
+        var file = (IStreamedFile?)sender; // TODO move it to eventargs
         _logger.LogInformation($"File {file?.FileName} handle was closed. {file?.FileSize} bytes was written");
     }
 

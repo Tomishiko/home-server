@@ -11,10 +11,9 @@ using Microsoft.EntityFrameworkCore;
 using core.Services;
 using core.Models;
 
-
 public static class ServiceExtensions
 {
-    public static IServiceCollection SetServices(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection Startup(this IServiceCollection services, IConfiguration config)
     {
         services.AddOptions<JWT>().BindConfiguration("JWT");
         services.AddSingleton<StreamedFileCompositor>();
@@ -27,10 +26,15 @@ public static class ServiceExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped(typeof(IPasswordHasher<>),typeof(PasswordHasher<>));
+        services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
+
+        JWT jwt = new();
+        config.GetSection("JWT").Bind(jwt);
+        services.SetAuthentication(jwt);
+
         return services;
     }
-    public static IServiceCollection SetAuthentication(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection SetAuthentication(this IServiceCollection services, JWT jwt)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -41,9 +45,9 @@ public static class ServiceExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = config.GetValue<string>("JWT:Issuer"),
-                    ValidAudience = config.GetValue<string>("JWT:Issuer"),
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.GetValue<string>("JWT:key")))
+                    ValidIssuer = jwt.issuer,
+                    ValidAudience = jwt.issuer,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key))
                 };
                 options.Events = new JwtBearerEvents
                 {

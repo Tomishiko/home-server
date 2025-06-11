@@ -17,7 +17,6 @@ CREATE TABLE users(
 
 CREATE TABLE logs(
     id bigint not null primary key generated always as identity,
-    user_id bigint references users (id),
     username varchar(256),
     eventname text,
     time timestamp

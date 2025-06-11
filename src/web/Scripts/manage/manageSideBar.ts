@@ -1,5 +1,8 @@
 // Sidebar interactivity
-$('#sidebar-item.nav-link').on('click', async function(e) {
+document.querySelectorAll('#sidebar-item.nav-link')
+    .forEach(x => x.addEventListener("click",navbarClickHandler))
+
+async function navbarClickHandler(e) {
     e.preventDefault();
     const current = $(e.target);
     if (current.hasClass('active'))
@@ -7,7 +10,7 @@ $('#sidebar-item.nav-link').on('click', async function(e) {
     $("#sidebar-item.nav-link.active").removeClass('active');
     await loadContent(current.attr("href"))
     current.addClass('active');
-})
+}
 // Dynamic table render
 async function loadContent(path) {
     try {
@@ -33,5 +36,5 @@ async function loadContent(path) {
 }
 //document.addEventListener("DOMContentLoaded", () => {
 
-    //loadContent($('a#sidebar-item.active').prop('href'));
+//loadContent($('a#sidebar-item.active').prop('href'));
 //});

@@ -11,7 +11,7 @@
 </style>
 
 <h1>User List</h1>
-<a href="@Url.Action("SignIn","Pages")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+<a href="@Url.Action("AddUser","Manager")" class="btn btn-dark border-secondary mb-3">Create New User</a>
 
 <table class="table table-bordered">
     <thead>
@@ -31,7 +31,7 @@
                 <td>@user.Role</td>
                 <td>
                 <a href="@Url.Action("Edit","Manager",new {id= user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
-                <a href="@Url.Action("DeleteUser","Manager", new{id=user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
+                <a href="@Url.Action("DeleteUser","ManagerApi", new{id=user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
                 </td>
             </tr>
         }

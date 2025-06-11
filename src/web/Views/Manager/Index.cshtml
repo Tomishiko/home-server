@@ -1,8 +1,7 @@
 ﻿@using core.Models
 @model IEnumerable<User>
 <style>
-    /* Custom active link styling */
-    #sidebar-item.active {
+    #sidebar a.active {
         background-color: #0056b3;
         color: #ffffff !important;
         font-weight: bolder;
@@ -16,34 +15,8 @@
     #sidebar-item {
         color: #dee2e6;
     }
-
-    #content {
-        margin-top: 16px;
-    }
-
-    #transparent-button {
-        opacity: 0.5;
-        box-shadow: none;
-    }
-
-    #transparent-button:hover {
-        /*background-color: rgba(200, 200, 200, 0.8);*/
-        opacity: 1;
-    }
-
-    .glassy-offcanvas {
-        background-color: rgba(33, 37, 41, 0.1) !important;
-        /* Dark blue with transparency */
-        backdrop-filter: blur(8px);
-    }
-
-
-    /* Custom styling for the close button */
-    .glassy-offcanvas .btn-close {
-        filter: invert(1) brightness(1.8);
-    }
 </style>
-
+<link rel="stylesheet" href="~/web.styles.css" asp-append-version="true" />
 <div class="container-fluid" style="margin-bottom: 20px">
     <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
         data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive">
@@ -63,11 +36,14 @@
                     <nav id="sidebar" class="d-md-block sidebar">
                         <div class="position-sticky">
                             <ul class="nav flex-column">
-                                <li class="nav-item"><a id="sidebar-item" class="nav-link active" aria-current="page"
+                                <li class="nav-item">
+                                    <a id="sidebar-item" class="nav-link active" aria-current="page"
                                         data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
                                         asp-controller="Manager" asp-action="ManageUsers">User
-                                        Base</a></li>
-                                <li class="nav-item"><a id="sidebar-item" class="nav-link" aria-current="page"
+                                        Base</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a id="sidebar-item" class="nav-link" aria-current="page"
                                         data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
                                         asp-controller="Manager" asp-action="ManageLogs">Logs</a>
                                 </li>
@@ -104,6 +80,7 @@
         </div>
     </div>
 </div>
+
 <script src="~/js/manage/manageSideBar.js"></script>
 <script>
     $('.modal-footer .btn-secondary').click(function (e) {

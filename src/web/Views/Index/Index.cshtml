@@ -34,7 +34,8 @@
         <li><a id="print" class="dropdown-item" href="#">Print</a></li>
         <li><a id="download" class="dropdown-item" href="#">Download</a></li>
     </ul>
-    @section Scripts {
     <script type="module" src="~/js/index/preload.js"></script>
-    <script type="module" src="~/js/index/partialTable.js"></script>
-    }
+    <script type="module" >
+        import {setContext} from "/js/index/partialTable.js"
+        setContext();
+    </script>

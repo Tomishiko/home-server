@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
@@ -12,11 +11,12 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace web.Controllers;
 
+[ApiController]
 [Route("api/[controller]")]
 public class StreamingController : ControllerBase
 {
     private StreamedFileCompositor _fileCompositor;
-    private FileMeta fileMeta;
+    private FileMeta? fileMeta;
     private readonly ILogger<StreamingController> _logger;
     public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger)
     {
@@ -32,6 +32,8 @@ public class StreamingController : ControllerBase
     [DisableRequestSizeLimit]
     public async Task<IActionResult> UploadLargeFileAsync()
     {
+        if (Request.ContentType is null)
+            return BadRequest();
         try
         {
             if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
@@ -48,13 +50,14 @@ public class StreamingController : ControllerBase
             var reader = new MultipartReader(boundary, HttpContext.Request.Body);
 
             var section = await reader.ReadNextSectionAsync();
-            int bytesRead = 0;
-
             do
             {
+                if (section is null)
+                    break;
 
+                if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition))
+                    break;
 
-                ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition);
                 if (!MultipartRequestHelper.HasFileContentDisposition(contentDisposition))
                 {
                     if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition) && contentDisposition.Name == "meta")
@@ -153,7 +156,7 @@ public class StreamingController : ControllerBase
     [Authorize]
     public IActionResult AbortStreaming(string uid)
     {
-        if (!_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out var file))
+        if (!_fileCompositor.StreamedFiles.TryGetValue(uid, out var file))
             return BadRequest("Identifier does not exist");
 
         file.Close();
@@ -164,7 +167,7 @@ public class StreamingController : ControllerBase
     }
     private class FileMeta
     {
-        public string uid { get; set; }
+        public string uid { get; set; } = string.Empty;
         public int currentPart { get; set; }
         public int bytesRead { get; set; }
     }

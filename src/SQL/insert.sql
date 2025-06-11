@@ -11,11 +11,11 @@ values
 
 
 
-insert Into logs (user_id,username,eventname,time)
+insert Into logs (username,eventname,time)
 values
-    (1,'user2','eventevent2','2000-01-08 04:05:06'),
-    (3,'user3','eventevent3','2001-01-08 04:05:06'),
-    (4,'user4','eventevent4','2002-01-08 04:05:06'),
-    (1,'user5','eventevent5','2003-01-08 04:05:06'),
-    (2,'user6','eventevent6','2004-01-08 04:05:06'),
-    (3,'user7','eventevent7','2005-01-08 04:05:06');
+    ('user2','eventevent2','2000-01-08 04:05:06'),
+    ('user3','eventevent3','2001-01-08 04:05:06'),
+    ('user4','eventevent4','2002-01-08 04:05:06'),
+    ('user5','eventevent5','2003-01-08 04:05:06'),
+    ('user6','eventevent6','2004-01-08 04:05:06'),
+    ('user7','eventevent7','2005-01-08 04:05:06');

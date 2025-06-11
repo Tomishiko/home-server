@@ -7,7 +7,7 @@ import * as api from './api.js'
 
 })(jQuery, window)
 
-function setContext() {
+export function setContext() {
     const tableSelector = '#partial_table tr';
     $(tableSelector).contextMenu({
         menuSelector: "#contextMenu",
@@ -38,9 +38,6 @@ function setContext() {
         await FetchTable(-1);
     });
 }
-document.addEventListener("DOMContentLoaded", () => {
-    setContext();
-});
 
 export async function FetchTable(id: number) {
 
@@ -49,7 +46,6 @@ export async function FetchTable(id: number) {
         if (response.redirected) {
             //window.location.replace(response.url);
             window.location.href = response.redirectUrl;
-            return;
         }
         const newTable = response.content.then(function(string) {
             $('#table-container').html(string);

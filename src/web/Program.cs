@@ -11,10 +11,9 @@ public static class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.SetServices(builder.Configuration);
+        builder.Services.Startup(builder.Configuration);
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        builder.Services.SetAuthentication(builder.Configuration);
         //builder.Services.AddScoped<Irepos>
 
         //TODO: AntiForgery token
@@ -64,7 +63,7 @@ public static class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Pages}/{action=Index}/{id?}");
+            pattern: "{controller=Index}/{action=Index}/{id?}");
 
         app.Run();
     }

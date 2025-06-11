@@ -51,21 +51,15 @@ public class UserService : IUserService
 
     }
 
-    public async Task<bool> RemoveUser(uint id)
+    public async Task<string> RemoveUser(uint id)
     {
         var userEntity = await _userRepo.GetByIdAsync(id);
         if (userEntity == null)
             throw new ArgumentOutOfRangeException(nameof(id), "No user found with provided Id");
 
-        var logs = await _logRepo.Query()
-            .Where(l => l.user_id == id)
-            .ExecuteUpdateAsync(setter => setter.SetProperty(l => l.user_id, (uint?)null));
-
-
         _userRepo.Delete(userEntity);
         //TODO: fix reporting the count of changes
-        await _userRepo.SaveContextAsync();
-        return true;
+        return userEntity.Uname;
 
     }
     public int SaveChanges()

@@ -9,12 +9,13 @@ export async function GetPartialTable(id: number, folder: string): Promise<Parti
         id: id,
         folder: folder
     });
-    const response = await fetch('/partial', {
+    const response = await fetch('/partialtable', {
         method: 'POST',
         body: postBody,
         headers: {
             "Accept": "text/html",
             "Content-type": "text/json",
+            "X-Requested-With":"XMLHttpRequest"
         }
     });
 
