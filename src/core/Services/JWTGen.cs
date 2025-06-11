@@ -22,7 +22,8 @@ public class JWTGen
         var jwt = _jwtOptions.Value;
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        IEnumerable<Claim> claims = [new Claim("name", username),new Claim("role", role)];
+        IEnumerable<Claim> claims = [new Claim(ClaimTypes.Name,username),
+                                     new Claim(ClaimTypes.Role,role)];
         //if(username == "admin")
         //{
         //    claims.Append(new Claim("role", "manager"));

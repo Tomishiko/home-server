@@ -25,7 +25,7 @@ public class LogService : ILogService
             Time = log.Time,
             Event = log.Event
         });
-        _logsRepo.SaveContext();
+        //_logsRepo.SaveContext();
     }
 
 }

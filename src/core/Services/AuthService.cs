@@ -27,6 +27,7 @@ public class AuthService : IAuthService
 
         var hasher = new PasswordHasher<User>();
         var providedPassword = hasher.HashPassword(user, user.Password);
+        // TODO:change logic to use usermanager service
         try
         {
             var userDB = await _userRepo.Query()

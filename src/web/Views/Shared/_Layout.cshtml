@@ -47,7 +47,7 @@
                         else
                         {
 
-                        if (User.Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
+                        if (User.IsInRole("manager")) //Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
                         {
                         <li class="nav-item">
                             <a class='nav-link @(path.StartsWith("/manager")? "active":"")' data-ajax="true" data-ajax-mode="replace" data-ajax-update="#main"

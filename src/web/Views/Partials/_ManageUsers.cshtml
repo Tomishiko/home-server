@@ -4,14 +4,14 @@
 }
 <style>
 
-    #editBtn{
+    #editBtn {
         font-size: 1 rem;
     }
 
 </style>
 
 <h1>User List</h1>
-<a href="@Url.Action("AddUser","Manager")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+<a href="@Url.Action("AddUser", "Manager")" class="btn btn-dark border-secondary mb-3">Create New User</a>
 
 <table class="table table-bordered">
     <thead>
@@ -30,8 +30,9 @@
                 <td>@user.Uname</td>
                 <td>@user.Role</td>
                 <td>
-                <a href="@Url.Action("Edit","Manager",new {id= user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
-                <a href="@Url.Action("DeleteUser","ManagerApi", new{id=user.Id})" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
+                    <a href="@Url.Action("Edit", "Manager", new { id = user.Id })" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
+                    <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id })" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
+
                 </td>
             </tr>
         }
@@ -48,7 +49,7 @@
         modalAccept.off();
         modalAccept.click(async function(btn){
             try{
-               const response =  await fetch(ref);
+               const response =  await fetch(ref,{method:"DELETE"});
                 if(response.ok){
                    location.reload();
                 }

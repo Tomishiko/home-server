@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Route("api/manager")]
 [Authorize]
+[Route("api")]
 public class ManagerApiController : ControllerBase
 {
     private ILogger<ManagerApiController> _logger;
@@ -23,7 +23,7 @@ public class ManagerApiController : ControllerBase
         _userService = userService;
         _logService = logService;
     }
-
+    [HttpPut("user")]
     public async Task<IActionResult> AddUser([FromBody] User user)
     {
         if (user.Uname.IsNullOrEmpty() || user.Password.IsNullOrEmpty() ||
@@ -36,7 +36,7 @@ public class ManagerApiController : ControllerBase
             await _userService.NewUserAsync(user);
             // Log action
             Debug.Assert(User.Identity is not null);
-            Log log = new Log($"Added new user {user}",DateTime.Now, User.Identity.Name);
+            Log log = new Log($"Added new user {user}", DateTime.Now, User.Identity.Name);
             _logService.NewLog(log);
 
             // Logs and user services work with same datacontext
@@ -44,23 +44,31 @@ public class ManagerApiController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Unexpected error whle adding user to db");
+            _logger.LogError(ex, "Unexpected error while adding user to db");
         }
 
         return Ok();
     }
+    [HttpDelete("user")]
     public async Task<IActionResult> DeleteUser(uint id)
     {
         //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
+        try
+        {
+            string deleted = await _userService.RemoveUser(id);
+            _logger.LogInformation($"Result of deleting user with id={id}:{deleted}");
+            Debug.Assert(User.Identity is not null);
+            Log log = new($"Deleted user: {deleted}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+            _logService.NewLog(log);
+            int result = await _userService.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while deleting user");
+        }
 
-        string deleted = await _userService.RemoveUser(id);
-        _logger.LogInformation($"Result of deleting user with id={id}:{deleted}");
-        Debug.Assert(User.Identity is not null);
-        Log log = new($"Deleted user: {deleted}",DateTime.Now,User.Identity.Name);
-        _logService.NewLog(log);
-        int result = await _userService.SaveChangesAsync();
 
-        // This is temporary, fix this crapy stuff
-        return result == 1 ? Ok() : BadRequest("Non existent user");
+        // This is temporary, fix this
+        return Ok();
     }
 }

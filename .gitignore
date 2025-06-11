@@ -125,3 +125,4 @@ src/.vscode
 src/web/wwwroot/files
 src/web/ScrapeScript
 ./deploy_local.sh
+*.http
