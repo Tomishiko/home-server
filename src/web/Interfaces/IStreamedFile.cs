@@ -1,6 +1,7 @@
 using System;
 using web.Interfaces;
 using Microsoft.Win32.SafeHandles;
+using web.Models;
 
 namespace web.Interfaces;
 
@@ -14,7 +15,7 @@ public interface IStreamedFile
     SafeFileHandle GetFileHandle { get; }
     void Close();
     DateTime Created { get; }
-    event EventHandler<string>? CloseEvent;
+    event EventHandler<CloseFileEventArgs>? CloseEvent;
     int PartsWritten { get; set; }
     void IncrementPartsWrittenLocked();
 

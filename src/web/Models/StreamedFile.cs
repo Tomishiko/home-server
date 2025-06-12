@@ -1,10 +1,12 @@
+namespace web.Models;
+
 using System;
 using System.Net;
+using core.Models;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Win32.SafeHandles;
 using web.Interfaces;
 
-namespace web.Models;
 
 public class StreamedFile : IStreamedFile
 {
@@ -15,6 +17,7 @@ public class StreamedFile : IStreamedFile
     public int TotalFileParts { get; init; }
     public string FileName { get; init; }
     public long PartSize { get; init; }
+    public required User Owner { get; init; }
 
     public SafeFileHandle GetFileHandle { get => fileHandleProvider.FileHandle; }
     public bool IsClosed { get => fileHandleProvider.IsClosed; }
@@ -39,12 +42,12 @@ public class StreamedFile : IStreamedFile
             Close();
         }
     }
-    public event EventHandler<string>? CloseEvent;
+    public event EventHandler<CloseFileEventArgs>? CloseEvent;
 
     public void Close()
     {
         fileHandleProvider.Close();
-        CloseEvent?.Invoke(this, Id);
+        CloseEvent?.Invoke(this, new CloseFileEventArgs(Id, FileName, FileSize, DateTime.Now));
     }
 
 }

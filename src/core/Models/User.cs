@@ -14,6 +14,6 @@ namespace core.Models;
     //    Role = role;
     //    Id = id;
     //}
-    public record User(string Uname, string Password,string? Role,uint Id = 0);
+    public record User(string Uname, string? Password = null,string? Role = null,uint Id = 0);
     //
     //}

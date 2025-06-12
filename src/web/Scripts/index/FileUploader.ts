@@ -70,7 +70,7 @@ export class FileUploader {
             }
 
         } catch (e) {
-            console.error(`Error when trying to handshake {e}`)
+            console.error(`Error when trying to handshake ${e}`)
         }
 
 

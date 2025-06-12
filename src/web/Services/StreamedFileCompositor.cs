@@ -1,5 +1,8 @@
 using web.Interfaces;
 using System.Collections.Concurrent;
+using core.Services;
+using core.Models;
+using web.Models;
 
 
 namespace web.Services;
@@ -7,20 +10,30 @@ namespace web.Services;
 public class StreamedFileCompositor
 {
     private ILogger<StreamedFileCompositor> _logger;
+    private readonly IServiceScopeFactory scopeFactory;
     public ConcurrentDictionary<string, IStreamedFile> StreamedFiles;
 
-    public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger)
+    public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
+        this.scopeFactory = scopeFactory;
     }
-    public void CloseEventHandler(object? sender, string id)
+    public void CloseEventHandler(object sender, CloseFileEventArgs e)
     {
-        if(StreamedFiles.TryRemove(id,out _)){
+        using var scope = scopeFactory.CreateScope();
+        var logService = scope.ServiceProvider.GetRequiredService<LogService>();
+
+        if (StreamedFiles.TryRemove(e.FileId, out _))
+        {
             // TODO: handle error of removing
+            Log log = new Log($"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",e.ClosedAt, "StreamedFileCompositor");
+            logService.NewLog(log);
         }
-        var file = (IStreamedFile?)sender; // TODO move it to eventargs
-        _logger.LogInformation($"File {file?.FileName} handle was closed. {file?.FileSize} bytes was written");
+        
+
+        
+        _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
     }
 
 }

@@ -23,9 +23,9 @@ public class ApplicationDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-       optionsBuilder.LogTo(Console.WriteLine, LogLevel.Debug)
-                     .EnableSensitiveDataLogging()
-                     .EnableDetailedErrors();
+       //optionsBuilder.LogTo(Console.WriteLine, LogLevel.Debug)
+       //              .EnableSensitiveDataLogging()
+       //              .EnableDetailedErrors();
     }
 
 }

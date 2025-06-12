@@ -8,6 +8,9 @@ using web.Models;
 using System.Web;
 using web.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using core.Services;
+using core.Models;
+using System.Diagnostics;
 
 namespace web.Controllers;
 
@@ -18,10 +21,12 @@ public class StreamingController : ControllerBase
     private StreamedFileCompositor _fileCompositor;
     private FileMeta? fileMeta;
     private readonly ILogger<StreamingController> _logger;
-    public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger)
+    private readonly ILogService logService;
+    public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger, ILogService logService)
     {
         _fileCompositor = compositor;
         _logger = logger;
+        this.logService = logService;
     }
 
 
@@ -111,6 +116,7 @@ public class StreamingController : ControllerBase
             _logger.LogWarning($"fname:{requestModel.fileName}, fsize:{requestModel.fileSize},expectedPartSize:{requestModel.expectedPartSize}");
             return BadRequest();
         }
+        Debug.Assert(User.Identity?.Name is not null, "User identity should not be null in this context");
         try
         {
             var encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
@@ -129,12 +135,11 @@ public class StreamingController : ControllerBase
                 FileSize = requestModel.fileSize,
                 TotalFileParts = requestModel.totalParts,
                 fileHandleProvider = new FileHandleProvider(fileHandle),
-                Created = DateTime.Now
+                Created = DateTime.Now,
+                Owner = new User(User.Identity.Name) // Assuming User.Identity.Name is the username
             };
             streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
-            // TODO: fix concurency here
-            // https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/
-            if (_fileCompositor.StreamedFiles.TryAdd(UniqueID, streamedFile))
+            if (!_fileCompositor.StreamedFiles.TryAdd(UniqueID, streamedFile))
             {
                 // TODO: handle errors and existing uuids
             }

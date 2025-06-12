@@ -8,9 +8,18 @@ namespace web;
 
 public static class Program
 {
+    static void MyHandler(object sender, UnhandledExceptionEventArgs args)
+    {
+        Exception e = (Exception)args.ExceptionObject;
+        Console.WriteLine("MyHandler caught : " + e.Message);
+        Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+        Console.WriteLine("StackTrace: " + e.StackTrace);
+        Console.WriteLine(args.ExceptionObject.ToString());
+    }
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        AppDomain.CurrentDomain.UnhandledException += MyHandler;
         builder.Services.Startup(builder.Configuration);
         // Add services to the container.
         builder.Services.AddControllersWithViews();
