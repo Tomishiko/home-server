@@ -27,5 +27,8 @@ public class LogService : ILogService
         });
         //_logsRepo.SaveContext();
     }
+    public Task<int> SaveChanges(){
+        return _logsRepo.SaveContextAsync();
+    }
 
 }

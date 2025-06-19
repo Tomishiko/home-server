@@ -66,7 +66,7 @@ public class UnitTest1
         //Delete Users
         foreach (var user in inserted)
         {
-            await userService.RemoveUser(user.Id);
+            await userService.RemoveUserById(user.Id);
         }
         //Assert for deletetion
         var deleted = userRepo.Query().Where(u => u.Uname.Contains("name"));

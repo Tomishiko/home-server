@@ -36,10 +36,13 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public virtual IEnumerable<T> GetAll() => _dbSet.AsEnumerable();
 
+    public virtual IAsyncEnumerable<T> GetAllAsync() => _dbSet.AsAsyncEnumerable();
+
     public virtual IQueryable<T> Query() => _dbSet.AsQueryable();
 
     public virtual Task<int> SaveContextAsync() => _context.SaveChangesAsync();
 
     public virtual int SaveContext() => _context.SaveChanges();
+
 }
 

@@ -22,7 +22,7 @@ public class ManagerController : Controller
     // Partial user tablesd
     public IActionResult ManageUsers()
     {
-        return PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAll());
+        return PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined());
     }
     // Partial log table
     public IActionResult ManageLogs()
@@ -32,7 +32,7 @@ public class ManagerController : Controller
 
     public IActionResult Index([FromHeader(Name="X-Requested-With")] string requestWith)
     {
-        IEnumerable<User> initialVal = _userService.GetAll();
+        IEnumerable<User> initialVal = _userService.GetAllJoined();
 
         if (requestWith == "XMLHttpRequest")
             return PartialView(initialVal);

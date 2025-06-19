@@ -55,7 +55,7 @@ public class ManagerApiController : ControllerBase
         //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
         try
         {
-            string deleted = await _userService.RemoveUser(id);
+            string deleted = await _userService.RemoveUserById(id);
             _logger.LogInformation($"Result of deleting user with id={id}:{deleted}");
             Debug.Assert(User.Identity is not null);
             Log log = new($"Deleted user: {deleted}", DateTime.Now.ToUniversalTime(), User.Identity.Name);

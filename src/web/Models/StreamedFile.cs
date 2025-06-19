@@ -1,28 +1,26 @@
 namespace web.Models;
 
 using System;
-using System.Net;
 using core.Models;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Win32.SafeHandles;
 using web.Interfaces;
 
 
 public class StreamedFile : IStreamedFile
 {
-    private int _partsWritten = 0;
+    private uint _partsWritten = 0;
     public IFileHandleProvider fileHandleProvider { private get; init; }
     public string Id { get; init; }
-    public long FileSize { get; init; }
-    public int TotalFileParts { get; init; }
+    public ulong FileSize { get; init; }
+    public uint TotalFileParts { get; init; }
     public string FileName { get; init; }
-    public long PartSize { get; init; }
-    public required User Owner { get; init; }
+    public uint PartSize { get; init; }
+    public required uint OwnerId { get; init; }
 
     public SafeFileHandle GetFileHandle { get => fileHandleProvider.FileHandle; }
     public bool IsClosed { get => fileHandleProvider.IsClosed; }
     public DateTime Created { get; init; }
-    public int PartsWritten
+    public uint PartsWritten
     {
         get => _partsWritten;
         set

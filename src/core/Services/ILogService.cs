@@ -5,4 +5,5 @@ public interface ILogService
 {
     void NewLog(Log log);
     IEnumerable<Log> GetAll();
+    Task<int> SaveChanges();
 }
