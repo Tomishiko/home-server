@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using core.Models;
 using Data.Models;
-using Data.Shared;
 using Data.Core;
 
 
@@ -23,7 +22,8 @@ public class UserService : BaseDataService, IUserService
                 .Include("Role")
                 .Select(u => new User(u.Uname, string.Empty, u.Role.Name, u.Id));
     }
-    public async Task NewUserAsync(User user)
+
+    public async Task AddUserAsync(User user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -38,16 +38,13 @@ public class UserService : BaseDataService, IUserService
         await _context.Users.AddAsync(userEntity);
     }
 
-    public async Task<string> RemoveUserById(uint id)
+    public void RemoveUserById(uint id)
     {
-        var userEntity = await _context.Users.FindAsync(id);
-        if (userEntity == null)
-            throw new ArgumentOutOfRangeException(nameof(id), "No user found with provided Id");
-
-        _context.Users.Remove(userEntity);
-        //TODO: fix reporting the count of changes
-        return userEntity.Uname;
-
+        //var userEntity = await _context.Users.FindAsync(id);
+        //if (userEntity == null)
+        //    throw new ArgumentOutOfRangeException(nameof(id), "No user found with provided Id");
+        var entity = new UserEntity { Id = id };
+        _context.Users.Remove(entity);
     }
 
     private UserEntity CreateEntity(User user)

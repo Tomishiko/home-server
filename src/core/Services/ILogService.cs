@@ -3,7 +3,7 @@ using core.Models;
 
 public interface ILogService
 {
-    void NewLog(Log log);
+    Task NewLogAsync(Log log);
     IEnumerable<Log> GetAll();
-    Task<int> SaveChanges();
+    Task<int> SaveChangesAsync();
 }

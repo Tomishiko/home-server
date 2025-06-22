@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "manager")]
 [Route("api")]
 public class ManagerApiController : ControllerBase
 {
@@ -33,11 +33,11 @@ public class ManagerApiController : ControllerBase
         try
         {
 
-            await _userService.NewUserAsync(user);
+            await _userService.AddUserAsync(user);
             // Log action
             Debug.Assert(User.Identity is not null);
             Log log = new Log($"Added new user {user}", DateTime.Now, User.Identity.Name);
-            _logService.NewLog(log);
+            await _logService.NewLogAsync(log);
 
             // Logs and user services work with same datacontext
             await _userService.SaveChangesAsync();
@@ -49,17 +49,22 @@ public class ManagerApiController : ControllerBase
 
         return Ok();
     }
-    [HttpDelete("user")]
-    public async Task<IActionResult> DeleteUser(uint id)
+    [HttpDelete("user/{id}")]
+    public async Task<IActionResult> DeleteUser(uint id, [FromBody] string uname)
     {
         //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
+        if (uname.IsNullOrEmpty())
+        {
+            return BadRequest();
+        }
+
         try
         {
-            string deleted = await _userService.RemoveUserById(id);
-            _logger.LogInformation($"Result of deleting user with id={id}:{deleted}");
+            _userService.RemoveUserById(id);
+            _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
             Debug.Assert(User.Identity is not null);
-            Log log = new($"Deleted user: {deleted}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
-            _logService.NewLog(log);
+            Log log = new($"Deleted user {id} : {uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+            await _logService.NewLogAsync(log);
             int result = await _userService.SaveChangesAsync();
         }
         catch (Exception ex)

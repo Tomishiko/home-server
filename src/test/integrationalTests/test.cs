@@ -50,10 +50,10 @@ public class UnitTest1
         var logService = new LogService(logsRepo);
 
         // Add Users
-        userService.NewUserAsync(new User(0, "testuname2", "12346"));
-        userService.NewUserAsync(new User(0, "testuname3", "12347"));
-        userService.NewUserAsync(new User(0, "testuname4", "12348"));
-        userService.NewUserAsync(new User(0, "testuname5", "12349"));
+        userService.AddUserAsync(new User(0, "testuname2", "12346"));
+        userService.AddUserAsync(new User(0, "testuname3", "12347"));
+        userService.AddUserAsync(new User(0, "testuname4", "12348"));
+        userService.AddUserAsync(new User(0, "testuname5", "12349"));
         await userService.SaveChangesAsync();
 
         // Assert for insertion

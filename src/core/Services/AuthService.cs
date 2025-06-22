@@ -7,15 +7,13 @@ using core.Models;
 using Data.Shared;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
+using Data.Core;
 
-public class AuthService : IAuthService
+public class AuthService : BaseDataService, IAuthService
 {
-    IRepository<UserEntity> _userRepo;
 
-    public AuthService(IRepository<UserEntity> userRepo)
-    {
-        _userRepo = userRepo;
-    }
+    public AuthService(ApplicationDbContext context) : base(context) { }
+
     ///<summary>Checks if the user is in DB</summary>
     ///<returns>True if user is in DB and passwords match, false othervise</returns>
     ///<exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is null</exception>
@@ -30,7 +28,7 @@ public class AuthService : IAuthService
         // TODO:change logic to use usermanager service
         try
         {
-            var userDB = await _userRepo.Query()
+            var userDB = await _context.Users
                 .Include("Role")
                 .Where(u => u.Uname == user.Uname)
                 .Select(u => new { Role = u.Role, Password = u.Password, Id = u.Id })

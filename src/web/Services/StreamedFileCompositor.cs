@@ -31,8 +31,8 @@ public class StreamedFileCompositor
             Log log = new Log(
                     $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
                     e.ClosedAt, "StreamedFileCompositor");
-            logService.NewLog(log);
-            await logService.SaveChanges();
+            await logService.NewLogAsync(log);
+            await logService.SaveChangesAsync();
             return;
         }
         await fileService.StageFileRecord(PrepareFileInfo(finishedFile),finishedFile.OwnerId);
