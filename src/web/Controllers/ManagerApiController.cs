@@ -50,7 +50,7 @@ public class ManagerApiController : ControllerBase
         return Ok();
     }
     [HttpDelete("user/{id}")]
-    public async Task<IActionResult> DeleteUser(uint id, [FromBody] string uname)
+    public async Task<IActionResult> DeleteUser(uint id, [FromQuery] string uname)
     {
         //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
         if (uname.IsNullOrEmpty())
@@ -63,13 +63,14 @@ public class ManagerApiController : ControllerBase
             _userService.RemoveUserById(id);
             _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
             Debug.Assert(User.Identity is not null);
-            Log log = new($"Deleted user {id} : {uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+            Log log = new($"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
             await _logService.NewLogAsync(log);
             int result = await _userService.SaveChangesAsync();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while deleting user");
+            return base.Problem(ex.Message);
         }
 
 
