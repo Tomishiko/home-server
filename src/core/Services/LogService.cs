@@ -1,31 +1,25 @@
 namespace core.Services;
 using core.Models;
-using Data.Shared;
 using Data.Models;
+using Data.Core;
 
-
-public class LogService : ILogService
+public class LogService : BaseDataService, ILogService
 {
-    IRepository<LogsEntity> _logsRepo;
 
-    public LogService(IRepository<LogsEntity> logsRepo)
-    {
-        _logsRepo = logsRepo;
-    }
+    public LogService(ApplicationDbContext context) : base(context) { }
 
     public IEnumerable<Log> GetAll()
     {
-        return _logsRepo.Query().Select(l => new Log(l.Event, l.Time,l.Uname));
+        return _context.Logs.Select(l => new Log(l.Event, l.Time, l.Uname));
     }
-    public void NewLog(Log log)
+
+    public async Task NewLogAsync(Log log)
     {
-        _logsRepo.Add(new LogsEntity
-        {
+        await _context.Logs.AddAsync(new LogsEntity {
             Uname = log.Uname,
             Time = log.Time,
             Event = log.Event
         });
-        //_logsRepo.SaveContext();
     }
 
 }

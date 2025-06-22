@@ -4,7 +4,6 @@ using core.Services;
 using core.Models;
 using web.Models;
 
-
 namespace web.Services;
 
 public class StreamedFileCompositor
@@ -19,21 +18,32 @@ public class StreamedFileCompositor
         StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
         this.scopeFactory = scopeFactory;
     }
-    public void CloseEventHandler(object sender, CloseFileEventArgs e)
+    public async void CloseEventHandlerAsync(object? sender, CloseFileEventArgs e)
     {
         using var scope = scopeFactory.CreateScope();
-        var logService = scope.ServiceProvider.GetRequiredService<LogService>();
+        var logService = scope.ServiceProvider.GetRequiredService<ILogService>();
+        var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
+        IStreamedFile? finishedFile;
 
-        if (StreamedFiles.TryRemove(e.FileId, out _))
+        if (!StreamedFiles.TryRemove(e.FileId, out finishedFile))
         {
             // TODO: handle error of removing
-            Log log = new Log($"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",e.ClosedAt, "StreamedFileCompositor");
-            logService.NewLog(log);
+            Log log = new Log(
+                    $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
+                    e.ClosedAt, "StreamedFileCompositor");
+            await logService.NewLogAsync(log);
+            await logService.SaveChangesAsync();
+            return;
         }
-        
-
-        
+        await fileService.StageFileRecord(PrepareFileInfo(finishedFile),finishedFile.OwnerId);
+        int changes = await fileService.SaveChangesAsync();
         _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
+    }
+    private core.Models.File PrepareFileInfo(IStreamedFile sf)
+    {
+
+        string[] name = sf.FileName.Split('.');
+        return new core.Models.File( sf.Id, name[0], sf.FileSize, name[1],string.Empty);
     }
 
 }

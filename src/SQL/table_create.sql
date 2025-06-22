@@ -25,11 +25,12 @@ CREATE TABLE logs(
 
 CREATE TABLE files(
     id bigint not null primary key generated always as identity,
+    uuid varchar(256) not null,
     name varchar(256) not null,
-    location varchar(256) not null,
     size bigint,
     ext varchar(10) not null,
-    owner bigint references users(id)
+    owner_id bigint references users(id),
+    shared boolean
 
 );
 

@@ -48,7 +48,7 @@ public class StreamingController : ControllerBase
 
             var subDirectory = string.Empty;
             var count = 0;
-            var totalSize = 0L;
+            ulong totalSize = 0;
             // find the boundary
             var boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
             // use boundary to iterator through the multipart section
@@ -114,7 +114,7 @@ public class StreamingController : ControllerBase
         {
 
             _logger.LogWarning($"fname:{requestModel.fileName}, fsize:{requestModel.fileSize},expectedPartSize:{requestModel.expectedPartSize}");
-            return BadRequest();
+            return BadRequest("Bad request data");
         }
         Debug.Assert(User.Identity?.Name is not null, "User identity should not be null in this context");
         try
@@ -122,11 +122,17 @@ public class StreamingController : ControllerBase
             var encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
             var UniqueID = Guid.NewGuid().ToString();
 
-            var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{encodeFileName}",
+            var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{UniqueID}",
                             FileMode.CreateNew,
                             FileAccess.Write,
                             FileShare.Write,
                             preallocationSize: requestModel.fileSize);
+            uint user_id;
+            if (!uint.TryParse(User.FindFirst("Id")?.Value, out user_id))
+            {
+                return BadRequest("Bad auth data");
+            }
+
             var streamedFile = new StreamedFile
             {
                 Id = UniqueID,
@@ -136,11 +142,12 @@ public class StreamingController : ControllerBase
                 TotalFileParts = requestModel.totalParts,
                 fileHandleProvider = new FileHandleProvider(fileHandle),
                 Created = DateTime.Now,
-                Owner = new User(User.Identity.Name) // Assuming User.Identity.Name is the username
+                OwnerId = user_id
             };
-            streamedFile.CloseEvent += _fileCompositor.CloseEventHandler;
+            streamedFile.CloseEvent += _fileCompositor.CloseEventHandlerAsync;
             if (!_fileCompositor.StreamedFiles.TryAdd(UniqueID, streamedFile))
             {
+                return StatusCode(500);
                 // TODO: handle errors and existing uuids
             }
             _logger.LogInformation($"FileHandle opened(OK) Filename: {requestModel.fileName}, Filesize:{streamedFile.FileSize}");

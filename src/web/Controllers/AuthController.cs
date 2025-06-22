@@ -41,7 +41,7 @@ public class AuthenticationController : ControllerBase
         }
         creds = result.user;
         Debug.Assert(creds.Role != null, "This field should be set in auth if succesfull");
-        string token = _tokenGen.GenerateNewToken(creds.Uname, creds.Role);
+        string token = _tokenGen.GenerateNewToken(creds);
         //_logger.LogInformation($"{HttpContext.Request.Headers.Accept}");
 
         // If request was sent from the code - return standart JWT token response

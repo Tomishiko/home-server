@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using core.Models;
+using System.Diagnostics;
 
 public class JWTGen
 {
@@ -17,13 +18,15 @@ public class JWTGen
         _jwtOptions = jwtOptions;
         _handler = new JwtSecurityTokenHandler();
     }
-    public string GenerateNewToken(string username,string role)
+    public string GenerateNewToken(User user)
     {
         var jwt = _jwtOptions.Value;
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        IEnumerable<Claim> claims = [new Claim(ClaimTypes.Name,username),
-                                     new Claim(ClaimTypes.Role,role)];
+        Debug.Assert(user.Role is not null);
+        IEnumerable<Claim> claims = [new Claim(ClaimTypes.Name,user.Uname),
+                                     new Claim(ClaimTypes.Role,user.Role),
+                                     new Claim("Id",user.Id.ToString())];
         //if(username == "admin")
         //{
         //    claims.Append(new Claim("role", "manager"));

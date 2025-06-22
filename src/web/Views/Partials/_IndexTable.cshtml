@@ -1,4 +1,4 @@
-﻿@model IEnumerable<FileInfo>
+﻿@model IAsyncEnumerable<core.Models.File>
 
 <div class="box-shadow">
     <label class="border" id="breadcrumbs">@ViewData["Breadcrumbs"]</label>
@@ -9,7 +9,7 @@
             <th scope="col">Name</th>
             <th scope="col">Size</th>
             <th scope="col">EXT</th>
-            <th scope="col">Modified</th>
+            <th scope="col">Owner</th>
         </tr>
     </thead>
     <tbody>
@@ -26,28 +26,15 @@
                 </tr>
             }
 
-            foreach (var item in Model)
+            await foreach (var item in Model)
             {
 
-                    @if ((item.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
-                    {
-                        <tr id="name" data-index="@i">
-                            <td >[@item.Name]</td>
-                            <td>[DIR]</td>
-                            <td>@item.Extension</td>
-                            <td>@item.LastWriteTime</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
-                            <td>@Utility.BytesToStringOptimized(item.Length)</td>
-                            <td>@item.Extension</td>
-                            <td>@item.LastWriteTime</td>
-                        </tr>
-
-                    }
+                <tr>
+                    <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
+                    <td>@Utility.BytesToStringOptimized(item.Size)</td>
+                    <td>@item.Ext</td>
+                    <td>@item.Owner</td>
+                </tr>
 
 
                 i++;
