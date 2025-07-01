@@ -30,20 +30,32 @@ public class StreamedFileCompositor
             // TODO: handle error of removing
             Log log = new Log(
                     $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
-                    e.ClosedAt, "StreamedFileCompositor");
+                    e.ClosedAt.ToUniversalTime(), "StreamedFileCompositor");
             await logService.NewLogAsync(log);
             await logService.SaveChangesAsync();
             return;
         }
-        await fileService.StageFileRecord(PrepareFileInfo(finishedFile),finishedFile.OwnerId);
+
+        // Get "extension" and file's name if possible
+        int extIndex = finishedFile.FileName.LastIndexOf('.');
+        string ext, fname;
+
+        if (extIndex != -1)
+        {
+            ext = finishedFile.FileName.Substring(extIndex);
+            fname = finishedFile.FileName.Substring(0, extIndex);
+        }
+        else
+        {
+            ext = string.Empty;
+            fname = finishedFile.FileName;
+        }
+
+        await fileService.NewFileRecordAsync(finishedFile.Id, ext, fname,
+                    finishedFile.FileSize, finishedFile.OwnerId, true);
+
         int changes = await fileService.SaveChangesAsync();
         _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
-    }
-    private core.Models.File PrepareFileInfo(IStreamedFile sf)
-    {
-
-        string[] name = sf.FileName.Split('.');
-        return new core.Models.File( sf.Id, name[0], sf.FileSize, name[1],string.Empty);
     }
 
 }

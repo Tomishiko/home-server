@@ -50,6 +50,11 @@ public static class Program
                 response.Redirect("/login");
 
             }
+            if (response.StatusCode >= 400)
+            {
+                var req = context.HttpContext.Request;
+                Console.WriteLine($"Failed request: {req.Method} {req.Path} => {response.StatusCode}");
+            }
         });
 
         app.UseAuthentication();

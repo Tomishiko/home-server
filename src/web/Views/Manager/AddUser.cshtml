@@ -5,6 +5,22 @@
     }
 </style>
 
+<div class="modal fade" id="modalNotification" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm action</h5>
+            </div>
+            <div class="modal-body">
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -16,7 +32,8 @@
                     <form id="registerForm" class="needs-validation" name="signIn" novalidate>
                         <div class="mb-3">
                             <label for="Uname" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="fullName" name="uname" pattern="^[a-zA-Z][a-zA-Z0-9_]{2,15}$" required>
+                            <input type="text" class="form-control" id="fullName" name="uname"
+                                pattern="^[a-zA-Z][a-zA-Z0-9_]{2,15}$" required>
                             <div class="invalid-feedback">Bad username</div>
                         </div>
 
@@ -60,10 +77,13 @@
         const uname = form.elements.uname.value;
         if (form.checkValidity()) {
             const selected = form.elements.role.selectedIndex;
-            await userService.NewUser(uname,
+            let [result, msg] = await userService.NewUser(uname,
                 form.elements.password.value,
                 form.elements.role.options[selected].value,
                 form.elements.email.value);
+            let modal = $('#modalNotification');
+            modal.find('p').html(msg);
+            modal.modal("show");
         }
         form.classList.add("was-validated");
 

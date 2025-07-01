@@ -1,4 +1,6 @@
 namespace core.Services;
+
+using core.Model;
 using core.Models;
 
 public interface IUserService
@@ -10,9 +12,9 @@ public interface IUserService
     ///Makes a trip to DB to fetch role data,
     ///dont use to consecutively add users
     ///</summary>
-    Task AddUserAsync(User user);
+    Task<Result<string>> AddUserAsync(User user);
 
-    void RemoveUserById(uint id);
+    Task RemoveUserById(uint id);
 
     ///<summary>
     ///Performed on main DbContext

@@ -44,7 +44,7 @@
         const user = e.currentTarget.dataset.tag;
         const modal = $('#modalConfirm');
         const ref = e.currentTarget.href;
-        $('div.modal-body p').html(`Are you sure you want to DELETE ${user}?`);
+        $('div.modal-body p').html(`Are you sure you want to DELETE ${user} and all private files associated with this user?`);
         const modalAccept = $('.modal-footer button#confirm');
         modalAccept.off();
         modalAccept.click(async function(btn){

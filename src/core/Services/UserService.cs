@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using core.Models;
 using Data.Models;
 using Data.Core;
-
+using core.Model;
 
 public class UserService : BaseDataService, IUserService
 {
@@ -23,26 +23,44 @@ public class UserService : BaseDataService, IUserService
                 .Select(u => new User(u.Uname, string.Empty, u.Role.Name, u.Id));
     }
 
-    public async Task AddUserAsync(User user)
+    public async Task<Result<string>> AddUserAsync(User user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
+        var userEntity = CreateEntity(user);
+        if (await _context.Users.AnyAsync(u => u.Uname == user.Uname))
+        {
+            return new Result<string>(ResultStatus.Fail, $"Username \"{user.Uname}\" is already taken");
+        }
         var roleId = await _context.Roles
                                     .Where(r => r.Name == user.Role)
                                     .Select(r => r.Id)
                                     .SingleAsync();
 
-        var userEntity = CreateEntity(user);
+
         userEntity.role_id = roleId;
         //TODO: fix reporting the count of changes
         await _context.Users.AddAsync(userEntity);
+        return new Result<string>(ResultStatus.Success, null);
     }
 
-    public void RemoveUserById(uint id)
+    public async Task RemoveUserById(uint id)
     {
         //var userEntity = await _context.Users.FindAsync(id);
         //if (userEntity == null)
         //    throw new ArgumentOutOfRangeException(nameof(id), "No user found with provided Id");
+        await _context.Files.Where(f => f.owner_id == id)
+            .ForEachAsync(f =>
+            {
+                if (f.Private)
+                    _context.Remove(f);
+                else
+                {
+                    f.owner_id = null;
+                    _context.Update(f);
+                }
+            });
+
         var entity = new UserEntity { Id = id };
         _context.Users.Remove(entity);
     }

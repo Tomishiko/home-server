@@ -16,7 +16,13 @@ public class FileEntity : BaseEntity
     public required string Name { get; set; }
 
     [ForeignKey("Owner")]
-    public uint owner_id { get; set; }
+    public uint? owner_id { get; set; }
+
+    [Column("shared")]
+    public bool Public { get; set; }
+
+    [NotMapped]
+    public bool Private { get => !Public; set => Public = !value; }
 
     public UserEntity? Owner { get; set; }
 

@@ -4,6 +4,8 @@ using core.Services;
 using Microsoft.AspNetCore.Mvc;
 using web.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Diagnostics;
+using System.Security.Claims;
 
 public class IndexController : Controller
 {
@@ -24,9 +26,9 @@ public class IndexController : Controller
 
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        ViewData["Breadcrumbs"] = "wwwroot/files";
+        ViewData["Breadcrumbs"] = "root/";
         //IEnumerable<FileInfo> fileInfo = _coreFS.GetIndexFiles;
-        var fileInfo = _fileService.GetFilesAsync();
+        var fileInfo = _fileService.GetSharedFilesAsync();
         if (requestWith == "XMLHttpRequest")
             return PartialView(fileInfo);
         else
@@ -36,13 +38,20 @@ public class IndexController : Controller
     [HttpPost("/partialtable")]
     public IActionResult PartialTableLoad([FromBody] PartialTableModel body)
     {
+        Claim? cuId = User.FindFirst("Id");
+        Debug.Assert(cuId is not null);
+        string subroute = body.action == NavigationAction.Public ? "" : body.action.ToString();
+        ViewData["Breadcrumbs"] = $"root/{subroute}";
+        return body.action switch
+        {
+            NavigationAction.Private => PartialView("/Views/Partials/_IndexTable.cshtml",
+                    _fileService.GetPrivateFilesAsync(uint.Parse(cuId.Value))),
 
-        var fs = (CoreFS)_coreFS;
-        string? newFolder;
-        var currDir = fs.GetElements(body.folder);
-        newFolder = (body.id == -1) ? body.folder.Remove(body.folder.LastIndexOf('/')) :
-                                $"{body.folder}/{currDir[body.id].Name}";
-        ViewData["Breadcrumbs"] = newFolder;
-        return PartialView("/Views/Partials/_IndexTable.cshtml", _fileService.GetFilesAsync());
+            NavigationAction.Public => PartialView("/Views/Partials/_IndexTable.cshtml",
+                    _fileService.GetSharedFilesAsync()),
+
+            _ => BadRequest()
+
+        };
     }
 }

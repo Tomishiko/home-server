@@ -22,6 +22,12 @@ CREATE TABLE logs(
     time timestamp
 );
 
+CREATE TABLE upload_history(
+    file_name varchar(256) not null,
+    uploader varchar(256) not null,
+    date timestamp
+);
+
 
 CREATE TABLE files(
     id bigint not null primary key generated always as identity,

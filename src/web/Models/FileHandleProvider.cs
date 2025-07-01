@@ -1,4 +1,3 @@
-using System;
 using Microsoft.Win32.SafeHandles;
 using web.Interfaces;
 namespace web.Models;
@@ -18,5 +17,6 @@ public class FileHandleProvider : IFileHandleProvider
     public void Close()
     {
         FileHandle.Close();
+        FileHandle.Dispose();
     }
 }

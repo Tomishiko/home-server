@@ -29,20 +29,16 @@ export function setContext() {
 
         },
     });
-    $('tr#name').on('dblclick', async function(e) {
+    $('.actionRow').on('dblclick', async function(e) {
         e.preventDefault();
-        await FetchTable(Number(e.currentTarget.getAttribute('data-index')))
-    });
-    $('#backBtn').on('dblclick', async function(e) {
-        e.preventDefault();
-        await FetchTable(-1);
+        await FetchTable(Number.parseInt(e.currentTarget.getAttribute('data-action')))
     });
 }
 
-export async function FetchTable(id: number) {
+export async function FetchTable(action: number) {
 
     try {
-        const response = await api.GetPartialTable(id, $('#breadcrumbs').html());
+        const response = await api.GetPartialTable(action);
         if (response.redirected) {
             //window.location.replace(response.url);
             window.location.href = response.redirectUrl;

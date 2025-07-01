@@ -6,6 +6,7 @@ using System.Diagnostics;
 using core.utils.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using core.Model;
 
 [ApiController]
 [Authorize(Roles = "manager")]
@@ -33,14 +34,24 @@ public class ManagerApiController : ControllerBase
         try
         {
 
-            await _userService.AddUserAsync(user);
+            Result<string> result = await _userService.AddUserAsync(user);
             // Log action
-            Debug.Assert(User.Identity is not null);
-            Log log = new Log($"Added new user {user}", DateTime.Now, User.Identity.Name);
-            await _logService.NewLogAsync(log);
+            switch (result.status)
+            {
+                case ResultStatus.Fail: return BadRequest(result.resultObject);
 
-            // Logs and user services work with same datacontext
-            await _userService.SaveChangesAsync();
+                case ResultStatus.Error: return Problem(result.resultObject);
+
+                case ResultStatus.Success:
+
+                    Debug.Assert(User.Identity is not null);
+                    Log log = new Log($"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+                    await _logService.NewLogAsync(log);
+
+                    // Logs and user services work with same datacontext
+                    await _userService.SaveChangesAsync();
+                    break;
+            }
         }
         catch (Exception ex)
         {
@@ -60,7 +71,7 @@ public class ManagerApiController : ControllerBase
 
         try
         {
-            _userService.RemoveUserById(id);
+            await _userService.RemoveUserById(id);
             _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
             Debug.Assert(User.Identity is not null);
             Log log = new($"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);

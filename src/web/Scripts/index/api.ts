@@ -3,11 +3,10 @@ export interface PartialTableResponse {
     content: Promise<string>,
     redirectUrl: string
 }
-export async function GetPartialTable(id: number, folder: string): Promise<PartialTableResponse> {
+export async function GetPartialTable(action: number): Promise<PartialTableResponse> {
 
     const postBody = JSON.stringify({
-        id: id,
-        folder: folder
+        action: action,
     });
     const response = await fetch('/partialtable', {
         method: 'POST',
@@ -15,7 +14,7 @@ export async function GetPartialTable(id: number, folder: string): Promise<Parti
         headers: {
             "Accept": "text/html",
             "Content-type": "text/json",
-            "X-Requested-With":"XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest"
         }
     });
 
