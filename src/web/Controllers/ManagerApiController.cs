@@ -45,7 +45,7 @@ public class ManagerApiController : ControllerBase
                 case ResultStatus.Success:
 
                     Debug.Assert(User.Identity is not null);
-                    Log log = new Log($"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+                    Log log = new Log(0,$"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
                     await _logService.NewLogAsync(log);
 
                     // Logs and user services work with same datacontext
@@ -74,7 +74,7 @@ public class ManagerApiController : ControllerBase
             await _userService.RemoveUserById(id);
             _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
             Debug.Assert(User.Identity is not null);
-            Log log = new($"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+            Log log = new(0,$"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
             await _logService.NewLogAsync(log);
             int result = await _userService.SaveChangesAsync();
         }

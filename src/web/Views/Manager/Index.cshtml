@@ -17,7 +17,7 @@
     }
 </style>
 <link rel="stylesheet" href="~/web.styles.css" asp-append-version="true" />
-<div class="container-fluid" style="margin-bottom: 20px">
+<div class="" style="margin-bottom: 20px">
     <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
         data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive">
         ==
@@ -55,7 +55,7 @@
             </div>
         </aside>
         <!--Content-->
-        <div id="content" class="col-lg-10 col-sm-12 align-self-start">
+        <div id="content" class="col-lg-10 col-sm-12 flex-grow-1  align-self-start">
             @await Html.PartialAsync("/Views/Partials/_ManageUsers.cshtml",Model)
         </div>
         <!--Content-->

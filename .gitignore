@@ -124,5 +124,6 @@ src/.vscode
 # user specific files
 src/web/wwwroot/files
 src/web/ScrapeScript
-./deploy_local.sh
+deploy_local.sh
 *.http
+*todo*

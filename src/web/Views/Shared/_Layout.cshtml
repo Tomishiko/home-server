@@ -11,7 +11,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -65,15 +65,13 @@
             </div>
         </nav>
     </header>
-    <div class="container-fluid">
-        <main role="main" class="pb-3" id="main">
-            @RenderBody()
-        </main>
-    </div>
+    <main role="main" class="pb-3 container-fluid " id="main">
+        @RenderBody()
+    </main>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer mt-auto  text-muted">
         <div class="container-fluid">
-            &copy; 2024 - Home Server - <a href="http://192.168.1.1">Router</a>
+            &copy; 2025 - <a href="https://tomishiko.iusevimbtw.com">Tomishiko</a>
         </div>
     </footer>
     <script

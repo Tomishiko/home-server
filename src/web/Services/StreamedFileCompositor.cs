@@ -29,6 +29,7 @@ public class StreamedFileCompositor
         {
             // TODO: handle error of removing
             Log log = new Log(
+                    0,
                     $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
                     e.ClosedAt.ToUniversalTime(), "StreamedFileCompositor");
             await logService.NewLogAsync(log);

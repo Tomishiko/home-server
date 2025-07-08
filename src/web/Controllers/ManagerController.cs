@@ -27,10 +27,17 @@ public class ManagerController : Controller
     // Partial log table
     public IActionResult ManageLogs()
     {
-        return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetAll());
+
+        return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10));
     }
 
-    public IActionResult Index([FromHeader(Name="X-Requested-With")] string requestWith)
+    public IActionResult LogsPartialTable([FromQuery]uint lastItem)
+    {
+
+        return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10));
+    }
+
+    public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         IEnumerable<User> initialVal = _userService.GetAllJoined();
 
@@ -40,7 +47,8 @@ public class ManagerController : Controller
             return View(initialVal);
     }
     [HttpGet]
-    public IActionResult AddUser(){
+    public IActionResult AddUser()
+    {
         return View("AddUser");
     }
 }

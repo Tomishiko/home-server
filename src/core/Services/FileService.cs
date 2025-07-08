@@ -52,7 +52,7 @@ public class FileService : BaseDataService, IFileService
             Debug.Assert(owner_id is not null);
             return _context.Files
                 .Include("Owner")
-                .Where(f => !f.Public && f.owner_id == owner_id)
+                .Where(f => f.Private && f.owner_id == owner_id)
                 .Select(f => new File(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
                 .AsAsyncEnumerable();
 
