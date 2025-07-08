@@ -1,5 +1,6 @@
 ﻿@using web.Helpers;
 @model IAsyncEnumerable<core.Models.File>
+<cache>
     @{
     ViewData["Title"] = "Index";
     }
@@ -39,3 +40,4 @@
         import {setContext} from "/js/index/partialTable.js"
         setContext();
     </script>
+    </cache>

@@ -26,8 +26,17 @@ public static class ServiceExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IFileService,FileService>();
+        services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
+
+        //if (env.IsDevelopment())
+        //{
+        //    services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
+        //}
+        //else
+        {
+            services.AddWebOptimizer();
+        }
 
         JWT jwt = new();
         config.GetSection("JWT").Bind(jwt);

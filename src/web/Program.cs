@@ -59,8 +59,8 @@ public static class Program
 
         app.UseAuthentication();
         app.UseHttpsRedirection();
+        app.UseWebOptimizer();
         app.UseStaticFiles();
-
         app.UseCors();
         app.UseRouting();
 

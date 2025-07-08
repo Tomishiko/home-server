@@ -1,9 +1,9 @@
-import * as ContextMenuLogic from './ContextMenu.js'
-import * as api from './api.js'
+import {contexMenu} from "./ContextMenu.js"
+import {GetPartialTable} from "./api.js"
 
 //Add to jquery plugin
 (function($, window) {
-    $.fn['contextMenu'] = ContextMenuLogic.contexMenu;
+    $.fn['contextMenu'] = contexMenu;
 
 })(jQuery, window)
 
@@ -38,7 +38,7 @@ export function setContext() {
 export async function FetchTable(action: number) {
 
     try {
-        const response = await api.GetPartialTable(action);
+        const response = await GetPartialTable(action);
         if (response.redirected) {
             //window.location.replace(response.url);
             window.location.href = response.redirectUrl;
