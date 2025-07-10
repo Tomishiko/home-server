@@ -31,37 +31,15 @@
                 <td>@user.Role</td>
                 <td>
                     <a href="@Url.Action("Edit", "Manager", new { id = user.Id })" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
-                    <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id, uname = user.Uname })" data-tag='@user.Uname' class="btn btn-dark btn-outline-danger">Delete</a>
+                    <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id, uname = user.Uname })" data-tag='@user.Uname' class="btn btn-delete btn-dark btn-outline-danger">Delete</a>
 
                 </td>
             </tr>
         }
     </tbody>
 </table>
-<script>
-    $('a.btn-outline-danger').bind('click',async function(e){
-        e.preventDefault();
-        const user = e.currentTarget.dataset.tag;
-        const modal = $('#modalConfirm');
-        const ref = e.currentTarget.href;
-        $('div.modal-body p').html(`Are you sure you want to DELETE ${user} and all private files associated with this user?`);
-        const modalAccept = $('.modal-footer button#confirm');
-        modalAccept.off();
-        modalAccept.click(async function(btn){
-            try{
-               const response =  await fetch(ref,{method:"DELETE"});
-                if(response.ok){
-                   location.reload();
-                }
-
-            }catch(ex){
-                alert(ex);
-            }
-        })
-
-
-        modal.modal('show');
-    });
-
-
+<script type="module" async>
+    import {deleteUserConfirmation} from "/js/manage/DeleteUser.js"
+    document.querySelectorAll("a.btn-delete").forEach(el=>
+        el.addEventListener("click",deleteUserConfirmation));
 </script>
