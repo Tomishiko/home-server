@@ -127,3 +127,4 @@ src/web/ScrapeScript
 deploy_local.sh
 *.http
 *todo*
+node_modules*
