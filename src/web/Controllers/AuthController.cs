@@ -26,7 +26,7 @@ public class AuthenticationController : ControllerBase
     [HttpPost("auth")]
     async public Task<IActionResult> Authentication([FromForm] User creds)
     {
-        _logger.LogInformation($"{creds}");
+        //_logger.LogInformation($"{creds}");
         AuthResult result;
         try
         {

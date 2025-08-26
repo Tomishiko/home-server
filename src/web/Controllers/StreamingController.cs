@@ -5,11 +5,11 @@ using web.Helpers;
 using web.Services;
 using System.Text.Json;
 using web.Models;
+using System.Buffers;
 using System.Web;
 using web.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using core.Services;
-using core.Models;
 using System.Diagnostics;
 
 namespace web.Controllers;
@@ -19,16 +19,16 @@ namespace web.Controllers;
 public class StreamingController : ControllerBase
 {
     private StreamedFileCompositor _fileCompositor;
-    private FileMeta? fileMeta;
+    private FileMeta? _fileMeta;
     private readonly ILogger<StreamingController> _logger;
-    private readonly ILogService logService;
+    private readonly ILogService _logService;
+
     public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger, ILogService logService)
     {
         _fileCompositor = compositor;
         _logger = logger;
-        this.logService = logService;
+        _logService = logService;
     }
-
 
     [HttpPost("uploadlarge")]
     [Authorize]
@@ -43,33 +43,40 @@ public class StreamingController : ControllerBase
         {
             if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
             {
-                throw new FormatException("Form without multipart content.");
+                return BadRequest("Form without multipart content.");
             }
 
             var subDirectory = string.Empty;
             var count = 0;
             ulong totalSize = 0;
             // find the boundary
-            var boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
+            string boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
             // use boundary to iterator through the multipart section
             var reader = new MultipartReader(boundary, HttpContext.Request.Body);
-
-            var section = await reader.ReadNextSectionAsync();
+            MultipartSection? section = await reader.ReadNextSectionAsync();
             do
             {
                 if (section is null)
                     break;
 
-                if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var contentDisposition))
-                    break;
+                if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition,
+                    out var contentDisposition)) break;
 
                 if (!MultipartRequestHelper.HasFileContentDisposition(contentDisposition))
                 {
                     if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition) && contentDisposition.Name == "meta")
                     {
-                        var formData = await section.AsFormDataSection().GetValueAsync();
 
-                        fileMeta = JsonSerializer.Deserialize<FileMeta>(formData);
+                        // there is no way we have null values propagated in this block.
+                        // all nulls returned with BadRequest
+#pragma warning disable 8602, 8600
+
+                        string formData = await section.AsFormDataSection()
+                                                    .GetValueAsync();
+                        if (string.IsNullOrEmpty(formData)) return BadRequest();
+
+                        _fileMeta = JsonSerializer.Deserialize<FileMeta>(formData);
+                        if (_fileMeta is null) return BadRequest();
 
                     }
                     section = await reader.ReadNextSectionAsync();
@@ -78,21 +85,24 @@ public class StreamingController : ControllerBase
 
                 IStreamedFile file;
 
-                if (_fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
+                if (_fileCompositor.StreamedFiles.TryGetValue(_fileMeta.uid, out file))
                 {
-                    byte[] buffer = new byte[fileMeta.bytesRead]; //TODO: Consider using Span<> or Memory<>
-                    //await section.AsFileSection().FileStream.ReadExactlyAsync(buffer, 0, fileMeta.bytesRead);
-                    //
-                    //Memory<byte> buffer = new Memory<byte>(new byte[fileMeta.bytesRead]);
-                    //Span<byte> buffe = new Span<byte>(new byte[fileMeta.bytesRead]);
-                    await section.AsFileSection().FileStream.ReadExactlyAsync(buffer);
+                    using var owner = MemoryPool<byte>.Shared.Rent(_fileMeta.bytesRead);
+                    Memory<byte> buffer = owner.Memory;
 
-                    await RandomAccess.WriteAsync(file.GetFileHandle, buffer, fileMeta.currentPart * file.PartSize);
+                    await section.AsFileSection().FileStream
+                                 .ReadExactlyAsync(buffer.Slice(0, _fileMeta.bytesRead));
+                    await RandomAccess.WriteAsync(file.GetFileHandle,
+                             buffer.Slice(0, _fileMeta.bytesRead),
+                            _fileMeta.currentPart * file.PartSize);
 
                     file.IncrementPartsWrittenLocked();
 
 
                 }
+
+#pragma warning restore 8602,8600
+
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
 
@@ -110,7 +120,9 @@ public class StreamingController : ControllerBase
     [Authorize]
     public IActionResult Handshake([FromBody] FileHandshake requestModel)
     {
-        if (string.IsNullOrEmpty(requestModel.fileName) || requestModel.fileSize < 1 || requestModel.expectedPartSize <= 64)
+        if (string.IsNullOrEmpty(requestModel.fileName)
+            || requestModel.fileSize < 1
+            || requestModel.expectedPartSize <= 64)
         {
 
             _logger.LogWarning($"fname:{requestModel.fileName}, fsize:{requestModel.fileSize},expectedPartSize:{requestModel.expectedPartSize}");
@@ -119,32 +131,28 @@ public class StreamingController : ControllerBase
         Debug.Assert(User.Identity?.Name is not null, "User identity should not be null in this context");
         try
         {
-            var encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
-            var UniqueID = Guid.NewGuid().ToString();
-
-            var fileHandle = System.IO.File.OpenHandle($"wwwroot/files/{UniqueID}",
-                            FileMode.CreateNew,
-                            FileAccess.Write,
-                            FileShare.Write,
-                            preallocationSize: requestModel.fileSize);
+            string? encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
+            string UniqueID = Guid.NewGuid().ToString();
             uint user_id;
             if (!uint.TryParse(User.FindFirst("Id")?.Value, out user_id))
             {
                 return BadRequest("Bad auth data");
             }
 
-            var streamedFile = new StreamedFile
-            {
-                Id = UniqueID,
-                FileName = requestModel.fileName,
-                PartSize = requestModel.expectedPartSize,
-                FileSize = requestModel.fileSize,
-                TotalFileParts = requestModel.totalParts,
-                fileHandleProvider = new FileHandleProvider(fileHandle),
-                Created = DateTime.Now,
-                OwnerId = user_id
-            };
-            streamedFile.CloseEvent += _fileCompositor.CloseEventHandlerAsync;
+            FileHandleConfig config = new($"wwwroot/files/{UniqueID}",
+                                         FileMode.CreateNew,
+                                         FileAccess.Write,
+                                         FileShare.Write,
+                                         requestModel.fileSize);
+
+            StreamedFile streamedFile = new(config,
+                                        UniqueID,
+                                        requestModel.totalParts,
+                                        requestModel.fileName,
+                                        requestModel.expectedPartSize,
+                                        user_id);
+
+            streamedFile.CloseEvent += _fileCompositor.OnCloseEventAsync;
             if (!_fileCompositor.StreamedFiles.TryAdd(UniqueID, streamedFile))
             {
                 return StatusCode(500);
@@ -157,7 +165,7 @@ public class StreamingController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while handshake");
-            return BadRequest($"Check the handshake data {ex.Message}");
+            return BadRequest($"Something unexpected happend while performing handshake {ex.Message}");
         }
 
 
@@ -171,13 +179,13 @@ public class StreamingController : ControllerBase
         if (!_fileCompositor.StreamedFiles.TryGetValue(uid, out var file))
             return BadRequest("Identifier does not exist");
 
-        file.Close();
+        file.Dispose();
         var fileInf = new FileInfo(Path.Combine("wwwroot", "files", file.FileName));
         fileInf.Delete();
         return Ok(file.FileName);
 
     }
-    private class FileMeta
+    private sealed class FileMeta
     {
         public string uid { get; set; } = string.Empty;
         public int currentPart { get; set; }

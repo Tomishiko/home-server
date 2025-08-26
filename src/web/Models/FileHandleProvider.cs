@@ -3,11 +3,13 @@ using web.Interfaces;
 namespace web.Models;
 
 
-public class FileHandleProvider : IFileHandleProvider
+public class FileHandleProvider : IFileHandleProvider, IDisposable
 {
     public SafeFileHandle FileHandle { get; }
 
     public bool IsClosed => FileHandle.IsClosed;
+
+    public bool IsDisposed { get; private set; } = false;
 
     public FileHandleProvider(SafeFileHandle fileHandle)
     {
@@ -16,7 +18,15 @@ public class FileHandleProvider : IFileHandleProvider
 
     public void Close()
     {
-        FileHandle.Close();
+        Dispose();
+    }
+
+    public void Dispose()
+    {
+        if (IsDisposed) return;
+
         FileHandle.Dispose();
+        GC.SuppressFinalize(true);
+        IsDisposed = true;
     }
 }

@@ -8,8 +8,8 @@ namespace web.Services;
 
 public class StreamedFileCompositor
 {
-    private ILogger<StreamedFileCompositor> _logger;
     private readonly IServiceScopeFactory scopeFactory;
+    private ILogger<StreamedFileCompositor> _logger;
     public ConcurrentDictionary<string, IStreamedFile> StreamedFiles;
 
     public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger, IServiceScopeFactory scopeFactory)
@@ -18,7 +18,7 @@ public class StreamedFileCompositor
         StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
         this.scopeFactory = scopeFactory;
     }
-    public async void CloseEventHandlerAsync(object? sender, CloseFileEventArgs e)
+    public async void OnCloseEventAsync(object? sender, CloseFileEventArgs e)
     {
         using var scope = scopeFactory.CreateScope();
         var logService = scope.ServiceProvider.GetRequiredService<ILogService>();
@@ -28,9 +28,7 @@ public class StreamedFileCompositor
         if (!StreamedFiles.TryRemove(e.FileId, out finishedFile))
         {
             // TODO: handle error of removing
-            Log log = new Log(
-                    0,
-                    $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
+            Log log = new Log( 0, $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
                     e.ClosedAt.ToUniversalTime(), "StreamedFileCompositor");
             await logService.NewLogAsync(log);
             await logService.SaveChangesAsync();
@@ -56,6 +54,8 @@ public class StreamedFileCompositor
                     finishedFile.FileSize, finishedFile.OwnerId, true);
 
         int changes = await fileService.SaveChangesAsync();
+        finishedFile.CloseEvent -= OnCloseEventAsync;
+        finishedFile.Dispose();
         _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
     }
 
