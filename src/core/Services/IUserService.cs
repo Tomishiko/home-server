@@ -1,13 +1,24 @@
 namespace core.Services;
+
+using core.Model;
 using core.Models;
 
 public interface IUserService
 {
-    IEnumerable<User> GetAll();
-    Task NewUserAsync(User user);
-    void NewUser(User user);
-    Task<bool> RemoveUser(uint id);
-    int SaveChanges();
+
+    IEnumerable<User> GetAllJoined();
+    ///<summary>
+    ///Create entity and begin tracking user.
+    ///Makes a trip to DB to fetch role data,
+    ///dont use to consecutively add users
+    ///</summary>
+    Task<Result<string>> AddUserAsync(User user);
+
+    Task RemoveUserById(uint id);
+
+    ///<summary>
+    ///Performed on main DbContext
+    ///</summary>
     Task<int> SaveChangesAsync();
 
 }

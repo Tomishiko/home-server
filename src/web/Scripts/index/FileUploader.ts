@@ -1,10 +1,10 @@
 export class FileUploader {
-    private files: File[];
+    private files: FileList
     private progressArea: HTMLElement;
     private progressBars: JQuery[];
     private readonly chunkSize = 1024 * 512;
 
-    constructor(files: File[], progressArea: HTMLElement) {
+    constructor(files: FileList, progressArea: HTMLElement) {
         this.files = files;
         this.progressArea = progressArea;
         this.progressBars = new Array(files.length);
@@ -70,7 +70,7 @@ export class FileUploader {
             }
 
         } catch (e) {
-            console.error(`Error when trying to handshake {e}`)
+            console.error(`Error when trying to handshake ${e}`)
         }
 
 

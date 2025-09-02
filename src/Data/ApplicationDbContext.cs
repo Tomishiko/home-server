@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Data.Shared;
 using Data.Models;
+using Microsoft.Extensions.Logging;
 
 public class ApplicationDbContext : DbContext
 {
@@ -13,12 +14,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserEntity> Users { get; set; }
     public DbSet<LogsEntity> Logs { get; set; }
     public DbSet<RolesEntity> Roles { get; set; }
+    public DbSet<FileEntity> Files { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserEntity>();
         modelBuilder.Entity<LogsEntity>();
         modelBuilder.Entity<RolesEntity>();
+        modelBuilder.Entity<FileEntity>();
+    }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+       //optionsBuilder.LogTo(Console.WriteLine, LogLevel.Debug)
+       //              .EnableSensitiveDataLogging()
+       //              .EnableDetailedErrors();
     }
 
 }

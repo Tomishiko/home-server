@@ -1,53 +1,51 @@
-﻿@model IEnumerable<FileInfo>
+﻿@model IAsyncEnumerable<core.Models.File>
 
 <div class="box-shadow">
     <label class="border" id="breadcrumbs">@ViewData["Breadcrumbs"]</label>
 </div>
+
 <table id="partial_table" class="table table-responsive table-striped table-hover">
     <thead>
         <tr>
             <th scope="col">Name</th>
             <th scope="col">Size</th>
             <th scope="col">EXT</th>
-            <th scope="col">Modified</th>
+            <th scope="col">Owner</th>
         </tr>
     </thead>
     <tbody>
 
         @{
             int i = 0;
-            if (!String.Equals(ViewData["Breadcrumbs"], "wwwroot/files"))
+            if (String.Equals(ViewData["Breadcrumbs"], "root/"))
             {
-                <tr id="backBtn">
+                <tr class="actionRow" data-action=@( (Int16)NavigationAction.Private )>
+                    <td>&#128193;Private</td>
+                    <td></td>
+                    <td>[folder]</td>
+                    <td></td>
+                </tr>
+            }
+            else
+            {
+                <tr class="actionRow" id="backBtn" data-action=@( (Int16)NavigationAction.Public)>
                     <td  style="padding-top: 0px; padding-bottom: 0px; font-size: 20px;">&#8629;</td>
                     <td></td>
                     <td></td>
                     <td></td>
                 </tr>
+
             }
 
-            foreach (var item in Model)
+            await foreach (var item in Model)
             {
 
-                    @if ((item.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
-                    {
-                        <tr id="name" data-index="@i">
-                            <td >[@item.Name]</td>
-                            <td>[DIR]</td>
-                            <td>@item.Extension</td>
-                            <td>@item.LastWriteTime</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <td><a asp-controller="Api" asp-action="GetFile" asp-route-id="@i">@item.Name</a></td>
-                            <td>@Utility.BytesToStringOptimized(item.Length)</td>
-                            <td>@item.Extension</td>
-                            <td>@item.LastWriteTime</td>
-                        </tr>
-
-                    }
+                <tr>
+                    <td><a asp-controller="File" asp-action="GetFile" asp-route-id="@item.Id">@item.Name</a></td>
+                    <td>@Utility.BytesToStringOptimized(item.Size)</td>
+                    <td>@item.Ext</td>
+                    <td>@item.Owner</td>
+                </tr>
 
 
                 i++;

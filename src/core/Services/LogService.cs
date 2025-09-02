@@ -1,34 +1,38 @@
 namespace core.Services;
 using core.Models;
-using Data.Shared;
 using Data.Models;
+using Data.Core;
 using Microsoft.EntityFrameworkCore;
 
-
-public class LogService : ILogService
+public class LogService : BaseDataService, ILogService
 {
-    IRepository<LogsEntity> _logsRepo;
 
-    public LogService(IRepository<LogsEntity> logsRepo)
+    public LogService(ApplicationDbContext context) : base(context) { }
+
+    public IAsyncEnumerable<Log> GetAll()
     {
-        _logsRepo = logsRepo;
+        return _context.Logs
+            .Select(l => new Log(l.Id,l.Event, l.Time, l.Uname))
+            .AsAsyncEnumerable();
     }
 
-    public IEnumerable<Log> GetAll()
+    public async Task NewLogAsync(Log log)
     {
-        return _logsRepo.Query()
-            .Include("User")
-            .Select(u => new Log(u.Event, u.Time,u.User.Uname));
-    }
-    public void NewLog(Log log, uint? user_id)
-    {
-        _logsRepo.Add(new LogsEntity
+        await _context.Logs.AddAsync(new LogsEntity
         {
-            user_id = user_id,
+            Uname = log.Uname,
             Time = log.Time,
             Event = log.Event
         });
-        _logsRepo.SaveContext();
+    }
+    public IAsyncEnumerable<Log> GetPage(uint last, int perPage)
+    {
+
+        return _context.Logs.OrderBy(l=>l.Id)
+                            .Where(l=>l.Id > last)
+                            .Take(perPage)
+                            .Select(l => new Log(l.Id,l.Event, l.Time, l.Uname))
+                            .AsAsyncEnumerable();
     }
 
 }

@@ -1,75 +1,64 @@
-import * as ContextMenuLogic from './ContextMenu.js'
-import * as api from './api.js'
+import { event, Event } from "jquery";
+import { contexMenu } from "./ContextMenu.js"
+import { GetPartialTable } from "./api.js"
 
-//Add to jquery plugin
-(function($, window) {
-    $.fn['contextMenu'] = ContextMenuLogic.contexMenu;
-
-})(jQuery, window)
-
-function setContext() {
-    const tableSelector = '#partial_table tr';
-    $(tableSelector).contextMenu({
-        menuSelector: "#contextMenu",
-        callback: function(invokedOn, selectedMenu) {
-            switch (selectedMenu[0]) {
-                case $("#contextMenu #download")[0]:
-                    alert("download");
-                    break;
-                case $("#contextMenu #print")[0]:
-                    alert("pirnt request");
-                    break;
-                    var url = invokedOn.find('a').prop('href');
-                    url = "/api/pfile" + url.substring(url.lastIndexOf('/'));
-                    fetch(url + '?printParams=printingparams');
-                    break;
-
-            };
-
-
-        },
-    });
-    $('tr#name').on('dblclick', async function(e) {
+export function setContext() {
+    const table = document.getElementById('partial_table');
+    const menu = document.getElementById('contextMenu');
+    if (!menu || !table) return;
+    let currntRowId: number = 0;
+    table.addEventListener("contextmenu", (e: MouseEvent) => {
+        const row = (<HTMLElement>e.target).closest("tr");
+        if (!row) return;
         e.preventDefault();
-        await FetchTable(Number(e.currentTarget.getAttribute('data-index')))
+        menu.style.display = 'block';
+        const left = checkClipping(e.pageX, menu.offsetWidth, window.innerWidth);
+        const right = checkClipping(e.pageY, menu.offsetHeight, window.innerHeight);
+        menu.style.left = `${left}px`;
+        menu.style.top = `${right}px`;
     });
-    $('#backBtn').on('dblclick', async function(e) {
-        e.preventDefault();
-        await FetchTable(-1);
+    document.addEventListener("click", () => {
+        menu.style.display = "none";
     });
+
+
+
+    document.querySelectorAll('.actionRow').forEach(x => {
+        x.addEventListener('dblclick', async function(e) {
+            e.preventDefault();
+            const action = (<HTMLElement>e.currentTarget).dataset["action"];
+            if (!action) return;
+            await FetchTable(Number.parseInt(action));
+        })
+    });
+
 }
-document.addEventListener("DOMContentLoaded", () => {
-    setContext();
-});
 
-export async function FetchTable(id: number) {
+function checkClipping(mouse: number, menu: number, win: number) {
+    // opening menu would pass the side of the page
+    if (mouse + menu > win && menu < mouse)
+        return mouse - menu;
+    return mouse;
+
+}
+export async function FetchTable(action: number) {
 
     try {
-        const response = await api.GetPartialTable(id, $('#breadcrumbs').html());
+        const response = await GetPartialTable(action);
         if (response.redirected) {
             //window.location.replace(response.url);
             window.location.href = response.redirectUrl;
-            return;
         }
-        const newTable = response.content.then(function(string) {
-            $('#table-container').html(string);
+        response.content.then(function(string) {
+            let tableCont = document.getElementById('table-container');
+            if (!tableCont)
+                return;
+            tableCont.innerHTML = string;
             setContext();
         });
 
-        //var request = $.post('partial',
-        //    {
-        //        'id': id,
-        //        'folder': $('#breadcrumbs').html()
-        //    }
-        //);
-        //request.done(function (data) {
-        //    $('#table-container').html(data);
-        //})
-        //request.fail(function () {
-        //    alert('failed to get table data');
-        //})
 
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 }

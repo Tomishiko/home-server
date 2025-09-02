@@ -1,22 +1,20 @@
-using System;
-using web.Interfaces;
 using Microsoft.Win32.SafeHandles;
+using web.Models;
 
 namespace web.Interfaces;
 
-public interface IStreamedFile
+public interface IStreamedFile : IDisposable
 {
     string Id { get; }
-    long FileSize { get; }
-    int TotalFileParts { get; }
+    ulong FileSize { get; }
+    uint TotalFileParts { get; }
     string FileName { get; }
-    long PartSize { get; }
+    uint OwnerId { get; }
+    uint PartSize { get; }
     SafeFileHandle GetFileHandle { get; }
-    void Close();
     DateTime Created { get; }
-    event EventHandler<string>? CloseEvent;
-    int PartsWritten { get; set; }
+    event EventHandler<CloseFileEventArgs>? CloseEvent;
+    uint PartsWritten { get; }
     void IncrementPartsWrittenLocked();
-
 
 }

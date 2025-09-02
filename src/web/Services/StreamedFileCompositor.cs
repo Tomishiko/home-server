@@ -1,26 +1,62 @@
 using web.Interfaces;
 using System.Collections.Concurrent;
-
+using core.Services;
+using core.Models;
+using web.Models;
 
 namespace web.Services;
 
 public class StreamedFileCompositor
 {
+    private readonly IServiceScopeFactory scopeFactory;
     private ILogger<StreamedFileCompositor> _logger;
     public ConcurrentDictionary<string, IStreamedFile> StreamedFiles;
 
-    public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger)
+    public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
+        this.scopeFactory = scopeFactory;
     }
-    public void CloseEventHandler(object? sender, string id)
+    public async void OnCloseEventAsync(object? sender, CloseFileEventArgs e)
     {
-        if(StreamedFiles.TryRemove(id,out _)){
+        using var scope = scopeFactory.CreateScope();
+        var logService = scope.ServiceProvider.GetRequiredService<ILogService>();
+        var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
+        IStreamedFile? finishedFile;
+
+        if (!StreamedFiles.TryRemove(e.FileId, out finishedFile))
+        {
             // TODO: handle error of removing
+            Log log = new Log( 0, $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
+                    e.ClosedAt.ToUniversalTime(), "StreamedFileCompositor");
+            await logService.NewLogAsync(log);
+            await logService.SaveChangesAsync();
+            return;
         }
-        var file = (IStreamedFile)sender; // TODO move it to eventargs
-        _logger.LogInformation($"File {file?.FileName} handle was closed. {file?.FileSize} bytes was written");
+
+        // Get "extension" and file's name if possible
+        int extIndex = finishedFile.FileName.LastIndexOf('.');
+        string ext, fname;
+
+        if (extIndex != -1)
+        {
+            ext = finishedFile.FileName.Substring(extIndex);
+            fname = finishedFile.FileName.Substring(0, extIndex);
+        }
+        else
+        {
+            ext = string.Empty;
+            fname = finishedFile.FileName;
+        }
+
+        await fileService.NewFileRecordAsync(finishedFile.Id, ext, fname,
+                    finishedFile.FileSize, finishedFile.OwnerId, true);
+
+        int changes = await fileService.SaveChangesAsync();
+        finishedFile.CloseEvent -= OnCloseEventAsync;
+        finishedFile.Dispose();
+        _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
     }
 
 }

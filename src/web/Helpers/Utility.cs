@@ -5,11 +5,11 @@ namespace web.Helpers;
 
 public static class Utility
 {
-    public static string BytesToStringOptimized(long value)
+    public static string BytesToStringOptimized(ulong value)
     {
         string suffix;
         double readable;
-        switch (Math.Abs(value))
+        switch (value)
         {
             case >= 0x1000000000000000:
                 suffix = "EiB";
@@ -40,5 +40,10 @@ public static class Utility
         }
 
         return (readable / 1024).ToString("0.## ", CultureInfo.InvariantCulture) + suffix;
+    }
+    public static bool IsXmlHttpRequest(string requestedWith)
+    {
+        if (requestedWith == "XMLHttpRequest") return true;
+        else return false;
     }
 }

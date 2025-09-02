@@ -1,0 +1,69 @@
+<style>
+    #createBtn {
+        --bs-btn-border-color: #19be72;
+        --bs-btn-color: #19be72;
+    }
+</style>
+
+<div class="modal fade" id="modalNotification" data-module="NewUser" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm action</h5>
+            </div>
+            <div class="modal-body">
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5" data-module="newUser">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-white">
+                    <h4 class="mb-0">Register New User</h4>
+                </div>
+                <div class="card-body">
+                    <form id="registerForm" class="needs-validation" name="signIn" novalidate>
+                        <div class="mb-3">
+                            <label for="Uname" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="fullName" name="uname"
+                                pattern="^[a-zA-Z][a-zA-Z0-9_]{2,15}$" required>
+                            <div class="invalid-feedback">Bad username</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                            <div class="invalid-feedback">Bad email format!</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="invalid-feedback">Password is required!</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">-- Select Role --</option>
+                                <option value="Admin">Admin</option>
+                                <option value="User">User</option>
+                            </select>
+                            <div class="invalid-feedback">Role is required!</div>
+                        </div>
+
+                        <button type="submit" id="createBtn" class="btn btn-dark btn-outline-success w-100">Create
+                            Account</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

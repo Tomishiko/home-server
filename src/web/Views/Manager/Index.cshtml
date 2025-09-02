@@ -1,0 +1,71 @@
+﻿@using core.Models
+@model IEnumerable<User>
+<link rel="stylesheet" href="~/web.styles.css" asp-append-version="true" />
+    <!--<link rel="modulepreload" href="~/js/manage/DeleteUser.js" as="script" async/>
+<link rel="modulepreload" href="~/js/manage/manageSideBar.js" as="script" async></link>
+<link rel="modulepreload" href="~/js/manage/loadMore.js" as="script" async/>-->
+<div class="" style="margin-bottom: 20px" data-module="manager"</div>
+    <button id="transparent-button" class="btn btn-dark border-secondary p-2 d-lg-none sticky-top" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#offcanvasResponsive">
+        ==
+    </button>
+    <div class="row">
+        <aside class="col-lg-2 col-sm-1 ">
+            <div class="glassy-offcanvas offcanvas-lg offcanvas-start " data-bs-backdrop="true" tabindex="-1" id="offcanvasResponsive"
+                aria-labelledby="offcanvasExampleLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-target="#offcanvasResponsive"
+                        data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <!--offcanvas nabigation-->
+                <div class="offcanvas-body">
+                    <nav id="sidebar" class="d-md-block sidebar">
+                        <div class="position-sticky">
+                            <ul class="nav flex-column">
+                                <li class="nav-item">
+                                    <a id="sidebar-item" href="#" class="nav-link active" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
+                                        data-ajax="true" data-ajax-url='@Url.Action("ManageUsers","Manager")' data-ajax-method="GET"
+                                        data-ajax-container="#content" data-ajax-action="substitute" data-ajax-success="subNavHandler">User Base</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a id="sidebar-item" href="#" class="nav-link" aria-current="page"
+                                        data-bs-dismiss="offcanvas" data-bs-target="#offcanvasResponsive"
+                                        data-ajax="true" data-ajax-url='@Url.Action("ManageLogs","Manager")' data-ajax-method="GET"
+                                        data-ajax-container="#content" data-ajax-action="substitute" data-ajax-success="subNavHandler">Logs</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+
+                </div>
+            </div>
+        </aside>
+        <!--Content-->
+        <div id="content" class="col-lg-10 col-sm-12 flex-grow-1  align-self-start">
+            @await Html.PartialAsync("/Views/Partials/_ManageUsers.cshtml",Model)
+        </div>
+        <!--Content-->
+
+        <!--Modal dialog-->
+        <div class="modal fade" id="modalConfirm" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm action</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>Modal body text goes here.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="confirm" class="btn btn-dark btn-outline-danger">Delete</button>
+                        <button type="button" class="btn btn-dark btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+            <!--Modal dialog-->
+        </div>
+    </div>
+</div>
+

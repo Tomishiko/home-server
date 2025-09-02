@@ -6,16 +6,18 @@ using System.Diagnostics;
 namespace web.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api")]
 public class FileController : ControllerBase
 {
     private readonly ICoreFS _coreFs;
     private readonly ILogger<FileController> _logger;
+    private readonly IFileService _fileService;
 
-    public FileController(ICoreFS coreFS, ILogger<FileController> logger)
+    public FileController(ICoreFS coreFS, ILogger<FileController> logger, IFileService fileService)
     {
         _coreFs = coreFS;
         _logger = logger;
+        _fileService = fileService;
     }
     [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
@@ -27,13 +29,20 @@ public class FileController : ControllerBase
     }
     [HttpGet("file/{id}")]
     [Authorize]
-    public IActionResult GetFile(int id)
+    public async Task<IActionResult> GetFile(uint id)
     {
-        var files = _coreFs.GetIndexFiles;
-        var file = files.ToArray()[id];
+        uint userId;
+        if (!uint.TryParse(User.FindFirst("Id")?.Value, out userId))
+            return BadRequest("Cant parse users identity");
 
-        var fs = file.OpenRead();
-        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
+        var fileRec = await _fileService.RequestFileAsync(userId, id);
+
+        if (fileRec is null)
+            return Forbid();
+
+
+        var fs = _coreFs.GetFileStream(fileRec.UUID);
+        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: $"{fileRec.Name}.{fileRec.Ext}");
     }
     [HttpGet("pfile/{id}")]
     public async Task<IActionResult> PrintFile(int id, [FromQuery] string printParams)

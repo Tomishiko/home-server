@@ -1,15 +1,16 @@
-// Sidebar interactivity
-$('#sidebar-item.nav-link').on('click', async function(e) {
+// Sidebar
+
+export async function navbarClickHandler(e) {
     e.preventDefault();
-    const current = $(e.target);
-    if (current.hasClass('active'))
+    const current: HTMLElement = e.target;
+    if (current.classList.contains('active'))
         return;
-    $("#sidebar-item.nav-link.active").removeClass('active');
-    await loadContent(current.attr("href"))
-    current.addClass('active');
-})
+    document.querySelector("#sidebar-item.nav-link.active").classList.remove('active');
+    //await loadContent(current.getAttribute("href"))
+    current.classList.add('active');
+}
 // Dynamic table render
-async function loadContent(path) {
+export async function loadContent(path) {
     try {
         const response = await fetch(path, {
             method: 'GET',
@@ -23,15 +24,19 @@ async function loadContent(path) {
             return;
         }
         response.text().then(function(string) {
-            $('#content').html(string);
+            const content = document.getElementById('content');
+            content.innerHTML = string;
+            const scripts = content.getElementsByTagName('script');
+            for(var script in scripts)
+                eval(script);
         });
 
 
     } catch (ex) {
-
+        alert(`something went wrong ${ex}`);
     }
 }
 //document.addEventListener("DOMContentLoaded", () => {
 
-    //loadContent($('a#sidebar-item.active').prop('href'));
+//loadContent($('a#sidebar-item.active').prop('href'));
 //});

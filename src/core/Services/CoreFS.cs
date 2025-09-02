@@ -40,7 +40,7 @@ public class CoreFS : ICoreFS
         _movieWatcher.EnableRaisingEvents = true;
         _movieWatcher.NotifyFilter = NotifyFilters.LastWrite;
         _movieWatcher.NotifyFilter = NotifyFilters.Size;
-        _movieWatcher.Changed += OnFilesChanged;
+        //_movieWatcher.Changed += OnFilesChanged;
 
     }
 
@@ -66,6 +66,7 @@ public class CoreFS : ICoreFS
         }
         return files;
     }
+
     public IEnumerable<FileInfo> GetIndexFiles
     {
         get
@@ -78,6 +79,7 @@ public class CoreFS : ICoreFS
             return temp;
         }
     }
+
     public IEnumerable<FileInfo> GetMovies
     {
         get
@@ -90,6 +92,11 @@ public class CoreFS : ICoreFS
             }
             return temp;
         }
+    }
+
+    public FileStream GetFileStream(string fileName)
+    {
+        return new FileStream($"{files}/{fileName}", FileMode.Open);
     }
 
 }

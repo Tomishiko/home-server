@@ -1,50 +1,65 @@
-using System;
-using System.Net;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Win32.SafeHandles;
 using web.Interfaces;
 
 namespace web.Models;
 
-public class StreamedFile : IStreamedFile
-{
-    private int _partsWritten = 0;
-    public IFileHandleProvider fileHandleProvider { private get; init; }
-    public string Id { get; init; }
-    public long FileSize { get; init; }
-    public int TotalFileParts { get; init; }
-    public string FileName { get; init; }
-    public long PartSize { get; init; }
 
-    public SafeFileHandle GetFileHandle { get => fileHandleProvider.FileHandle; }
+public sealed class StreamedFile : IStreamedFile
+{
+    private uint _partsWritten = 0;
+    private SafeFileHandle fileHandleProvider;
+    private bool _isDisposed = false;
+
+    public string Id { get; init; }
+    public ulong FileSize { get; init; }
+    public uint TotalFileParts { get; init; }
+    public string FileName { get; init; }
+    public uint PartSize { get; init; }
+    public uint OwnerId { get; init; }
+    public SafeFileHandle GetFileHandle { get => fileHandleProvider; }
     public bool IsClosed { get => fileHandleProvider.IsClosed; }
     public DateTime Created { get; init; }
-    public int PartsWritten
+    public uint PartsWritten
     {
         get => _partsWritten;
-        set
-        {
-            _partsWritten = value;
-            if (value == TotalFileParts)
-            {
-                Close();
-            }
-        }
     }
     public void IncrementPartsWrittenLocked()
     {
         Interlocked.Increment(ref _partsWritten);
-        if(_partsWritten == TotalFileParts)
+        if (_partsWritten == TotalFileParts)
         {
             Close();
         }
     }
-    public event EventHandler<string>? CloseEvent;
+    public event EventHandler<CloseFileEventArgs>? CloseEvent;
 
-    public void Close()
+    public StreamedFile(FileHandleConfig fconfig, string uuid, uint totalFileParts,
+            string fileName, uint partSize, uint ownerId)
     {
-        fileHandleProvider.Close();
-        CloseEvent?.Invoke(this, Id);
+        Id = uuid;
+        TotalFileParts = totalFileParts;
+        FileName = fileName;
+        PartSize = partSize;
+        OwnerId = ownerId;
+        FileSize = fconfig.preallocationSize;
+        fileHandleProvider = File.OpenHandle(fconfig.path,
+                                            fconfig.fileMode,
+                                            fconfig.FileAccess,
+                                            fconfig.fileShare,
+                                            FileOptions.Asynchronous | FileOptions.RandomAccess | FileOptions.WriteThrough,
+                                            preallocationSize: fconfig.preallocationSize);
     }
 
+
+    void Close() => CloseEvent?.Invoke(this, new CloseFileEventArgs(Id, FileName, FileSize, DateTime.Now));
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+
+        fileHandleProvider?.Dispose();
+        GC.SuppressFinalize(this);
+        CloseEvent = null;
+        _isDisposed = true;
+    }
 }

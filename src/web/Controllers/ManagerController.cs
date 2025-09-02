@@ -1,58 +1,56 @@
 namespace web.Controllers;
-using core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
-using core.utils.extensions;
-
+using core.Models;
+using web.Helpers;
 
 [Authorize(Roles = "manager")]
 public class ManagerController : Controller
 {
-    IUserService _userService;
-    ILogService _logService;
-    ILogger<ManagerController> _logger;
+    private readonly ILogService _logService;
+    private readonly IUserService _userService;
+    private readonly ILogger<ManagerController> _logger;
 
-    public ManagerController(ILogger<ManagerController> logger, ILogService logService, IUserService userService)
+    public ManagerController(ILogService logService, IUserService userService, ILogger<ManagerController> logger)
     {
-        _logger = logger;
-        _logService = logService;
+        this._logService = logService;
         _userService = userService;
-    }
-    public async Task<IActionResult> AddUser([FromBody] User user)
-    {
-        if (user.Uname.IsNullOrEmpty() || user.Password.IsNullOrEmpty() ||
-                user.Role.IsNullOrEmpty())
-            return BadRequest("Some requiered fields are empty");
-        _logger.LogInformation($"Add user request {user.Uname}");
-        try
-        {
-
-            await _userService.NewUserAsync(user);
-            await _userService.SaveChangesAsync();
-        }
-        catch(Exception ex){
-            _logger.LogWarning(ex,"Unexpected error whle adding user to db");
-        }
-
-        return Ok();
+        _logger = logger;
     }
 
-    public async Task<IActionResult> DeleteUser(uint id)
-    {
-        //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
 
-        bool result = await _userService.RemoveUser(id);
-        _logger.LogInformation($"Result of deleting user with id={id}:{result}");
+    // Partial user tablesd
+    public IActionResult ManageUsers([FromHeader(Name = "X-Requested-With")] string requestWith)
+    {
+        return Utility.IsXmlHttpRequest(requestWith)
+            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined())
+            : Index(string.Empty);
+    }
+    // Partial log table
+    public IActionResult ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
+    {
 
-        return result ? Ok() : BadRequest("Non existent user");
+        Console.WriteLine("hello from controller");
+        return Utility.IsXmlHttpRequest(requestWith)
+            ? PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10))
+            : Index(string.Empty);// return Manager index page fallback
     }
-    public IActionResult ManageUsers()
+
+    public IActionResult LogsPartialTable([FromQuery] uint lastItem)
     {
-        return PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAll());
+
+        return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10));
     }
-    public async Task<IActionResult> ManageLogs()
+
+    public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetAll());
+        IEnumerable<User> initialVal = _userService.GetAllJoined();
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index",initialVal);
+    }
+    [HttpGet]
+    public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
+    {
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");
     }
 }

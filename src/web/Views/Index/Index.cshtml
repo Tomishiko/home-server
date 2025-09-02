@@ -1,0 +1,42 @@
+﻿@using web.Helpers;
+@model IAsyncEnumerable<core.Models.File>
+@{
+ViewData["Title"] = "Index";
+}
+@* TODO: #4 add antiforgery token for this page *@
+
+<!--<link rel="modulepreload" href="~/js/index/preload.js" as="script" async/>
+<link rel="modulepreload" href="~/js/index/partialTable.js" as="script" async/>
+-->
+<div data-module="indexPage">
+    <style>
+        tr {
+            -moz-user-select: none;
+            -khtml-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+    <div id='fileBlock' style="padding-top: 8px; padding-bottom: 16px;">
+        <div class="row g-3">
+
+
+            <div class="col-auto w-auto">
+                <input class="form-control" type="file" id="file" multiple>
+            </div>
+            <div class="col-auto ">
+                <button id="submitBtn" class="btn btn-dark border-secondary">Upload</button>
+            </div>
+
+        </div>
+    </div>
+    <div class="container-list-group-horizontal" id="table-container">
+        @await Html.PartialAsync("/Views/Partials/_IndexTable.cshtml", Model, ViewData)
+    </div>
+    <ul id="contextMenu" class="dropdown-menu" role="menu" style="display:none">
+        <li><a id="print" class="dropdown-item" href="#">Print</a></li>
+        <li><a id="download" class="dropdown-item" href="#">Download</a></li>
+    </ul>
+</div>
+

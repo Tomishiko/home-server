@@ -1,20 +1,18 @@
 namespace Data.Models;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 [Table("logs")]
 public class LogsEntity : BaseEntity
 {
-    [ForeignKey(nameof(User))]
-    public uint? user_id;
 
-    public UserEntity? User { get; set; }
+    [Column("username")]
+    public string? Uname { get; set; }
 
     [Column("eventname")]
-    public string Event { get; set; }
+    public required string Event { get; set; }
 
     [Column("time")]
-    public DateTime Time { get; set; }
+    public required DateTime Time { get; set; }
 
 }
 

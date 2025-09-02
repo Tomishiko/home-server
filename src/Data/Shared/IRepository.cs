@@ -12,6 +12,7 @@ public interface IRepository<T> where T : BaseEntity
     Task<T?> GetByIdAsync(uint id);
     Task<List<T>> ToListAsync(CancellationToken cancellationToken = default(CancellationToken));
     IEnumerable<T> GetAll();
+    IAsyncEnumerable<T> GetAllAsync();
     IQueryable<T> Query();
     Task<int> SaveContextAsync();
     int SaveContext();

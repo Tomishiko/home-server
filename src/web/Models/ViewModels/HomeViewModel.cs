@@ -5,8 +5,8 @@ namespace web.Models;
 
 public class HomeViewModel : PageModel
 {
-    public IEnumerable<FileInfo> Files { get; set; }
+    public IEnumerable<FileInfo>? Files { get; set; }
     [BindProperty]
-    public IFormFile Upload { get; set; }
+    public IFormFile? Upload { get; set; }
 
 }
