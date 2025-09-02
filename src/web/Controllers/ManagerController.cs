@@ -31,7 +31,7 @@ public class ManagerController : Controller
         return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10));
     }
 
-    public IActionResult LogsPartialTable([FromQuery]uint lastItem)
+    public IActionResult LogsPartialTable([FromQuery] uint lastItem)
     {
 
         return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10));
@@ -47,8 +47,11 @@ public class ManagerController : Controller
             return View(initialVal);
     }
     [HttpGet]
-    public IActionResult AddUser()
+    public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        return View("AddUser");
+        if (requestWith == "XMLHttpRequest")
+            return PartialView("AddUser");
+        else
+            return View("AddUser");
     }
 }

@@ -13,6 +13,17 @@ public static class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.Startup(builder.Configuration);
         // Add services to the container.
+        //        if (builder.Environment.IsDevelopment())
+        //        {
+        //            builder.Services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
+        //        }
+        //        else
+        {
+        //    builder.Services.AddWebOptimizer(pipeline =>
+        //    {
+        //        pipeline.AddJavaScriptBundle("/js/site.js", "js/index/*.js");
+        //    });
+        }
         builder.Services.AddControllersWithViews();
         //builder.Services.AddScoped<Irepos>
 
@@ -59,7 +70,7 @@ public static class Program
 
         app.UseAuthentication();
         app.UseHttpsRedirection();
-        app.UseWebOptimizer();
+        //app.UseWebOptimizer();
         app.UseStaticFiles();
         app.UseCors();
         app.UseRouting();

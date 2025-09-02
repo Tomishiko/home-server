@@ -6,11 +6,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Home Server</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" rel="preload" href="dist/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/web.styles.css" asp-append-version="true" />
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="/css/site.css"/>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100" data-bs-no-jquery="true">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -22,9 +22,9 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between" id="navbar-main">
                     <ul class="nav-underline navbar-nav d-flex">
                         <li class="nav-item">
-                            <a class='nav-link @(path =="/" ? "active":"")' data-ajax="true" data-ajax-mode="replace" data-ajax-update="main"
+                            <a class='nav-link @(path =="/" ? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="main"
                                 data-ajax-url='@Url.Action("Index","Index")' data-ajax-method="GET"
-                                data-ajax-success="partialSuccess" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
+                                data-ajax-success="window.mainNavHandler" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
                         <li class="nav-item">
                             <a class='nav-link @(path.StartsWith("/movies")? "active":"")' asp-area="" asp-controller="Pages" asp-action="Movies">Movies</a>
                         </li>
@@ -37,9 +37,9 @@
                         if (!User.Identity.IsAuthenticated)
                         {
                         <li class="nav-item">
-                            <a class="nav-link" data-ajax="true" data-ajax-mode="replace"
+                            <a class="nav-link" data-ajax="true" data-ajax-action="substitute"
                                 data-ajax-url='@Url.Action("Index","Login")' data-ajax-method="GET"
-                                asp-controller="Login" data-ajax-update="main" asp-action="Index">Log in</a>
+                                asp-controller="Login" data-ajax-container="main" asp-action="Index">Log in</a>
 
                         </li>
                         }
@@ -49,9 +49,9 @@
                         if (User.IsInRole("manager")) //Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
                         {
                         <li class="nav-item">
-                            <a class='nav-link @(path.StartsWith("/manager")? "active":"")' data-ajax="true" data-ajax-mode="replace" data-ajax-update="#main"
+                            <a class='nav-link @(path.StartsWith("/manager")? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="#main"
                                 data-ajax-url='@Url.Action("Index","Manager")' data-ajax-method="GET"
-                                data-ajax-success="partialSuccess"asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
+                                data-ajax-success="mainNavHandler"asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
                         </li>
                         }
                         <li class="nav-item">
@@ -73,19 +73,7 @@
             &copy; 2025 - <a href="https://tomishiko.iusevimbtw.com">Tomishiko</a>
         </div>
     </footer>
-
-<script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
-
-<script
-    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ajax-unobtrusive/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
-<script src="~/js/shared/navbar.js"></script>
-<script src="~/js/shared/navigation.js"></script>
-
-<script>
-    $('nav a.nav-link').on('click',function(){
-        $('#navbar-main').collapse('hide');
-    })
-</script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
+    <script src="/js/main.js" type="module"></script>
 </html>

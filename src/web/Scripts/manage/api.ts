@@ -16,3 +16,7 @@ export async function PostUser(user: User) {
     });
 
 }
+export async function FetchMoreLogs(cursor: string) {
+    return  await fetch(`/manager/logspartialtable?lastitem=${cursor}`)
+                  .then(response => response.text())
+}

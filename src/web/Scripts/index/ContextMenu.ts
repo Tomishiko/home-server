@@ -1,49 +1,43 @@
+export interface ContextSetting {
+    menuSelector: string,
+    callback: Function,
+}
 export function contexMenu(settings: ContextSetting) {
     return this.each(function() {
         // Open context menu
-        $(this).on("contextmenu", function(e) {
+        this.addEventListener("contextmenu", function(e) {
             // return native menu if pressing control
             if (e.ctrlKey) return
 
             //open menu
-            var $menu = $(settings.menuSelector)
-                .data("invokedOn", $(e.currentTarget))
-                .show()
-                .css({
-                    position: "absolute",
-                    left: getMenuPosition(e.clientX, "width", "scrollLeft"),
-                    top: getMenuPosition(e.clientY, "height", "scrollTop"),
-                })
-                .off("click")
-                .on("click", "a", function(e) {
-                    $menu.hide()
+            var menu = document.querySelector(settings.menuSelector) as HTMLElement;
+            menu.dataset["invokedOn"] = e.target;
 
-                    var $invokedOn = $menu.data("invokedOn")
-                    var $selectedMenu = $(e.target)
 
-                    settings.callback.call(this, $invokedOn, $selectedMenu)
+            menu.style = JSON.stringify({
+                position: "absolute",
+                display: "block",
+                left: getMenuPosition(e.clientX, "width", "scrollLeft"),
+                top: getMenuPosition(e.clientY, "height", "scrollTop"),
+            });
+            menu.querySelectorAll("a").forEach(node => {
+                node.addEventListener("click", function(e) {
+                    menu.style.display = "none";
+                    var invokedOn = menu.dataset["invokedOn"];
+                    var selectedMenu = e.target;
+                    settings.callback.call(this, invokedOn, selectedMenu);
                 })
+            })
 
             return false
         })
 
         //make sure menu closes on any click
-        $("html").on("click", function() {
-            $(settings.menuSelector).hide()
+        document.body.addEventListener("click", function() {
+            let menu = document.querySelector(settings.menuSelector) as HTMLElement;
+            menu.style.display = "none;"
         })
     })
 
-    function getMenuPosition(mouse: number, direction: string, scrollDir: string) {
-        var win = $(window)[direction](),
-            scroll = $(window)[scrollDir](),
-            menu = $(settings.menuSelector)[direction](),
-            position = mouse + scroll
-
-        // opening menu would pass the side of the page
-        if (mouse + menu > win && menu < mouse)
-            position -= menu
-
-        return position
-    }
 }
 

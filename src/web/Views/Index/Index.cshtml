@@ -1,11 +1,14 @@
 ﻿@using web.Helpers;
 @model IAsyncEnumerable<core.Models.File>
-<cache>
-    @{
-    ViewData["Title"] = "Index";
-    }
-    @* TODO: #4 add antiforgery token for this page *@
+@{
+ViewData["Title"] = "Index";
+}
+@* TODO: #4 add antiforgery token for this page *@
 
+<!--<link rel="modulepreload" href="~/js/index/preload.js" as="script" async/>
+<link rel="modulepreload" href="~/js/index/partialTable.js" as="script" async/>
+-->
+<div data-module="indexPage">
     <style>
         tr {
             -moz-user-select: none;
@@ -35,9 +38,5 @@
         <li><a id="print" class="dropdown-item" href="#">Print</a></li>
         <li><a id="download" class="dropdown-item" href="#">Download</a></li>
     </ul>
-    <script type="module" src="~/js/index/preload.js"></script>
-    <script type="module" >
-        import {setContext} from "/js/index/partialTable.js"
-        setContext();
-    </script>
-    </cache>
+</div>
+

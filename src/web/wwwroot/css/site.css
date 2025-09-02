@@ -1,3 +1,17 @@
+#sidebar a.active {
+    background-color: #0056b3;
+    color: #ffffff !important;
+    font-weight: bolder;
+    border-radius: 0.375rem;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+#sidebar-item {
+    color: #dee2e6;
+}
 html {
   font-size: 14px;
 }

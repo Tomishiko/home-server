@@ -1,4 +1,3 @@
-# Build Folders (you can keep bin if you'd like, to store dlls and pdbs)
 src/[Bb]in/
 src/[Oo]bj/
 src/web/wwwroot/
@@ -127,4 +126,4 @@ src/web/ScrapeScript
 deploy_local.sh
 *.http
 *todo*
-node_modules*
+node_modules

@@ -1,0 +1,7 @@
+export const Modules = {
+    indexPage: () => import('./indexPage'),
+    newUser: () => import('./NewUser'),
+    manager: () => import('./managerIndex'),
+    logs: () => import("../manage/logs")
+
+};

@@ -5,7 +5,7 @@
     }
 </style>
 
-<div class="modal fade" id="modalNotification" tabindex="-1" role="dialog">
+<div class="modal fade" id="modalNotification" data-module="NewUser" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -21,7 +21,7 @@
     </div>
 </div>
 
-<div class="container mt-5">
+<div class="container mt-5" data-module="newUser">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow-sm">
@@ -67,27 +67,3 @@
         </div>
     </div>
 </div>
-@section Scripts{
-<script type="module">
-    import * as userService from '/js/manage/NewUser.js'
-    $('#registerForm').on('submit', async function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const form = document.forms.signIn;
-        const uname = form.elements.uname.value;
-        if (form.checkValidity()) {
-            const selected = form.elements.role.selectedIndex;
-            let [result, msg] = await userService.NewUser(uname,
-                form.elements.password.value,
-                form.elements.role.options[selected].value,
-                form.elements.email.value);
-            let modal = $('#modalNotification');
-            modal.find('p').html(msg);
-            modal.modal("show");
-        }
-        form.classList.add("was-validated");
-
-    });
-
-</script>
-}

@@ -6,12 +6,12 @@
     "removeComments": false,
     "sourceMap": false,
     "target": "ES6",
+    "module":"esnext",
     "outDir": "wwwroot/js",
     "allowJs": true
 
   },
   "include": [
-    "Scripts/**/*"
   ],
   "exclude": [
     "node_modules",

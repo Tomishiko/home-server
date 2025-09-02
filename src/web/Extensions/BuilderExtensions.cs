@@ -29,14 +29,6 @@ public static class ServiceExtensions
         services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
 
-        //if (env.IsDevelopment())
-        //{
-        //    services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
-        //}
-        //else
-        {
-            services.AddWebOptimizer();
-        }
 
         JWT jwt = new();
         config.GetSection("JWT").Bind(jwt);

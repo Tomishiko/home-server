@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "User List";
 }
+<div>
 <style>
 
     #editBtn {
@@ -11,7 +12,10 @@
 </style>
 
 <h1>User List</h1>
-<a href="@Url.Action("AddUser", "Manager")" class="btn btn-dark border-secondary mb-3">Create New User</a>
+<a href="@Url.Action("AddUser", "Manager")" data-ajax="true" data-ajax-mode="replace"
+    data-ajax-update="main" data-ajax-url='@Url.Action("AddUser","Manager")'
+    data-ajax-method="GET" data-ajax-success="window.mainNavHandler"
+    class="btn btn-dark border-secondary mb-3">Create New User</a>
 
 <table class="table table-bordered">
     <thead>
@@ -38,8 +42,3 @@
         }
     </tbody>
 </table>
-<script type="module" async>
-    import {deleteUserConfirmation} from "/js/manage/DeleteUser.js"
-    document.querySelectorAll("a.btn-delete").forEach(el=>
-        el.addEventListener("click",deleteUserConfirmation));
-</script>

@@ -1,7 +1,7 @@
-$('#loadmoreBtn').bind('click',async function(){
-    const last = $('tr').last();
-    const content = await fetch(`/manager/logspartialtable?lastitem=${last.data('cursor')}`)
-        .then(response=>response.text())
-        .then(content=> $('#logTable').append(content));
+import { FetchMoreLogs } from "./api.js";
 
-});
+export async function loadMoreLogs(last: HTMLElement,appendElem:HTMLElement) {
+    FetchMoreLogs(last.dataset.cursor)
+        .then(content => appendElem.innerHTML += content);
+
+}
