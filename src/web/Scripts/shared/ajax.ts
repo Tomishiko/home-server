@@ -27,9 +27,11 @@ async function ajaxPartial(action: Action, method: string, contentContainer: HTM
                 case Action.Substitute:
                     contentContainer.innerHTML = x;
                     break;
+                default:
+                    console.error("Undefined ajax action");
             }
 
-            window.mainNavHandler(x, href,contentContainer);
+            window.mainNavHandler(x, href, contentContainer);
             window.addAjaxListeners(contentContainer);
         });
 

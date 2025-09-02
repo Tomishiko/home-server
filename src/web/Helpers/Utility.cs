@@ -41,4 +41,9 @@ public static class Utility
 
         return (readable / 1024).ToString("0.## ", CultureInfo.InvariantCulture) + suffix;
     }
+    public static bool IsXmlHttpRequest(string requestedWith)
+    {
+        if (requestedWith == "XMLHttpRequest") return true;
+        else return false;
+    }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
 using core.Models;
+using web.Helpers;
 
 [Authorize(Roles = "manager")]
 public class ManagerController : Controller
@@ -20,15 +21,20 @@ public class ManagerController : Controller
 
 
     // Partial user tablesd
-    public IActionResult ManageUsers()
+    public IActionResult ManageUsers([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        return PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined());
+        return Utility.IsXmlHttpRequest(requestWith)
+            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined())
+            : Index(string.Empty);
     }
     // Partial log table
-    public IActionResult ManageLogs()
+    public IActionResult ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
 
-        return PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10));
+        Console.WriteLine("hello from controller");
+        return Utility.IsXmlHttpRequest(requestWith)
+            ? PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10))
+            : Index(string.Empty);// return Manager index page fallback
     }
 
     public IActionResult LogsPartialTable([FromQuery] uint lastItem)
@@ -40,18 +46,11 @@ public class ManagerController : Controller
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         IEnumerable<User> initialVal = _userService.GetAllJoined();
-
-        if (requestWith == "XMLHttpRequest")
-            return PartialView(initialVal);
-        else
-            return View(initialVal);
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index",initialVal);
     }
     [HttpGet]
     public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        if (requestWith == "XMLHttpRequest")
-            return PartialView("AddUser");
-        else
-            return View("AddUser");
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");
     }
 }
