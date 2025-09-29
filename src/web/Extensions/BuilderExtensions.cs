@@ -28,6 +28,7 @@ public static class ServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
+        services.AddHostedService<BackgroundFileService>();
 
 
         JWT jwt = new();

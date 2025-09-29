@@ -1,6 +1,6 @@
 import { event, Event } from "jquery";
 import { contexMenu } from "./ContextMenu.js"
-import { GetPartialTable } from "./api.js"
+import { GetPartialTable, DeleteFile } from "./api.js"
 
 export function setContext() {
     const table = document.getElementById('partial_table');
@@ -16,6 +16,21 @@ export function setContext() {
         const right = checkClipping(e.pageY, menu.offsetHeight, window.innerHeight);
         menu.style.left = `${left}px`;
         menu.style.top = `${right}px`;
+        const deleteBtn = menu.querySelector<HTMLLinkElement>("#delete");
+        //deleteBtn!.href = row.closest("a")?.href ?? "";
+        const ref = row.querySelector("a")!.href;
+        deleteBtn?.addEventListener("click", async (e) => {
+            try {
+                const response = await DeleteFile(ref);
+                if (response.ok) {
+                    location.reload();
+                    return;
+                }
+                response.text().then(s => console.error(`${s}`));
+            } catch (ex) {
+                console.error(`${ex}`);
+            }
+        });
     });
     document.addEventListener("click", () => {
         menu.style.display = "none";

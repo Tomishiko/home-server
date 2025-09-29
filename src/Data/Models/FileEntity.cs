@@ -5,21 +5,24 @@ using System.ComponentModel.DataAnnotations.Schema;
 public class FileEntity : BaseEntity
 {
     [Column("uuid")]
-    public required string UUID { get; set; }
+    public string UUID { get; set; } = string.Empty;
 
     [Column("size")]
     public ulong Size { get; set; }
 
     [Column("ext")]
-    public required string Ext { get; set; }
+    public string Ext { get; set; } = string.Empty;
     [Column("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [ForeignKey("Owner")]
     public uint? owner_id { get; set; }
 
     [Column("shared")]
     public bool Public { get; set; }
+
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; } = false;
 
     [NotMapped]
     public bool Private { get => !Public; set => Public = !value; }

@@ -6,22 +6,13 @@ using core.Models;
 using Data.Core;
 using System.Diagnostics;
 
+
 public class FileService : BaseDataService, IFileService
 {
     public FileService(ApplicationDbContext context) : base(context) { }
 
-    public async Task NewFileRecordAsync(string UUID, string ext, string fileName, ulong fileSize, uint owner_id,bool shared)
+    public async Task NewFileRecordAsync(string UUID, string ext, string fileName, ulong fileSize, uint owner_id, bool shared)
     {
-        //uint owner_id = await _userRepo.Query().Where(u => u.Uname == file.Owner).Select(u => u.Id).SingleAsync();
-        //{
-        //var fileEnt = new FileEntity
-        //    UUID = file.UUID,
-        //    Ext = file.Ext,
-        //    Size = file.Size,
-        //    Name = file.Name,
-        //    owner_id = owner_id
-        //};
-        //await _fileRepo.AddAsync(fileEnt);
         var fileEnt = new FileEntity
         {
             UUID = UUID,
@@ -39,12 +30,12 @@ public class FileService : BaseDataService, IFileService
     ///</summary>
     ///<exception cref="ArgumentNullException"> Throws if shared is false
     ///and owner id is not provided or null</exception>
-    private IAsyncEnumerable<File> GetFilesAsync(bool shared, uint? owner_id = null)
+    private IAsyncEnumerable<File> GetFiles(bool shared, uint? owner_id = null)
     {
         if (shared)
             return _context.Files
                 .Include("Owner")
-                .Where(f => f.Public)
+                .Where(f => f.Public && !f.IsDeleted)
                 .Select(f => new File(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
                 .AsAsyncEnumerable();
         else
@@ -52,7 +43,7 @@ public class FileService : BaseDataService, IFileService
             Debug.Assert(owner_id is not null);
             return _context.Files
                 .Include("Owner")
-                .Where(f => f.Private && f.owner_id == owner_id)
+                .Where(f => f.Private && f.owner_id == owner_id && !f.IsDeleted)
                 .Select(f => new File(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
                 .AsAsyncEnumerable();
 
@@ -61,25 +52,51 @@ public class FileService : BaseDataService, IFileService
     }
     public Task<FileEntity> GetFile(uint id)
     {
-        return _context.Files.Where(f => f.Id == id).SingleAsync();
+        return _context.Files.Where(f => f.Id == id && !f.IsDeleted).SingleAsync();
     }
     public IAsyncEnumerable<File> GetSharedFilesAsync()
     {
-        return GetFilesAsync(true);
+        return GetFiles(true);
     }
 
     public IAsyncEnumerable<File> GetPrivateFilesAsync(uint owner_id)
     {
-        return GetFilesAsync(false, owner_id);
+        return GetFiles(false, owner_id);
     }
-    public async Task<File?> RequestFileAsync(uint userId, uint fileId)
+    public async Task<File?> RequestFileAsync(uint? userId, uint fileId)
     {
         var fileInfo = await GetFile(fileId);
 
-        if (fileInfo.Private && fileInfo.owner_id != userId)
+        if (fileInfo.Private && (userId == null || fileInfo.owner_id != userId))
             return null;
 
         return new File(fileInfo.UUID, fileInfo.Name, fileInfo.Size, fileInfo.Ext);
+    }
+
+    ///<summary>
+    /// Marks a file for a deletion
+    ///</summary>
+    ///<returns>Amount of records marked for deletion</returns>
+    public Task<int> MarkAsDeletedAsync(uint userId, uint fileId)
+    {
+        return _context.Files
+            .Where(f => f.Id == fileId && f.owner_id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsDeleted, true));
+
+    }
+    ///<summary>
+    ///Returns a list of file names which are flagged deleted in DB
+    ///</summary>
+   // public IAsyncEnumerable<File> GetDeletedFiles()
+   // {
+   //     return _context.Files.Where(f => f.IsDeleted)
+   //                          .Select(f=>new File("",$"wwwroot/files/{f.UUID}",))
+   //                          .AsAsyncEnumerable();
+   // }
+    public void StageDeletion(uint fileId)
+    {
+        _context.Files.Remove(new FileEntity { Id = fileId });
+
     }
 
 }

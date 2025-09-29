@@ -24,3 +24,9 @@ export async function GetPartialTable(action: number): Promise<PartialTableRespo
         redirectUrl: response.url
     };
 }
+export function DeleteFile(ref: string): Promise<Response> {
+    return fetch(ref, {
+        method: "DELETE",
+
+    });
+}

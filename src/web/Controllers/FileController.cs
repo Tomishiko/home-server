@@ -19,6 +19,13 @@ public class FileController : ControllerBase
         _logger = logger;
         _fileService = fileService;
     }
+    private uint? GetUserId()
+    {
+        uint userId;
+        if (!uint.TryParse(User.FindFirst("Id")?.Value, out userId))
+            return null;
+        return userId;
+    }
     [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
     {
@@ -28,18 +35,16 @@ public class FileController : ControllerBase
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
     }
     [HttpGet("file/{id}")]
-    [Authorize]
+    //[Authorize]
     public async Task<IActionResult> GetFile(uint id)
     {
-        uint userId;
-        if (!uint.TryParse(User.FindFirst("Id")?.Value, out userId))
-            return BadRequest("Cant parse users identity");
+
+        uint? userId = GetUserId();
+        Console.WriteLine(userId);
 
         var fileRec = await _fileService.RequestFileAsync(userId, id);
-
         if (fileRec is null)
             return Forbid();
-
 
         var fs = _coreFs.GetFileStream(fileRec.UUID);
         return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: $"{fileRec.Name}.{fileRec.Ext}");
@@ -54,6 +59,16 @@ public class FileController : ControllerBase
         cmd.StartInfo.Arguments = $"{file.FullName}";
         cmd.Start();
         await cmd.WaitForExitAsync();
+        return Ok();
+    }
+    [HttpDelete("file/{id}")]
+    public async Task<IActionResult> DeleteFile(uint id)
+    {
+        uint? userId = GetUserId();
+        if (userId is null) return Forbid("Unable to identify user");
+        int deleteCount = await _fileService.MarkAsDeletedAsync((uint)userId, id);
+        if (deleteCount == 0)
+            return Forbid("File does not exist or insufficient rights");
         return Ok();
     }
 

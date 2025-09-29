@@ -38,14 +38,14 @@ public class ManagerApiController : ControllerBase
             // Log action
             switch (result.status)
             {
-                case ResultStatus.Fail: return BadRequest(result.resultObject);
+                case ResultStatus.Fail: return Conflict(result.resultObject);
 
                 case ResultStatus.Error: return Problem(result.resultObject);
 
                 case ResultStatus.Success:
 
                     Debug.Assert(User.Identity is not null);
-                    Log log = new Log(0,$"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+                    Log log = new Log(0, $"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
                     await _logService.NewLogAsync(log);
 
                     // Logs and user services work with same datacontext
@@ -56,6 +56,7 @@ public class ManagerApiController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while adding user to db");
+            return base.Problem();
         }
 
         return Ok();
@@ -74,7 +75,7 @@ public class ManagerApiController : ControllerBase
             await _userService.RemoveUserById(id);
             _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
             Debug.Assert(User.Identity is not null);
-            Log log = new(0,$"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
+            Log log = new(0, $"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
             await _logService.NewLogAsync(log);
             int result = await _userService.SaveChangesAsync();
         }

@@ -28,7 +28,6 @@ CREATE TABLE upload_history(
     date timestamp
 );
 
-
 CREATE TABLE files(
     id bigint not null primary key generated always as identity,
     uuid varchar(256) not null,
@@ -36,7 +35,8 @@ CREATE TABLE files(
     size bigint,
     ext varchar(10) not null,
     owner_id bigint references users(id),
-    shared boolean
+    shared boolean,
+    is_deleted boolean
 
 );
 
