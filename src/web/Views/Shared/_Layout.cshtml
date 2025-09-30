@@ -6,7 +6,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Home Server</title>
-    <link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>
+        <!--<link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>-->
+    <link rel="stylesheet" rel="preload" href="/css/bootstrap.css"/>
     <link rel="stylesheet" href="/web.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="/css/site.css"/>
 </head>
@@ -54,9 +55,10 @@
                                 data-ajax-success="mainNavHandler"asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
                         </li>
                         }
-                        <li class="nav-item">
-                            <a class="nav-link " asp-area="">Usernamehere!!</a>
-                        </li>
+                            <a class='nav-link @(path.StartsWith("/profile")? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="#main"
+                                data-ajax-url='@Url.Action("Index","Profile")' data-ajax-method="GET"
+                                data-ajax-success="mainNavHandler"asp-controller="Profile" asp-action="Index" asp-area="">@User?.FindFirstValue(ClaimTypes.Name)
+                            </a>
                         }
                         }
                     </ul>
