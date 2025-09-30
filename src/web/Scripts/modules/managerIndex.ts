@@ -1,6 +1,7 @@
 import { navbarClickHandler } from "../manage/manageSideBar.js"
 import { deleteUserConfirmation } from "../manage/DeleteUser.js"
 import Modal from 'bootstrap/js/dist/modal.js'
+import Offcanvas from 'bootstrap/js/dist/offcanvas.js'
 
 export function init(component: HTMLElement) {
 
@@ -21,6 +22,12 @@ export function init(component: HTMLElement) {
                 deleteUserConfirmation(e, modalEl);
             }));
 
+    }
+    const offcanvas = component.querySelector("#offcanvasResponsive");
+    if (offcanvas) {
+        const offcanModel = Offcanvas.getOrCreateInstance(offcanvas);
+        component.querySelector("#transparent-button")?.addEventListener('click', () => offcanModel.toggle());
+        component.querySelector('#closeOffcanvasBtn')?.addEventListener('click', () => offcanModel.hide());
     }
     //document.querySelector('.modal-footer .btn-secondary').addEventListener("click", function(e) {
     //    document.querySelector('#modalConfirm').modal('hide');
