@@ -4,5 +4,6 @@ module.exports = {
     output: 'wwwroot/dist/bootstrap.min.css',
     safelist: {
         greedy: [/modal/],
+        greedy: [/offcanvas/],
     }
 }
