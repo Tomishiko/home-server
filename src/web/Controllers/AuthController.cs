@@ -59,7 +59,9 @@ public class AuthenticationController : ControllerBase
             {
                 Expires = DateTimeOffset.UtcNow.AddMinutes(double.Parse(_options.Value.expiration)),
                 SameSite = SameSiteMode.Strict,
-                HttpOnly = true
+                HttpOnly = true,
+                Secure = true,
+                IsEssential = true
             });
 
             if (Request.Cookies.TryGetValue("returnUrl", out string? returnUrl))

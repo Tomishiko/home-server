@@ -23,4 +23,9 @@ public class ProfileController : Controller
         };
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView(testUser) : View(testUser);
     }
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("AspNet.Id");
+        return Redirect("/");
+    }
 }

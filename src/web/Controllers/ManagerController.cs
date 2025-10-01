@@ -42,13 +42,12 @@ public class ManagerController : Controller
 
         return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10));
     }
-
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         IEnumerable<User> initialVal = _userService.GetAllJoined();
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index",initialVal);
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index", initialVal);
     }
-    [HttpGet]
+    [HttpPut]
     public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");
