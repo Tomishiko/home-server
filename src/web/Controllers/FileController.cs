@@ -1,9 +1,10 @@
+namespace web.Controllers;
+
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
-using Microsoft.AspNetCore.Authorization;
+using web.Helpers;
 using System.Diagnostics;
 
-namespace web.Controllers;
 
 [ApiController]
 [Route("api")]
@@ -19,13 +20,6 @@ public class FileController : ControllerBase
         _logger = logger;
         _fileService = fileService;
     }
-    private uint? GetUserId()
-    {
-        uint userId;
-        if (!uint.TryParse(User.FindFirst("Id")?.Value, out userId))
-            return null;
-        return userId;
-    }
     [HttpGet("video/{id}")]
     public IActionResult GetVideo(int id)
     {
@@ -39,7 +33,7 @@ public class FileController : ControllerBase
     public async Task<IActionResult> GetFile(uint id)
     {
 
-        uint? userId = GetUserId();
+        uint? userId = Utility.TryGetUserId(User);
         Console.WriteLine(userId);
 
         var fileRec = await _fileService.RequestFileAsync(userId, id);
@@ -64,7 +58,7 @@ public class FileController : ControllerBase
     [HttpDelete("file/{id}")]
     public async Task<IActionResult> DeleteFile(uint id)
     {
-        uint? userId = GetUserId();
+        uint? userId = Utility.TryGetUserId(User);
         if (userId is null) return Forbid("Unable to identify user");
         int deleteCount = await _fileService.MarkAsDeletedAsync((uint)userId, id);
         if (deleteCount == 0)

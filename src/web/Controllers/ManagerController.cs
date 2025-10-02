@@ -24,7 +24,7 @@ public class ManagerController : Controller
     public IActionResult ManageUsers([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         return Utility.IsXmlHttpRequest(requestWith)
-            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined())
+            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllUsersJoined())
             : Index(string.Empty);
     }
     // Partial log table
@@ -44,10 +44,10 @@ public class ManagerController : Controller
     }
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        IEnumerable<User> initialVal = _userService.GetAllJoined();
+        IEnumerable<User> initialVal = _userService.GetAllUsersJoined();
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index", initialVal);
     }
-    [HttpPut]
+
     public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");

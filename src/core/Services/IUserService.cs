@@ -6,7 +6,7 @@ using core.Models;
 public interface IUserService
 {
 
-    IEnumerable<User> GetAllJoined();
+    IEnumerable<User> GetAllUsersJoined();
     ///<summary>
     ///Create entity and begin tracking user.
     ///Makes a trip to DB to fetch role data,
@@ -21,4 +21,5 @@ public interface IUserService
     ///</summary>
     Task<int> SaveChangesAsync();
 
+    Task<User> GetUserInfo(uint id);
 }

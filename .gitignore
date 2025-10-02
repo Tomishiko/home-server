@@ -1,6 +1,7 @@
 src/[Bb]in/
 src/[Oo]bj/
 src/web/wwwroot/
+!src/web/wwwroot/css/site.css
 
 # Logs
 Logs/

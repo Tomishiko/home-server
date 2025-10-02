@@ -3,25 +3,26 @@ using core.Models;
 using web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using core.Services;
 
 [Authorize]
 public class ProfileController : Controller
 {
 
-    public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
-    {
+    readonly IUserService _userService;
 
-        var testUser = new ProfileViewModel
-        {
-            FullName = "Full Name",
-            Username = "user name",
-            ProfilePictureUrl = "",
-            Bio = "This is my long bio",
-            Email = "email@email.com",
-            Phone = "+38095123678",
-            Location = "why is there Location?"
-        };
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(testUser) : View(testUser);
+    public ProfileController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
+    public async Task<IActionResult> Index([FromHeader(Name = "X-Requested-With")] string requestWith)
+    {
+        uint? userId = Utility.TryGetUserId(User);
+        if (userId is null) return BadRequest();
+
+        User user = await _userService.GetUserInfo(userId.Value);
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(user) : View(user);
     }
     public IActionResult Logout()
     {
