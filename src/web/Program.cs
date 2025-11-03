@@ -11,6 +11,7 @@ public static class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder.Services.PerfomServicesCheckups(builder.Configuration);
         builder.Services.Startup(builder.Configuration);
         // Add services to the container.
         //        if (builder.Environment.IsDevelopment())
@@ -18,12 +19,12 @@ public static class Program
         //            builder.Services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
         //        }
         //        else
-        {
-        //    builder.Services.AddWebOptimizer(pipeline =>
-        //    {
-        //        pipeline.AddJavaScriptBundle("/js/site.js", "js/index/*.js");
+            //{
+            //    builder.Services.AddWebOptimizer(pipeline =>
+            //    {
+            //        pipeline.AddJavaScriptBundle("/js/site.js", "js/index/*.js");
         //    });
-        }
+        //}
         builder.Services.AddControllersWithViews();
         //builder.Services.AddScoped<Irepos>
 

@@ -30,7 +30,6 @@ public static class ServiceExtensions
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
         services.AddHostedService<BackgroundFileService>();
 
-
         JWT jwt = new();
         config.GetSection("JWT").Bind(jwt);
         services.SetAuthentication(jwt);
@@ -68,7 +67,17 @@ public static class ServiceExtensions
             });
         return services;
     }
+    public static IServiceCollection PerfomServicesCheckups(this IServiceCollection services, IConfiguration config)
+    {
+        var opt = new DbContextOptionsBuilder<ApplicationDbContext>();
+        opt.UseNpgsql(config.GetValue<string>("ConnectionString"));
+        using var db = new ApplicationDbContext(opt.Options);
+        if (!db.Database.CanConnect())
+            throw new Exception("Cannot connect to Database");
+        return services;
+    }
 }
+
 
 public static class ConfigurationExtensions
 {
