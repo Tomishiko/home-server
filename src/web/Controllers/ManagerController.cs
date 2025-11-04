@@ -24,31 +24,30 @@ public class ManagerController : Controller
     public IActionResult ManageUsers([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         return Utility.IsXmlHttpRequest(requestWith)
-            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllJoined())
+            ? PartialView("/Views/Partials/_ManageUsers.cshtml", _userService.GetAllUsersJoined())
             : Index(string.Empty);
     }
     // Partial log table
     public IActionResult ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-
-        Console.WriteLine("hello from controller");
+        string? timeZone = Request.Cookies["timeZone"];
         return Utility.IsXmlHttpRequest(requestWith)
-            ? PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10))
+            ? PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10, timeZone))
             : Index(string.Empty);// return Manager index page fallback
     }
 
     public IActionResult LogsPartialTable([FromQuery] uint lastItem)
     {
-
-        return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10));
+        string? timeZone = Request.Cookies["timeZone"];
+        return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10, timeZone));
     }
 
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        IEnumerable<User> initialVal = _userService.GetAllJoined();
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index",initialVal);
+        IEnumerable<User> initialVal = _userService.GetAllUsersJoined();
+        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index", initialVal);
     }
-    [HttpGet]
+
     public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");

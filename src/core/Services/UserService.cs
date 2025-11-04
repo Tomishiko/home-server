@@ -15,12 +15,21 @@ public class UserService : BaseDataService, IUserService
     {
         _hasher = hasher;
     }
+    private UserEntity CreateEntity(User user)
+    {
+        var hashed = _hasher.HashPassword(user, user.Password);
+        return new UserEntity()
+        {
+            Uname = user.Uname,
+            Password = hashed
+        };
+    }
 
-    public IEnumerable<User> GetAllJoined()
+    public IEnumerable<User> GetAllUsersJoined()
     {
         return _context.Users
                 .Include("Role")
-                .Select(u => new User(u.Uname, string.Empty, u.Role.Name, u.Id));
+                .Select(u => User.FromEntity(u));
     }
 
     public async Task<Result<string>> AddUserAsync(User user)
@@ -65,13 +74,10 @@ public class UserService : BaseDataService, IUserService
         _context.Users.Remove(entity);
     }
 
-    private UserEntity CreateEntity(User user)
-    {
-        var hashed = _hasher.HashPassword(user, user.Password);
-        return new UserEntity()
-        {
-            Uname = user.Uname,
-            Password = hashed
-        };
-    }
+
+    public Task<User> GetUserInfo(uint id) =>
+        _context.Users.Where(u => u.Id == id)
+                      .Include("Role")
+                      .Select(u => User.FromEntity(u))
+                      .SingleAsync();
 }

@@ -31,9 +31,6 @@ html {
   min-height: 100%;
 }
 
-body {
-  margin-bottom: 60px;
-}
 .list-group{
   max-height: 50%;
   margin-bottom: 10px;

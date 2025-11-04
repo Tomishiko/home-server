@@ -31,6 +31,9 @@ window.addEventListener('popstate', async function(e) {
 // initial module load
 document.addEventListener('DOMContentLoaded', async () => {
     const content = document.getElementById("main");
+    const utcOffset = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.cookie = `utcOffset=${utcOffset}`;
+
     window.addAjaxListeners(document.body);
     await activateModules(content);
 

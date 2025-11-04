@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace web.Helpers;
 
@@ -45,5 +46,12 @@ public static class Utility
     {
         if (requestedWith == "XMLHttpRequest") return true;
         else return false;
+    }
+    public static uint? TryGetUserId(ClaimsPrincipal claimsPrincipal){
+
+        uint userId;
+        if (!uint.TryParse(claimsPrincipal.FindFirstValue("Id"), out userId))
+            return null;
+        return userId;
     }
 }
