@@ -10,6 +10,7 @@ using web.Services;
 using Microsoft.EntityFrameworkCore;
 using core.Services;
 using core.Models;
+using web.Helpers;
 
 public static class ServiceExtensions
 {
@@ -20,8 +21,10 @@ public static class ServiceExtensions
         services.AddSingleton<ICoreFS, CoreFS>();
         services.AddSingleton<JWTGen>();
         services.AddTransient<IMpvService, Mpv>();
+        services.AddTransient<FileUploadHelperService>();
         services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(config.GetValue<string>("ConnectionString")));
+        services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();

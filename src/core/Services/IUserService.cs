@@ -1,7 +1,7 @@
+using core.Models;
+
 namespace core.Services;
 
-using core.Model;
-using core.Models;
 
 public interface IUserService
 {

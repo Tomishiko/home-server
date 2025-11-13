@@ -1,31 +1,37 @@
-﻿namespace core.Services;
-
-using System.IO;
+﻿using System.IO;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using core.Models;
+
+namespace core.Services;
+
 
 /// <summary>
 /// Represents the core file system service that manages hosted files.
-/// Movies and index cached
 /// </summary>
 public class CoreFS : ICoreFS
 {
-    private const string filesRelativePath = @"wwwroot/files";
-    private const string moviesRelativePath = @"wwwroot/files/movies";
-    private readonly TimeSpan cacheTime = TimeSpan.FromMinutes(30);
-    private readonly DirectoryInfo files = new DirectoryInfo(filesRelativePath);
-    private readonly DirectoryInfo movies = new DirectoryInfo(moviesRelativePath);
+    private readonly string filesRelativePath;
+    private readonly string moviesRelativePath;
+    private readonly TimeSpan _cacheTime = TimeSpan.FromMinutes(30);
+    private readonly DirectoryInfo _files;
     private readonly IMemoryCache _memCache;
-    private DateTime lastFileUpdate;
-    private DateTime lastMovieUpdate;
-    private FileSystemWatcher _indexWatcher = new FileSystemWatcher(filesRelativePath);
-    private FileSystemWatcher _movieWatcher = new FileSystemWatcher(moviesRelativePath);
+    private DateTime _lastFileUpdate;
+    private DateTime _lastMovieUpdate;
+    private FileSystemWatcher _indexWatcher;
+    private FileSystemWatcher _movieWatcher;
 
 
-    public CoreFS(IMemoryCache memCache)
+    public CoreFS(IMemoryCache memCache, IOptions<FileUploadOptions> uploadOptions)
     {
-        this.lastFileUpdate = files.LastWriteTime;
-        this.lastMovieUpdate = movies.LastWriteTime;
-        this._memCache = memCache;
+        var cfg = uploadOptions.Value;
+        filesRelativePath = cfg.StoragePath;
+
+        _files = new DirectoryInfo(filesRelativePath);
+        _indexWatcher = new FileSystemWatcher(filesRelativePath);
+
+        _lastFileUpdate = _files.LastWriteTime;
+        _memCache = memCache;
         SetWatchers();
     }
 
@@ -34,13 +40,6 @@ public class CoreFS : ICoreFS
         _indexWatcher.EnableRaisingEvents = true;
         _indexWatcher.NotifyFilter = NotifyFilters.LastWrite;
         _indexWatcher.Changed += OnFilesChanged;
-        _movieWatcher.NotifyFilter = NotifyFilters.Size;
-
-
-        _movieWatcher.EnableRaisingEvents = true;
-        _movieWatcher.NotifyFilter = NotifyFilters.LastWrite;
-        _movieWatcher.NotifyFilter = NotifyFilters.Size;
-        //_movieWatcher.Changed += OnFilesChanged;
 
     }
 
@@ -50,7 +49,7 @@ public class CoreFS : ICoreFS
         {
             var path = watcher.Path;
             if (_memCache.TryGetValue(path, out _))
-                _memCache.Set(path, GetElements(path), cacheTime);
+                _memCache.Set(path, GetElements(path), _cacheTime);
         }
 
 
@@ -74,7 +73,7 @@ public class CoreFS : ICoreFS
             if (!_memCache.TryGetValue<FileInfo[]>(filesRelativePath, out var temp))
             {
                 temp = GetElements(filesRelativePath);
-                _memCache.Set(filesRelativePath, temp, cacheTime);
+                _memCache.Set(filesRelativePath, temp, _cacheTime);
             }
             return temp;
         }
@@ -88,7 +87,7 @@ public class CoreFS : ICoreFS
             if (!_memCache.TryGetValue<FileInfo[]>(moviesRelativePath, out var temp))
             {
                 temp = GetElements(moviesRelativePath);
-                _memCache.Set(moviesRelativePath, temp, cacheTime);
+                _memCache.Set(moviesRelativePath, temp, _cacheTime);
             }
             return temp;
         }
@@ -96,7 +95,7 @@ public class CoreFS : ICoreFS
 
     public FileStream GetFileStream(string fileName)
     {
-        return new FileStream($"{files}/{fileName}", FileMode.Open);
+        return new FileStream($"{_files}/{fileName}", FileMode.Open);
     }
 
 }

@@ -52,5 +52,9 @@ export function init(component) {
         console.error(err, file);
         alert(`Unexpected error when uploading file ${file.name}`);
     });
+    uploader.events.on('error', (err: any) => {
+        console.error(err);
+        alert(`${err}`);
+    });
     setContext();
 }

@@ -1,11 +1,11 @@
-namespace core.Services;
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using core.Models;
 using Data.Models;
 using Data.Core;
-using core.Model;
+
+namespace core.Services;
+
 
 public class UserService : BaseDataService, IUserService
 {

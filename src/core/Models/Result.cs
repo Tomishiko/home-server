@@ -1,4 +1,4 @@
-namespace core.Model;
+namespace core.Models;
 
 public enum ResultStatus{
     Success,

@@ -1,12 +1,12 @@
-namespace web.Controllers;
-
 using core.Models;
 using core.Services;
 using System.Diagnostics;
 using core.utils.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using core.Model;
+
+namespace web.Controllers;
+
 
 [ApiController]
 [Authorize(Roles = "manager")]

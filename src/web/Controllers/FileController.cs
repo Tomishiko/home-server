@@ -13,35 +13,25 @@ public class FileController : ControllerBase
     private readonly ICoreFS _coreFs;
     private readonly ILogger<FileController> _logger;
     private readonly IFileService _fileService;
+    private readonly FileUploadHelperService _upload;
 
-    public FileController(ICoreFS coreFS, ILogger<FileController> logger, IFileService fileService)
+    public FileController(ICoreFS coreFS, ILogger<FileController> logger, IFileService fileService, FileUploadHelperService upload)
     {
         _coreFs = coreFS;
         _logger = logger;
         _fileService = fileService;
-    }
-    [HttpGet("video/{id}")]
-    public IActionResult GetVideo(int id)
-    {
-        var videos = _coreFs.GetMovies;
-        var file = videos.ToArray()[id];
-        var fs = file.OpenRead();
-        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: file.Name);
+        _upload = upload;
     }
     [HttpGet("file/{id}")]
-    //[Authorize]
     public async Task<IActionResult> GetFile(uint id)
     {
 
         uint? userId = Utility.TryGetUserId(User);
-        Console.WriteLine(userId);
 
         var fileRec = await _fileService.RequestFileAsync(userId, id);
         if (fileRec is null)
             return Forbid();
-
-        var fs = _coreFs.GetFileStream(fileRec.UUID);
-        return File(fs, contentType: "application/octet-stream", enableRangeProcessing: true, fileDownloadName: $"{fileRec.Name}.{fileRec.Ext}");
+        return _upload.ServeFile(this, fileRec);
     }
     [HttpGet("pfile/{id}")]
     public async Task<IActionResult> PrintFile(int id, [FromQuery] string printParams)

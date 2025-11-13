@@ -30,13 +30,13 @@ public class FileService : BaseDataService, IFileService
     ///</summary>
     ///<exception cref="ArgumentNullException"> Throws if shared is false
     ///and owner id is not provided or null</exception>
-    private IAsyncEnumerable<File> GetFiles(bool shared, uint? owner_id = null)
+    private IAsyncEnumerable<FileMeta> GetFiles(bool shared, uint? owner_id = null)
     {
         if (shared)
             return _context.Files
                 .Include("Owner")
                 .Where(f => f.Public && !f.IsDeleted)
-                .Select(f => new File(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
+                .Select(f => new FileMeta(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
                 .AsAsyncEnumerable();
         else
         {
@@ -44,7 +44,7 @@ public class FileService : BaseDataService, IFileService
             return _context.Files
                 .Include("Owner")
                 .Where(f => f.Private && f.owner_id == owner_id && !f.IsDeleted)
-                .Select(f => new File(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
+                .Select(f => new FileMeta(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
                 .AsAsyncEnumerable();
 
         }
@@ -54,23 +54,23 @@ public class FileService : BaseDataService, IFileService
     {
         return _context.Files.Where(f => f.Id == id && !f.IsDeleted).SingleAsync();
     }
-    public IAsyncEnumerable<File> GetSharedFilesAsync()
+    public IAsyncEnumerable<FileMeta> GetSharedFilesAsync()
     {
         return GetFiles(true);
     }
 
-    public IAsyncEnumerable<File> GetPrivateFilesAsync(uint owner_id)
+    public IAsyncEnumerable<FileMeta> GetPrivateFilesAsync(uint owner_id)
     {
         return GetFiles(false, owner_id);
     }
-    public async Task<File?> RequestFileAsync(uint? userId, uint fileId)
+    public async Task<FileMeta?> RequestFileAsync(uint? userId, uint fileId)
     {
         var fileInfo = await GetFile(fileId);
 
         if (fileInfo.Private && (userId == null || fileInfo.owner_id != userId))
             return null;
 
-        return new File(fileInfo.UUID, fileInfo.Name, fileInfo.Size, fileInfo.Ext);
+        return new FileMeta(fileInfo.UUID, fileInfo.Name, fileInfo.Size, fileInfo.Ext);
     }
 
     ///<summary>

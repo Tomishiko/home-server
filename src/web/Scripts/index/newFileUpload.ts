@@ -11,7 +11,9 @@ export type UploaderConfig = {
 
 type HandshakeResponse = {
     uid: string;
-    uploadedParts?: number[]; // optional array of already-received part indexes (for resume)
+    uploadedParts?: number[]; // optional array of already-received part indexes
+    isSuccess: boolean;
+    description?: string;
 };
 
 export type ProgressEventPayload = {
@@ -230,6 +232,10 @@ export class Uploader {
     async uploadFile(file: File) {
         // handshake: ask server for uid and optionally existing parts (resume)
         const handshakeResp = await this.handshake(file);
+        if (!handshakeResp.isSuccess) {
+            this.events.emit('error', handshakeResp.description);
+            return;
+        }
         const task = new FileUploadTask(file, handshakeResp.uid, handshakeResp.uploadedParts, this.config);
         // propagate per-file events to global events
         task.events.on('progress', (payload: ProgressEventPayload) => {
@@ -268,16 +274,17 @@ export class Uploader {
         });
 
         if (!resp.ok) {
-            throw new Error(`Handshake failed: ${resp.status}`);
+            //throw new Error(`Handshake failed: ${resp.status}`);
+            return { uid: '', isSuccess: false, description: resp.statusText };
         }
         // expect JSON { uid: string, uploadedParts?: number[] } — fallback to text uid
         const contentType = resp.headers.get('content-type') ?? '';
         if (contentType.includes('application/json')) {
             const json = await resp.json();
-            return { uid: json.uid, uploadedParts: json.uploadedParts ?? [] };
+            return { uid: json.uid, uploadedParts: json.uploadedParts ?? [], isSuccess: true };
         } else {
             const text = await resp.text();
-            return { uid: text, uploadedParts: [] };
+            return { uid: text, uploadedParts: [], isSuccess: true };
         }
     }
 
