@@ -26,13 +26,6 @@
                             <a class='nav-link @(path =="/" ? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="main"
                                 data-ajax-url='@Url.Action("Index","Index")' data-ajax-method="GET"
                                 data-ajax-success="window.mainNavHandler" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
-                        <li class="nav-item">
-                            <a class='nav-link @(path.StartsWith("/movies")? "active":"")' asp-area="" asp-controller="Pages" asp-action="Movies">Movies</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Pages" asp-action="Tv">TV</a>
-                        </li>
                         @{
 
                         if (!User.Identity.IsAuthenticated)
