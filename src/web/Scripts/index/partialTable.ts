@@ -8,6 +8,7 @@ export function setContext() {
     if (!menu || !table) return;
     let currntRowId: number = 0;
     table.addEventListener("contextmenu", (e: MouseEvent) => {
+        if(e.ctrlKey) return;
         const row = (<HTMLElement>e.target).closest("tr");
         if (!row) return;
         e.preventDefault();

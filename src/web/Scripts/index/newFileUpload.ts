@@ -16,6 +16,13 @@ type HandshakeResponse = {
     description?: string;
 };
 
+class AuthoriztionError extends Error {
+
+    constructor(msg: string) {
+        super(msg);
+    }
+}
+
 export type ProgressEventPayload = {
     file: File;
     uid: string;
@@ -224,6 +231,10 @@ export class Uploader {
             try {
                 await this.uploadFile(f);
             } catch (err) {
+                if (err instanceof AuthoriztionError) {
+                    this.events.emit('error', err);
+                    return;
+                }
                 this.events.emit('file-error', f, err);
             }
         }
@@ -233,7 +244,7 @@ export class Uploader {
         // handshake: ask server for uid and optionally existing parts (resume)
         const handshakeResp = await this.handshake(file);
         if (!handshakeResp.isSuccess) {
-            this.events.emit('error', handshakeResp.description);
+            this.events.emit('error', handshakeResp.description, file);
             return;
         }
         const task = new FileUploadTask(file, handshakeResp.uid, handshakeResp.uploadedParts, this.config);
@@ -274,7 +285,9 @@ export class Uploader {
         });
 
         if (!resp.ok) {
-            //throw new Error(`Handshake failed: ${resp.status}`);
+            if (resp.status == 401)
+                throw new AuthoriztionError(`Unathorized ${resp.status}`);
+
             return { uid: '', isSuccess: false, description: resp.statusText };
         }
         // expect JSON { uid: string, uploadedParts?: number[] } — fallback to text uid
