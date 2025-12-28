@@ -7,6 +7,7 @@ using Data.Core;
 namespace core.Services;
 
 
+/// <inheritdoc />
 public class UserService : BaseDataService, IUserService
 {
     IPasswordHasher<User> _hasher;
@@ -32,6 +33,7 @@ public class UserService : BaseDataService, IUserService
                 .Select(u => User.FromEntity(u));
     }
 
+    /// <inheritdoc />
     public async Task<Result<string>> AddUserAsync(User user)
     {
         ArgumentNullException.ThrowIfNull(user);
@@ -42,7 +44,7 @@ public class UserService : BaseDataService, IUserService
             return new Result<string>(ResultStatus.Fail, $"Username \"{user.Uname}\" is already taken");
         }
         var roleId = await _context.Roles
-                                    .Where(r => r.Name == user.Role)
+                                    .Where(r => r.Name == (user.Role ?? "user")) //It is what it is
                                     .Select(r => r.Id)
                                     .SingleAsync();
 

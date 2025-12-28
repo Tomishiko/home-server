@@ -4,6 +4,7 @@ using System.Diagnostics;
 using core.utils.extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace web.Controllers;
 
@@ -16,13 +17,18 @@ public class ManagerApiController : ControllerBase
     private ILogger<ManagerApiController> _logger;
     private IUserService _userService;
     private ILogService _logService;
+    private readonly InvitesService _invites;
 
 
-    public ManagerApiController(ILogger<ManagerApiController> logger, IUserService userService, ILogService logService)
+    public ManagerApiController(ILogger<ManagerApiController> logger,
+                                IUserService userService,
+                                ILogService logService,
+                                InvitesService invites)
     {
         _logger = logger;
         _userService = userService;
         _logService = logService;
+        _invites = invites;
     }
     [HttpPut("user")]
     public async Task<IActionResult> AddUser([FromBody] User user)
@@ -44,7 +50,7 @@ public class ManagerApiController : ControllerBase
 
                 case ResultStatus.Success:
 
-                    Debug.Assert(User.Identity is not null);
+                    Debug.Assert(User.Identity?.Name is not null);
                     Log log = new Log(0, $"Added new user {user}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
                     await _logService.NewLogAsync(log);
 
@@ -88,5 +94,13 @@ public class ManagerApiController : ControllerBase
 
         // This is temporary, fix this
         return Ok();
+    }
+    [HttpGet("geninvite")]
+    public async Task<IActionResult> GetNewInviteToken()
+    {
+        Debug.Assert(User.Identity?.Name is not null);
+        byte[] token = await _invites.GenNewInvite(User.Identity.Name);
+
+        return Ok(WebEncoders.Base64UrlEncode(token));
     }
 }

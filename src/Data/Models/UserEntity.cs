@@ -12,7 +12,7 @@ public class UserEntity : BaseEntity
     public string Password { get; set; }
 
     [ForeignKey(nameof(Role))]
-    public uint? role_id;
+    public uint? role_id { get; set; }
 
     public RolesEntity? Role { get; set; }
 }

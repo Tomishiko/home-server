@@ -1,5 +1,3 @@
-import { post } from "jquery"
-
 export interface User {
     uname: string,
     password: string,
