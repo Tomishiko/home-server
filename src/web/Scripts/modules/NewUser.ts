@@ -14,7 +14,7 @@ export async function init(component) {
                 form.elements.email.value);
 
             let modal = document.getElementById("modalNotification");
-            if(!modal)
+            if (!modal)
                 return
             modal.getElementsByTagName('p')[0].innerHTML = msg;
 
@@ -33,15 +33,15 @@ export async function init(component) {
     });
 
 }
-async function NewUser(username: string, password: string, role: string | null, email: string | null): Promise<[boolean, string]> {
+async function NewUser(username: string, password: string, role: number | null, email: string | null): Promise<[boolean, string]> {
     // TODO: add field validations
     try {
 
         let result = await PostUser({
-            uname: username,
-            password: password,
-            role: role?.toLowerCase(),
-            email: email
+            Username: username,
+            Password: password,
+            Role: role,
+            Email: email
         });
         if (result.ok) {
             let msg = `User ${username} succesfully added to the system!`;
@@ -54,6 +54,6 @@ async function NewUser(username: string, password: string, role: string | null, 
         }
     } catch (ex) {
         console.error(ex);
-        return [false,""];
+        return [false, ""];
     }
 }

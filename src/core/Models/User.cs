@@ -18,8 +18,8 @@ using Data.Models;
 public record User(string? Uname, string? Password = null, string? Role = null, uint? Id = null, string? Email = null)
 {
     static public User FromEntity(UserEntity entity) => new User(entity.Uname,
-                                        Role: entity.Role?.Name ?? "",
-                                        Email: "TEST@EMAIL.COM",
+                                        Role: entity.Role?.Name ?? string.Empty,
+                                        Email: entity.Email ?? string.Empty,
                                         Id: entity.Id);
 }
 //

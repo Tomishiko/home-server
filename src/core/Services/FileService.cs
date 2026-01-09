@@ -1,4 +1,3 @@
-namespace core.Services;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -6,6 +5,7 @@ using core.Models;
 using Data.Core;
 using System.Diagnostics;
 
+namespace core.Services;
 
 public class FileService : BaseDataService, IFileService
 {

@@ -50,6 +50,9 @@ public class ManagerController : Controller
 
     public IActionResult AddUser([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView("AddUser") : View("AddUser");
+        ViewData["isInvite"] = false;
+        return Utility.IsXmlHttpRequest(requestWith)
+            ? PartialView("~/Views/Shared/NewUserPage.cshtml")
+            : View("~/Views/Shared/NewUserPage.cshtml");
     }
 }

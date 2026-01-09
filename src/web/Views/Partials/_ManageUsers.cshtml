@@ -23,6 +23,7 @@
             <th>ID</th>
             <th>Username</th>
             <th>Role</th>
+            <th>Email</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -33,6 +34,7 @@
                 <td>@user.Id</td>
                 <td>@user.Uname</td>
                 <td>@user.Role</td>
+                <td>@user.Email</td>
                 <td>
                     <a href="@Url.Action("Edit", "Manager", new { id = user.Id })" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
                     <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id, uname = user.Uname })" data-tag='@user.Uname' class="btn btn-delete btn-dark btn-outline-danger">Delete</a>

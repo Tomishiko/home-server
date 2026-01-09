@@ -23,13 +23,15 @@ public class LogService : BaseDataService, ILogService
     public async Task NewLogAsync(Log log)
     {
         var time = log.Time.ToUniversalTime();
-        await _context.Logs.AddAsync(new LogsEntity
+        _context.Logs.Add(new LogsEntity
         {
             Uname = log.Uname,
             Time = time,
             Event = log.Event
         });
+        await SaveChangesAsync();
     }
+
     public IAsyncEnumerable<Log> GetPage(uint last, int perPage, string? timeZone)
     {
 

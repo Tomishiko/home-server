@@ -20,13 +20,18 @@ public class JWTGen
     }
     public string GenerateNewToken(User user)
     {
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Uname);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Role);
+        ArgumentNullException.ThrowIfNull(user.Id);
+
+
         var jwt = _jwtOptions.Value;
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         Debug.Assert(user.Role is not null);
-        IEnumerable<Claim> claims = [new Claim(ClaimTypes.Name,user.Uname),
+        Claim[] claims = [new Claim(ClaimTypes.Name,user.Uname),
                                      new Claim(ClaimTypes.Role,user.Role),
-                                     new Claim("Id",user.Id.ToString())];
+                                     new Claim("Id",user.Id.ToString()!)];
         //if(username == "admin")
         //{
         //    claims.Append(new Claim("role", "manager"));

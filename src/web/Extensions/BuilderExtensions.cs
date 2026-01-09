@@ -22,6 +22,7 @@ public static class ServiceExtensions
         services.AddSingleton<JWTGen>();
         services.AddTransient<IMpvService, Mpv>();
         services.AddTransient<FileUploadHelperService>();
+        services.AddTransient<InvitesService>();
         services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(config.GetValue<string>("ConnectionString")));
         services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));

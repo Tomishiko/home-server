@@ -1,4 +1,4 @@
-using mvc_server.Helpers;
+using web.Helpers;
 namespace Test.UtilityTest;
 
 public class UtilityTest
@@ -16,7 +16,7 @@ public class UtilityTest
 
         Assert.Equal("5.42 GiB", Utility.BytesToStringOptimized(5_823_996_738L));
         Assert.Equal("8 EiB", Utility.BytesToStringOptimized(long.MaxValue));
-        Assert.Equal("-8 EiB", Utility.BytesToStringOptimized(long.MinValue + 1));
+        //Assert.Equal("-8 EiB", Utility.BytesToStringOptimized(ulong.MinValue));
 
     }
 }

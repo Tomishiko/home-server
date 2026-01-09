@@ -3,26 +3,23 @@ using Microsoft.EntityFrameworkCore;
 using core.Models;
 using Data.Models;
 using Data.Core;
+using Microsoft.Extensions.Logging;
 
 namespace core.Services;
 
 
+/// <inheritdoc />
 public class UserService : BaseDataService, IUserService
 {
-    IPasswordHasher<User> _hasher;
+    private readonly IPasswordHasher<User> _hasher;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(IPasswordHasher<User> hasher, ApplicationDbContext context) : base(context)
+    public UserService(IPasswordHasher<User> hasher,
+                       ApplicationDbContext context,
+                       ILogger<UserService> logger) : base(context)
     {
         _hasher = hasher;
-    }
-    private UserEntity CreateEntity(User user)
-    {
-        var hashed = _hasher.HashPassword(user, user.Password);
-        return new UserEntity()
-        {
-            Uname = user.Uname,
-            Password = hashed
-        };
+        _logger = logger;
     }
 
     public IEnumerable<User> GetAllUsersJoined()
@@ -32,52 +29,83 @@ public class UserService : BaseDataService, IUserService
                 .Select(u => User.FromEntity(u));
     }
 
-    public async Task<Result<string>> AddUserAsync(User user)
+    public Task<User?> GetUserInfo(uint id) =>
+        _context.Users.Where(u => u.Id == id)
+                      .Include("Role")
+                      .Select(u => User.FromEntity(u))
+                      .SingleOrDefaultAsync();
+
+    public async Task<Result<string>> AddUserAsync(string uname,
+                                                   string password,
+                                                   string initiatorUname,
+                                                   string? email = null,
+                                                   uint? role = null)
     {
-        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNullOrEmpty(uname, nameof(uname));
+        ArgumentNullException.ThrowIfNullOrEmpty(password, nameof(password));
+        ArgumentNullException.ThrowIfNullOrEmpty(initiatorUname,
+                                             nameof(initiatorUname));
 
-        var userEntity = CreateEntity(user);
-        if (await _context.Users.AnyAsync(u => u.Uname == user.Uname))
+
+        _logger.LogInformation($"Request to create new user from {initiatorUname}");
+
+        bool unameExists = await _context.Users.AnyAsync(u => u.Uname == uname);
+        if (unameExists)
         {
-            return new Result<string>(ResultStatus.Fail, $"Username \"{user.Uname}\" is already taken");
+            return new Result<string>(ResultStatus.Fail,
+                                      $"Username \"{uname}\" is already taken");
         }
-        var roleId = await _context.Roles
-                                    .Where(r => r.Name == user.Role)
-                                    .Select(r => r.Id)
-                                    .SingleAsync();
 
+        uint? roleId = await _context.Roles
+                                    .Where(r => r.Id == (role ?? (uint)Roles.Default)) //It is what it is
+                                    .Select(r => (uint?)r.Id)
+                                    .SingleOrDefaultAsync();
+        if (roleId is null)
+        {
+            return new Result<string>(ResultStatus.Fail,
+                                      $"Provided role does not exist");
+        }
 
-        userEntity.role_id = roleId;
+        var userEntity = CreateUserEntity(
+                            new User(uname, password, Email: email),
+                            (uint)roleId);
+        var logEntity = new LogsEntity
+        {
+            Time = DateTime.UtcNow,
+            Uname = initiatorUname,
+            Event = $"New user added {userEntity.Uname}"
+        };
+
         //TODO: fix reporting the count of changes
-        await _context.Users.AddAsync(userEntity);
+        _context.Logs.Add(logEntity);
+        _context.Users.Add(userEntity);
+        await SaveChangesAsync();
+
         return new Result<string>(ResultStatus.Success, null);
     }
 
     public async Task RemoveUserById(uint id)
     {
-        //var userEntity = await _context.Users.FindAsync(id);
-        //if (userEntity == null)
-        //    throw new ArgumentOutOfRangeException(nameof(id), "No user found with provided Id");
-        await _context.Files.Where(f => f.owner_id == id)
-            .ForEachAsync(f =>
-            {
-                if (f.Private)
-                    _context.Remove(f);
-                else
-                {
-                    f.owner_id = null;
-                    _context.Update(f);
-                }
-            });
+        // Remove file link
+        await _context.Files
+            .Where(f => f.owner_id == id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(f => f.owner_id,
+                                                               (uint?)null));
 
-        var entity = new UserEntity { Id = id };
-        _context.Users.Remove(entity);
+        await _context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
+    }
+
+    private UserEntity CreateUserEntity(User user, uint roleId)
+    {
+        var hashed = _hasher.HashPassword(user, user.Password!);
+        return new UserEntity()
+        {
+            Uname = user.Uname!,
+            Password = hashed,
+            Email = user.Email,
+            role_id = roleId
+        };
     }
 
 
-    public Task<User> GetUserInfo(uint id) =>
-        _context.Users.Where(u => u.Id == id)
-                      .Include("Role")
-                      .Select(u => User.FromEntity(u))
-                      .SingleAsync();
 }

@@ -1,26 +1,3 @@
-<style>
-    #createBtn {
-        --bs-btn-border-color: #19be72;
-        --bs-btn-color: #19be72;
-    }
-</style>
-
-<div class="modal fade" id="modalNotification" data-module="NewUser" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm action</h5>
-            </div>
-            <div class="modal-body">
-                <p></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="container mt-5" data-module="newUser">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -53,8 +30,8 @@
                             <label for="role" class="form-label">Role</label>
                             <select class="form-select" id="role" name="role" required>
                                 <option value="">-- Select Role --</option>
-                                <option value="Admin">Admin</option>
-                                <option value="User">User</option>
+                                <option value="2">Manager</option>
+                                <option value="1">User</option>
                             </select>
                             <div class="invalid-feedback">Role is required!</div>
                         </div>

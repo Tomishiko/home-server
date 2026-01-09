@@ -1,13 +1,15 @@
 insert into roles(name)
 values ('user'), ('manager');
 
-insert into users(uname,password,role_id)
+insert into users(uname,password,email,role_id)
 values
-    ('user1','sdfjn1',1),
-    ('user2','qwety',1),
-    ('user3','qwetyasd',1),
-    ('admin','AQAAAAIAAYagAAAAEPePPB2Ye/oMAFYr02HulXU8xnQjBGC76OJw1ldGcPYIGmYPz3nCM/a+vS6ggqawHA==',2), -- "admin" "admin"
-    ('user4','qwesdfatyasd',1);
+    ('user1','sdfjn1','test@email.com',1),
+    ('user2','qwety','test@email.com',1),
+    ('user3','qwetyasd','test@email.com',1),
+    ('user4','qwesdfatyasd','test@email.com',1),
+    -- ↑ these are for testing only
+
+    ('admin','AQAAAAIAAYagAAAAEPePPB2Ye/oMAFYr02HulXU8xnQjBGC76OJw1ldGcPYIGmYPz3nCM/a+vS6ggqawHA==','admin@email.com',2); -- "admin" "admin"
 
 
 

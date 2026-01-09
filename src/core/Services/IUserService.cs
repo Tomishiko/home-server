@@ -12,7 +12,11 @@ public interface IUserService
     ///Makes a trip to DB to fetch role data,
     ///dont use to consecutively add users
     ///</summary>
-    Task<Result<string>> AddUserAsync(User user);
+    Task<Result<string>> AddUserAsync(string uname,
+                                                   string password,
+                                                   string initiatorUname,
+                                                   string? email = null,
+                                                   uint? role = null);
 
     Task RemoveUserById(uint id);
 
@@ -21,5 +25,5 @@ public interface IUserService
     ///</summary>
     Task<int> SaveChangesAsync();
 
-    Task<User> GetUserInfo(uint id);
+    Task<User?> GetUserInfo(uint id);
 }
