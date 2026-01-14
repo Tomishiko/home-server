@@ -30,9 +30,9 @@ CREATE TABLE files(
     name varchar(255) not null,
     size bigint,
     ext varchar(10) not null,
-    owner_id bigint references users(id),
+    owner_id bigint references users(id) on delete set NULL,
     shared boolean,
     is_deleted boolean
 
 );
-
+CREATE INDEX idx_files_owner_id ON files(owner_id);

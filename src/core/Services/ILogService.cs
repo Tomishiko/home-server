@@ -1,10 +1,11 @@
 namespace core.Services;
+
+using System.Collections.Immutable;
 using core.Models;
 
-public interface ILogService
+public interface ILogService : IBaseDataService
 {
     Task NewLogAsync(Log log);
     IAsyncEnumerable<Log> GetAll(string? timeZone);
-    IAsyncEnumerable<Log> GetPage(uint last, int perPage, string? timeZone);
-    Task<int> SaveChangesAsync();
+    Task<ImmutableArray<Log>> GetPage(int perPage, string? timeZone, uint lastId = default, DateTime lastTime = default);
 }

@@ -1,7 +1,7 @@
 namespace core.Services;
 using Data.Core;
 
-public class BaseDataService
+public class BaseDataService : IBaseDataService
 {
     protected readonly ApplicationDbContext _context;
 
@@ -11,7 +11,7 @@ public class BaseDataService
     }
     public virtual Task<int> SaveChangesAsync()
     {
-       return  _context.SaveChangesAsync();
+        return _context.SaveChangesAsync();
 
     }
 }

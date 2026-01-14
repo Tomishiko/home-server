@@ -1,4 +1,5 @@
-@model IEnumerable<core.Models.Log>
+@using System.Collections.Immutable;
+@model ImmutableArray<core.Models.Log>
 <div data-module="logs">
     <h2>Logs Table</h2>
     <table class="table table-bordered table-striped">
@@ -10,10 +11,12 @@
             </tr>
         </thead>
         <tbody id="logTable">
-            @await Html.PartialAsync("/Views/Partials/_LogsTableBody.cshtml",Model)
+                @await Html.PartialAsync("/Views/Partials/_LogsTableBody.cshtml",Model)
         </tbody>
     </table>
 
     <button id="loadmoreBtn" class="btn btn-dark position-relative start-50 translate-middle border-secondary"
-        style="margin-top: 24px;">Load more</button>
+        style="margin-top: 24px;" data-cursor='@ViewData["Cursor"]'>Load more</button>
+
+
 </div>

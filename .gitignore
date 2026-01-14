@@ -128,3 +128,4 @@ deploy_local.sh
 *.http
 *todo*
 node_modules
+managerapicontrollerreview

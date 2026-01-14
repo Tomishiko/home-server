@@ -2,8 +2,12 @@ namespace web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
+using core.utils.extensions;
 using core.Models;
 using web.Helpers;
+using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Collections.Immutable;
 
 [Authorize(Roles = "manager")]
 public class ManagerController : Controller
@@ -28,18 +32,58 @@ public class ManagerController : Controller
             : Index(string.Empty);
     }
     // Partial log table
-    public IActionResult ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
+    public async Task<IActionResult> ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
         string? timeZone = Request.Cookies["timeZone"];
+        ImmutableArray<Log> data = await _logService.GetPage(10, timeZone);
+        if (data.Length == 10)
+        {
+            Log last = data[data.Length - 1];
+            var cursor = WebEncoders.Base64UrlEncode(
+                    Encoding.UTF8.GetBytes($"{last.Id}|{last.Time:O}"));
+
+            ViewData["Cursor"] = cursor;
+        }
+
         return Utility.IsXmlHttpRequest(requestWith)
-            ? PartialView("/Views/Partials/_ManageLogs.cshtml", _logService.GetPage(0, 10, timeZone))
+            ? PartialView("/Views/Partials/_ManageLogs.cshtml", data)
             : Index(string.Empty);// return Manager index page fallback
     }
 
-    public IActionResult LogsPartialTable([FromQuery] uint lastItem)
+    public async Task<IActionResult> LogsPartialTable([FromQuery] string pagination)
     {
+        if (pagination.IsNullOrEmpty())
+        {
+            return BadRequest();
+        }
+        var decoded = Encoding.UTF8.GetString(
+                WebEncoders.Base64UrlDecode(pagination));
+        var parts = decoded.Split('|');
+
+        uint cursorId;
+        DateTime eventTime;
+
+        if (!uint.TryParse(parts[0], out cursorId) ||
+                !DateTime.TryParse(parts[1], out eventTime))
+        {
+            return BadRequest("Wrong pagination format");
+        }
         string? timeZone = Request.Cookies["timeZone"];
-        return PartialView("/Views/Partials/_LogsTableBody.cshtml", _logService.GetPage(lastItem, 10, timeZone));
+
+        ImmutableArray<Log> data = await _logService.GetPage(10, timeZone, cursorId, eventTime);
+
+        if (data.Length == 10)
+        {
+            Log last = data[data.Length - 1];
+            var cursor = WebEncoders.Base64UrlEncode(
+                    Encoding.UTF8.GetBytes($"{last.Id}|{last.Time:O}"));
+
+            Response.Headers.Add("X-Next-Cursor", cursor);
+
+        }
+        return PartialView(
+                "/Views/Partials/_LogsTableBody.cshtml",
+                data);
     }
 
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)

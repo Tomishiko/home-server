@@ -14,7 +14,7 @@ public class UserEntity : BaseEntity
     public string? Email { get; set; }
 
     [ForeignKey(nameof(Role))]
-    public uint? role_id { get; set; }
+    public uint role_id { get; set; }
 
     public RolesEntity? Role { get; set; }
 }

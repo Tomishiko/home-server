@@ -50,7 +50,7 @@ document.querySelectorAll('header .nav-link')
         target.classList.add('active');
     }));
 
-async function activateModules(container: HTMLElement | null) {
+async function activateModules(container: HTMLElement | null, optionalData?: any) {
     if (!container)
         return;
     const modules = container.querySelectorAll('[data-module]');
@@ -58,7 +58,7 @@ async function activateModules(container: HTMLElement | null) {
         const modName = (<HTMLElement>el).dataset.module;
         try {
             if (modName && Modules[modName]) {
-                Modules[modName]().then(mod => mod.init(el));
+                Modules[modName]().then(mod => mod.init(el,optionalData));
             }
 
         } catch (err) {
@@ -75,7 +75,7 @@ window.addAjaxListeners = function addAjaxListeners(container: HTMLElement) {
 }
 
 
-window.mainNavHandler = async function partialSuccess(data: string, href: string, container: HTMLElement) {
+window.mainNavHandler = async function partialSuccess(data: string, href: string, container: HTMLElement, optionalData?: any) {
     const newContent = data;
     const newUrl: string = href;
     //const active:number = $('header .nav-link.active').index("header .nav-link");
@@ -87,7 +87,7 @@ window.mainNavHandler = async function partialSuccess(data: string, href: string
     if (newUrl) {
         history.pushState({ html: newContent, url: newUrl, active: active }, '', newUrl);
     }
-    await activateModules(container);
+    await activateModules(container, optionalData);
 }
 window.subNavHandler = async function subnavigationSuccess(data: string, status, xhr) {
     activateModules(document.getElementById("content"));

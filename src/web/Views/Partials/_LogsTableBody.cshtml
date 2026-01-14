@@ -1,10 +1,15 @@
-@model IEnumerable<core.Models.Log>
+@using System.Collections.Immutable;
+@model ImmutableArray<core.Models.Log>
 
-@foreach (var log in Model)
-{
-    <tr data-cursor="@log.Id">
-        <td>@log.Uname</td>
-        <td>@log.Event</td>
-        <td>@log.Time.ToString("yyyy-MM-dd HH:mm:ss")</td>
-    </tr>
+@for(int i = 0; i < Model.Length; i++) {
+<tr>
+    <td>@Model[i].Uname</td>
+    <td>@Model[i].Event</td>
+    <td>
+        <time datetime="@Model[i].Time.ToString("O")">
+            @Model[i].Time.ToString("g")
+        </time>
+
+    </td>
+</tr>
 }

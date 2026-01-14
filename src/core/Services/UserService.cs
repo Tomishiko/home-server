@@ -4,6 +4,7 @@ using core.Models;
 using Data.Models;
 using Data.Core;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace core.Services;
 
@@ -35,11 +36,11 @@ public class UserService : BaseDataService, IUserService
                       .Select(u => User.FromEntity(u))
                       .SingleOrDefaultAsync();
 
-    public async Task<Result<string>> AddUserAsync(string uname,
+    public async Task<Result<User>> AddUserAsync(string uname,
                                                    string password,
                                                    string initiatorUname,
                                                    string? email = null,
-                                                   uint? role = null)
+                                                   uint? roleId = null)
     {
         ArgumentNullException.ThrowIfNullOrEmpty(uname, nameof(uname));
         ArgumentNullException.ThrowIfNullOrEmpty(password, nameof(password));
@@ -52,22 +53,19 @@ public class UserService : BaseDataService, IUserService
         bool unameExists = await _context.Users.AnyAsync(u => u.Uname == uname);
         if (unameExists)
         {
-            return new Result<string>(ResultStatus.Fail,
+            return new Result<User>(ResultStatus.Fail,
                                       $"Username \"{uname}\" is already taken");
         }
 
-        uint? roleId = await _context.Roles
-                                    .Where(r => r.Id == (role ?? (uint)Roles.Default)) //It is what it is
-                                    .Select(r => (uint?)r.Id)
-                                    .SingleOrDefaultAsync();
         if (roleId is null)
         {
-            return new Result<string>(ResultStatus.Fail,
+            return new Result<User>(ResultStatus.Fail,
                                       $"Provided role does not exist");
         }
 
+        var userDTO = new User(uname, password, Email: email);
         var userEntity = CreateUserEntity(
-                            new User(uname, password, Email: email),
+                            userDTO,
                             (uint)roleId);
         var logEntity = new LogsEntity
         {
@@ -81,18 +79,35 @@ public class UserService : BaseDataService, IUserService
         _context.Users.Add(userEntity);
         await SaveChangesAsync();
 
-        return new Result<string>(ResultStatus.Success, null);
+
+        return new Result<User>(ResultStatus.Success,
+                                resultObject: userDTO with { Id = userEntity.Id });
     }
 
-    public async Task RemoveUserById(uint id)
+    public async Task RemoveUserById(uint id, string issuer)
     {
-        // Remove file link
-        await _context.Files
-            .Where(f => f.owner_id == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(f => f.owner_id,
-                                                               (uint?)null));
 
-        await _context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
+        // TODO: add worker for deleting private files without owner
+        // FK link is removed by pstgres
+        var userIdParam = new NpgsqlParameter
+        {
+            ParameterName = "p_user_id",
+            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint,
+            Value = id
+        };
+        var issuerNameParam = new NpgsqlParameter
+        {
+            ParameterName = "p_issuer_name",
+            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar,
+            Value = issuer
+        };
+
+        UserEntity? deleted = await _context.Users
+            .FromSqlRaw("SELECT * FROM remove_user_by_id(@p_user_id,@p_issuer_name)",
+                        userIdParam,
+                        issuerNameParam)
+            .SingleOrDefaultAsync();
+
     }
 
     private UserEntity CreateUserEntity(User user, uint roleId)

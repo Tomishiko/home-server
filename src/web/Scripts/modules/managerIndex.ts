@@ -3,7 +3,7 @@ import { deleteUserConfirmation } from "../manage/DeleteUser.js"
 import Modal from 'bootstrap/js/dist/modal.js'
 import Offcanvas from 'bootstrap/js/dist/offcanvas.js'
 
-export function init(component: HTMLElement) {
+export function init(component: HTMLElement,optionalData:any) {
 
     const sidebarItem = component.querySelectorAll('#sidebar-item.nav-link');
     sidebarItem.forEach(x => x.addEventListener("click", navbarClickHandler));

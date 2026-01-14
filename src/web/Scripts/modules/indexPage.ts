@@ -3,7 +3,7 @@ import { Uploader, FileUploadTask, UploaderConfig, FileCompletePayload, Progress
 import { ProgressBarCtrl } from '../index/ProgressBars'
 import { removeData } from 'jquery';
 
-export function init(component) {
+export function init(component, optionalData: any) {
     // document.getElementById('submitBtn').addEventListener('click', function() {
     //     const filePicker = document.getElementById('file') as HTMLInputElement;
     //     const progressArea = document.getElementById('fileBlock');
@@ -50,8 +50,8 @@ export function init(component) {
         alert(`Unexpected error when uploading file ${file.name}`);
         barCtrl.hideUploadProgressBars(file.name);
     });
-    uploader.events.on('error', (err: any,object:any) => {
-        console.error(err,object);
+    uploader.events.on('error', (err: any, object: any) => {
+        console.error(err, object);
         alert(`${err}`);
         barCtrl.hideUploadProgressBars()
     });

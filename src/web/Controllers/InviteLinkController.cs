@@ -67,7 +67,7 @@ public class InviteLinkController : Controller
             return BadRequest();
 
         Debug.Assert(issuer.Uname is not null);
-        Result<string> result = await _userService.AddUserAsync(request.Username,
+        Result<User> result = await _userService.AddUserAsync(request.Username,
                                                                 request.Password,
                                                                 issuer.Uname,
                                                                 request.Email);

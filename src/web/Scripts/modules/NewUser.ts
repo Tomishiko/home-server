@@ -1,6 +1,6 @@
 import { PostUser } from '../manage/api.js'
 
-export async function init(component) {
+export async function init(component, optionalData: any) {
     document.getElementById("registerForm")?.addEventListener("submit", async function(e) {
         e.preventDefault();
         e.stopPropagation();

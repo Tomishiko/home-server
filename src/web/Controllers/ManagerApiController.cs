@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using web.Models;
+using System.Security.Claims;
 
 namespace web.Controllers;
 
@@ -17,66 +18,79 @@ public class ManagerApiController : ControllerBase
 {
     private ILogger<ManagerApiController> _logger;
     private IUserService _userService;
-    private ILogService _logService;
     private readonly InvitesService _invites;
 
 
     public ManagerApiController(ILogger<ManagerApiController> logger,
                                 IUserService userService,
-                                ILogService logService,
                                 InvitesService invites)
     {
         _logger = logger;
         _userService = userService;
-        _logService = logService;
         _invites = invites;
     }
     [HttpPost("user")]
     public async Task<IActionResult> AddUser([FromBody] RegisterManagerRequest userRequest)
     {
-        Debug.Assert(User.Identity?.Name is not null);
+        var currentUserName = User.Identity?.Name;
+        if (currentUserName.IsNullOrEmpty())
+        {
+            return Unauthorized("User identity could not be determined");
+        }
 
 
-        Result<string> result = await _userService.AddUserAsync(userRequest.Username,
-                                                                userRequest.Password,
-                                                                User.Identity.Name,
-                                                                userRequest.Email,
-                                                                userRequest.Role);
+        Result<User> result = await _userService.AddUserAsync(userRequest.Username,
+                                                              userRequest.Password,
+                                                              currentUserName!,
+                                                              userRequest.Email,
+                                                              userRequest.Role);
 
         if (result.status == ResultStatus.Fail)
         {
-            return Conflict(result.resultObject);
+            return Conflict(result.resultMsg);
         }
 
-        return Created();
+        Debug.Assert(result.resultObject is not null);
+        return CreatedAtAction(nameof(GetUser),
+                               new { id = result.resultObject?.Id },
+                               result.resultObject);
     }
     [HttpDelete("user/{id}")]
-    public async Task<IActionResult> DeleteUser(uint id, [FromQuery] string uname)
+    public async Task<IActionResult> DeleteUser(uint id)
     {
-        //_logger.LogInformation($"parameter : {user.Uname}  {user.Id}");
-        if (uname.IsNullOrEmpty())
-        {
-            return BadRequest();
-        }
-
-        try
-        {
-            await _userService.RemoveUserById(id);
-            _logger.LogInformation($"Deleting user with id={id} uname= {uname}");
-            Debug.Assert(User.Identity is not null);
-            Log log = new(0, $"Deleted user: {id}.{uname}", DateTime.Now.ToUniversalTime(), User.Identity.Name);
-            await _logService.NewLogAsync(log);
-            int result = await _userService.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while deleting user");
-            return base.Problem(ex.Message);
-        }
 
 
-        //TODO: This is temporary, fix this
-        return Ok();
+        var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value;
+        if (currentUserName.IsNullOrEmpty())
+        {
+            return Unauthorized("User identity could not be determined");
+        }
+
+        _logger.LogInformation("Request to delete a user with id={id} uname= {uname}", id, currentUserName);
+
+
+        await _userService.RemoveUserById(id, currentUserName);
+
+
+        return NoContent();
+    }
+    [HttpGet("user/{id}")]
+    public async Task<IActionResult> GetUser(uint id)
+    {
+        User? userData = await _userService.GetUserInfo(id);
+
+        if (userData is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new
+        {
+            Id = userData.Id,
+            Username = userData.Uname,
+            Role = userData.Role,
+            Email = userData.Email
+        });
     }
     [HttpGet("geninvite")]
     public async Task<IActionResult> GetNewInviteToken()

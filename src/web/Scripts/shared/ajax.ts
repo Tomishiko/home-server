@@ -31,7 +31,7 @@ async function ajaxPartial(action: Action, method: string, contentContainer: HTM
                     console.error("Undefined ajax action");
             }
 
-            window.mainNavHandler(x, href, contentContainer);
+            window.mainNavHandler(x, href, contentContainer,response.headers);
             window.addAjaxListeners(contentContainer);
         });
 
