@@ -6,24 +6,24 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using Data.Core;
-using Data.Models;
 using Microsoft.Extensions.Configuration;
+using core.Interfaces;
+using core.Models;
+using Microsoft.Extensions.Options;
 
 public sealed class BackgroundFileService : BackgroundService
 {
-    readonly ILogger<BackgroundService> _logger;
-    readonly IServiceProvider _services;
-    readonly string _basePath;
+    private readonly ILogger<BackgroundService> _logger;
+    private readonly IServiceProvider _services;
+    private readonly FileUploadOptions _fileUploadOptions;
 
     Timer? _timer;
 
-    public BackgroundFileService(ILogger<BackgroundService> logger, IServiceProvider services, IConfiguration config)
+    public BackgroundFileService(ILogger<BackgroundService> logger, IServiceProvider services, IOptions<FileUploadOptions> config)
     {
         _logger = logger;
         _services = services;
-        _basePath = config.GetValue<string>("FilesLocation")
-            ?? throw new NullReferenceException("File storage location is not specified");
+        _fileUploadOptions = config.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -48,21 +48,20 @@ public sealed class BackgroundFileService : BackgroundService
             _logger.LogError(ex, "Unexpected error encountered");
         }
     }
-    public override void Dispose()
-    {
-        _timer?.Dispose();
-    }
     private async Task PerformCheckForDatedFiles()
     {
         using var scope = _services.CreateAsyncScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var files = context.Files.Where(f => f.IsDeleted)
                                  .AsAsyncEnumerable();
 
         await Parallel.ForEachAsync(files, (file, cancelationToken) =>
         {
-            var path = $"{_basePath}/{file.UUID}";
-            Debug.Assert(File.Exists(path));
+            string path = Path.Combine(_fileUploadOptions.StoragePath, file.UUID);
+            if (!File.Exists(path))
+            {
+                return ValueTask.CompletedTask;
+            }
             try
             {
                 File.Delete(path);
@@ -77,5 +76,9 @@ public sealed class BackgroundFileService : BackgroundService
         });
         await context.SaveChangesAsync();
 
+    }
+    public override void Dispose()
+    {
+        _timer?.Dispose();
     }
 }

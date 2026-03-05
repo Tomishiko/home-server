@@ -1,7 +1,7 @@
 using core.Models;
-using Data.Models;
-using Data.Core;
-using Data.Extensions;
+using core.Domain;
+using core.Extensions;
+using core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Immutable;
 
@@ -10,20 +10,22 @@ namespace core.Services;
 public class LogService : BaseDataService, ILogService
 {
 
-    public LogService(ApplicationDbContext context) : base(context) { }
+    public LogService(IApplicationDbContext context) : base(context) { }
 
-    public IAsyncEnumerable<Log> GetAll(string? timeZone)
+    public IAsyncEnumerable<LogDto> GetAll(string? timeZone)
     {
         return _context.Logs
-            .Select(l => new Log(
+            .AsNoTracking()
+            .Select(l => new LogDto(
                 l.Id,
                 l.Event,
-                AdjustForTimezone(l, timeZone),
+                TimeZoneInfo.ConvertTimeBySystemTimeZoneId(l.Time,
+                                                           timeZone ?? "UTC"),
                 l.Uname))
             .AsAsyncEnumerable();
     }
 
-    public async Task NewLogAsync(Log log)
+    public async Task NewLogAsync(LogDto log)
     {
         var time = log.Time.ToUniversalTime();
 
@@ -36,52 +38,41 @@ public class LogService : BaseDataService, ILogService
         await SaveChangesAsync();
     }
 
-    public async Task<ImmutableArray<Log>> GetPage(int perPage, string? timeZone, uint lastId = default, DateTime lastTime = default)
+    public async Task<ImmutableArray<LogDto>> GetPage(int perPage,
+                                                      string? timeZone,
+                                                      long lastId = default,
+                                                      DateTimeOffset lastTime = default)
     {
 
-        //return _context.Logs.OrderByDescending(l => l.Time)
-        //                    .Where(l => l.Id > lastId)
-        //                    .Take(perPage)
-        //                    .Select(l => new Log(l.Id,
-        //                                         l.Event,
-        //                                         AdjustForTimezone(l, timeZone),
-        //                                         l.Uname))
-        //                    .AsAsyncEnumerable();
         IQueryable<LogsEntity> query = _context.Logs;
 
-        //For first page case
+        // Apply where filter if its not first page
         if (lastId > 0)
         {
 
+            //Console.WriteLine($"{lastId}");
+            //Console.WriteLine($"{lastTime}");
             lastTime = lastTime.ToUniversalTime();
             query = query.Where(l => l.Time < lastTime ||
                        (l.Time == lastTime && l.Id < lastId));
         }
 
-        return await query.OrderByDescending(l => l.Time)
+        var test = await query.OrderByDescending(l => l.Time)
                           .ThenByDescending(l => l.Id)
                           .Take(perPage)
                           .AsNoTracking()
-                          .Select(l => new Log(l.Id,
-                                               l.Event,
-                                               AdjustForTimezone(l, timeZone),
-                                               l.Uname))
+                          .Select(l =>
+                              new LogDto(l.Id,
+                                         l.Event,
+                                         TimeZoneInfo.ConvertTimeBySystemTimeZoneId(l.Time,
+                                                                                    timeZone ?? "UTC"),
+                                         l.Uname))
                           .ToImmutableArrayAsync();
-
-    }
-    static private DateTime AdjustForTimezone(LogsEntity l, string? timeZone)
-    {
-        if (string.IsNullOrEmpty(timeZone)) return l.Time;
-
-        TimeZoneInfo? tzInfo;
-        TimeZoneInfo.TryFindSystemTimeZoneById(timeZone, out tzInfo);
-
-        if (tzInfo is null)
+        foreach (var entry in test)
         {
-            return l.Time;
+            Console.WriteLine(entry);
         }
-
-        return TimeZoneInfo.ConvertTimeFromUtc(l.Time, tzInfo);
+        return test;
 
     }
 

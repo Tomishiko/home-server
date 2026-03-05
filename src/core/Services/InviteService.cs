@@ -2,11 +2,10 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.WebUtilities;
 using core.Models;
-using Data.Core;
-using Data.Models;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using core.Interfaces;
+using core.Domain;
 
 namespace core.Services;
 
@@ -16,29 +15,18 @@ namespace core.Services;
 public class InvitesService : BaseDataService, IInviteService
 {
     private readonly ILogger<InvitesService> _logger;
-    public InvitesService(ApplicationDbContext context,
+    public InvitesService(IApplicationDbContext context,
             ILogger<InvitesService> logger) : base(context)
     {
         _logger = logger;
     }
 
-    public async Task<User?> ValidateToken(string token,
+    public async Task<UserDto?> ValidateToken(string token,
                                            CancellationToken ct = default)
     {
         byte[] hashedToken = SHA256.HashData(WebEncoders
                                             .Base64UrlDecode(token));
-        var tokenParam = new NpgsqlParameter
-        {
-            ParameterName = "token",
-            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bytea,
-            Value = hashedToken
-        };
-
-        UserEntity? issuer = await _context.Users
-            .FromSqlRaw($"SELECT * FROM GetInviteIssuerByToken(@token)", tokenParam)
-            .AsNoTracking()
-            .SingleOrDefaultAsync(ct);
-
+        UserEntity? issuer = await _context.ValidateInviteTokenStoredProc(hashedToken);
         if (issuer is null)
         {
             _logger.LogInformation($"Request with invalid invite token");
@@ -46,21 +34,20 @@ public class InvitesService : BaseDataService, IInviteService
         }
 
         _logger.LogInformation($"Request to validate token created by {issuer?.Uname} : success");
-        return User.FromEntity(issuer!);
-
+        return issuer!.ToDto();
     }
 
-    public async Task<byte[]> GenNewInvite(string issuerName, CancellationToken ct = default)
+    public async Task<InviteTokenModel> GenNewInvite(string issuerName, CancellationToken ct = default)
     {
         byte[] bytes = RandomNumberGenerator.GetBytes(32);
-        uint issuerId = await GetUserIdByName(issuerName);
-        AddNewInvite(bytes, issuerId, ct);
+        long issuerId = await GetUserIdByName(issuerName);
+        var entity = AddNewInvite(bytes, issuerId, ct);
         _logger.LogInformation($"New invite was added by {issuerName}");
         await SaveChangesAsync();
-        return bytes;
+        return new InviteTokenModel(bytes, entity.Entity.ExpiresAt);
     }
 
-    private EntityEntry<InviteEntity> AddNewInvite(byte[] token, uint issuerId, CancellationToken ct)
+    private EntityEntry<InviteEntity> AddNewInvite(byte[] token, long issuerId, CancellationToken ct)
     {
 
         byte[] hashedToken = SHA256.HashData(token);
@@ -69,15 +56,16 @@ public class InvitesService : BaseDataService, IInviteService
         {
             TokenHash = hashedToken,
             ExpiresAt = now.AddMinutes(10),
-            CreatedBy = issuerId,// TODO dont forget to change
+            CreatedBy = issuerId,
 
         };
         return _context.Invites.Add(entity);
     }
-    private async Task<uint> GetUserIdByName(string issuerName) =>
+    private async Task<long> GetUserIdByName(string issuerName) =>
         await _context.Users.AsNoTracking()
                             .Where(u => u.Uname == issuerName && u.Role!.Name == "manager")
                             .Select(u => u.Id)
                             .SingleAsync();
 
 }
+

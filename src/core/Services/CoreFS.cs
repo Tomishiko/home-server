@@ -11,8 +11,8 @@ namespace core.Services;
 /// </summary>
 public class CoreFS : ICoreFS
 {
-    private readonly string filesRelativePath;
-    private readonly string moviesRelativePath;
+    private readonly string _filesPath;
+    private readonly string _moviesRelativePath;
     private readonly TimeSpan _cacheTime = TimeSpan.FromMinutes(30);
     private readonly DirectoryInfo _files;
     private readonly IMemoryCache _memCache;
@@ -25,10 +25,10 @@ public class CoreFS : ICoreFS
     public CoreFS(IMemoryCache memCache, IOptions<FileUploadOptions> uploadOptions)
     {
         var cfg = uploadOptions.Value;
-        filesRelativePath = cfg.StoragePath;
+        _filesPath = cfg.StoragePath;
 
-        _files = new DirectoryInfo(filesRelativePath);
-        _indexWatcher = new FileSystemWatcher(filesRelativePath);
+        _files = new DirectoryInfo(_filesPath);
+        _indexWatcher = new FileSystemWatcher(_filesPath);
 
         _lastFileUpdate = _files.LastWriteTime;
         _memCache = memCache;
@@ -70,10 +70,10 @@ public class CoreFS : ICoreFS
     {
         get
         {
-            if (!_memCache.TryGetValue<FileInfo[]>(filesRelativePath, out var temp))
+            if (!_memCache.TryGetValue<FileInfo[]>(_filesPath, out var temp))
             {
-                temp = GetElements(filesRelativePath);
-                _memCache.Set(filesRelativePath, temp, _cacheTime);
+                temp = GetElements(_filesPath);
+                _memCache.Set(_filesPath, temp, _cacheTime);
             }
             return temp;
         }
@@ -84,10 +84,10 @@ public class CoreFS : ICoreFS
         get
         {
 
-            if (!_memCache.TryGetValue<FileInfo[]>(moviesRelativePath, out var temp))
+            if (!_memCache.TryGetValue<FileInfo[]>(_moviesRelativePath, out var temp))
             {
-                temp = GetElements(moviesRelativePath);
-                _memCache.Set(moviesRelativePath, temp, _cacheTime);
+                temp = GetElements(_moviesRelativePath);
+                _memCache.Set(_moviesRelativePath, temp, _cacheTime);
             }
             return temp;
         }

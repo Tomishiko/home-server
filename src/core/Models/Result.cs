@@ -1,4 +1,4 @@
-namespace core.Models;
+namespace core.Models.Junk;
 
 public enum ResultStatus
 {

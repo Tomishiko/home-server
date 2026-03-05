@@ -6,7 +6,7 @@
                     <h4 class="mb-0">Register New User</h4>
                 </div>
                 <div class="card-body">
-                    <form id="registerForm" class="needs-validation" name="signIn" novalidate>
+                    <form id="registerForm" asp-controller="ManagerApi" asp-action="PostJson" method="post" class="needs-validation" name="signIn" novalidate>
                         <div class="mb-3">
                             <label for="Uname" class="form-label">Username</label>
                             <input type="text" class="form-control" id="fullName" name="uname"

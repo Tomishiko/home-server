@@ -14,11 +14,15 @@
         <PackageReference Include="LigerShark.WebOptimizer.Core" Version="3.0.436" />
         <PackageReference Include="Microsoft.jQuery.Unobtrusive.Ajax" Version="3.2.6" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.1" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../core/core.csproj" />
+        <ProjectReference Include="..\Data\Data.csproj" />
     </ItemGroup>
 
 </Project>

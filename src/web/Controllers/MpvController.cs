@@ -3,8 +3,8 @@ using core.Services;
 using System.Diagnostics;
 namespace web.Controllers;
 
-[Route("api/[controller]")]
-[ApiController]
+//[Route("api/[controller]")]
+//[ApiController]
 public class MpvController : ControllerBase
 {
 
@@ -23,7 +23,7 @@ public class MpvController : ControllerBase
         _mpvService = mpvService;
     }
 
-    [HttpPost("start")]
+//    [HttpPost("start")]
     public async Task<IActionResult> StartMpv()
     {
 
@@ -50,7 +50,7 @@ public class MpvController : ControllerBase
 
         return Ok();
     }
-    [HttpGet("command")]
+ //   [HttpGet("command")]
     public async Task<IActionResult> MpvCommand([FromQuery] string cmd)
     {
 

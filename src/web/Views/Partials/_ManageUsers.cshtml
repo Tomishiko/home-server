@@ -1,46 +1,46 @@
-@model IEnumerable<core.Models.User>
+@model IEnumerable<core.Models.UserDto>
 @{
     ViewData["Title"] = "User List";
 }
-<div>
-<style>
+<div data-module="users">
+    <style>
+            #editBtn {
+                font-size: 1 rem;
+            }
+    </style>
 
-    #editBtn {
-        font-size: 1 rem;
-    }
+    <h1>User List</h1>
+    <a href="@Url.Action("AddUser", "Manager")" data-ajax="true" data-ajax-action="substitute" data-ajax-update="main"
+       data-ajax-url='@Url.Action("AddUser","Manager")' data-ajax-method="GET"
+       data-ajax-success="window.mainNavHandler"  class="btn btn-dark border-secondary mb-3">Create New User</a>
 
-</style>
-
-<h1>User List</h1>
-<a href="@Url.Action("AddUser", "Manager")" data-ajax="true" data-ajax-action="substitute"
-    data-ajax-update="main" data-ajax-url='@Url.Action("AddUser","Manager")'
-    data-ajax-method="GET" data-ajax-success="window.mainNavHandler"
-    class="btn btn-dark border-secondary mb-3">Create New User</a>
-
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
-        {
+    <table class="table table-bordered">
+        <thead>
             <tr>
-                <td>@user.Id</td>
-                <td>@user.Uname</td>
-                <td>@user.Role</td>
-                <td>@user.Email</td>
-                <td>
-                    <a href="@Url.Action("Edit", "Manager", new { id = user.Id })" data-tag='@user.Uname' class="btn btn-dark btn-outline-warning">Edit</a>
-                    <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id, uname = user.Uname })" data-tag='@user.Uname' class="btn btn-delete btn-dark btn-outline-danger">Delete</a>
-
-                </td>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Username</td>
+                    <td>@user.Role</td>
+                    <td>@user.Email</td>
+                    <td>
+                        <a href="@Url.Action("Edit", "Manager", new { id = user.Id })" data-tag='@user.Username'
+                           class="btn btn-dark btn-outline-warning">Edit</a>
+                        <a href="@Url.Action("DeleteUser", "ManagerApi", new { id = user.Id, uname = user.Username })"
+                           data-tag='@user.Username' class="btn btn-delete btn-dark btn-outline-danger">Delete</a>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

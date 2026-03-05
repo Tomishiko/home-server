@@ -1,4 +1,5 @@
 namespace web.Controllers;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using core.Services;
@@ -9,7 +10,7 @@ using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Collections.Immutable;
 
-[Authorize(Roles = "manager")]
+[Authorize(Policy = "ManagerOnly")]
 public class ManagerController : Controller
 {
     private readonly ILogService _logService;
@@ -34,11 +35,11 @@ public class ManagerController : Controller
     // Partial log table
     public async Task<IActionResult> ManageLogs([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        string? timeZone = Request.Cookies["timeZone"];
-        ImmutableArray<Log> data = await _logService.GetPage(10, timeZone);
+        string? timeZone = Request.Cookies["utcOffset"];
+        ImmutableArray<LogDto> data = await _logService.GetPage(10, timeZone);
         if (data.Length == 10)
         {
-            Log last = data[data.Length - 1];
+            LogDto last = data[data.Length - 1];
             var cursor = WebEncoders.Base64UrlEncode(
                     Encoding.UTF8.GetBytes($"{last.Id}|{last.Time:O}"));
 
@@ -60,21 +61,23 @@ public class ManagerController : Controller
                 WebEncoders.Base64UrlDecode(pagination));
         var parts = decoded.Split('|');
 
-        uint cursorId;
-        DateTime eventTime;
+        long cursorId;
+        DateTimeOffset eventTime;
 
-        if (!uint.TryParse(parts[0], out cursorId) ||
-                !DateTime.TryParse(parts[1], out eventTime))
+        _logger.LogCritical(parts[1]);
+
+        if (!long.TryParse(parts[0], out cursorId) ||
+                !DateTimeOffset.TryParse(parts[1], out eventTime))
         {
             return BadRequest("Wrong pagination format");
         }
-        string? timeZone = Request.Cookies["timeZone"];
+        string? timeZone = Request.Cookies["utcOffset"];
 
-        ImmutableArray<Log> data = await _logService.GetPage(10, timeZone, cursorId, eventTime);
+        ImmutableArray<LogDto> data = await _logService.GetPage(10, timeZone, cursorId, eventTime);
 
         if (data.Length == 10)
         {
-            Log last = data[data.Length - 1];
+            LogDto last = data[data.Length - 1];
             var cursor = WebEncoders.Base64UrlEncode(
                     Encoding.UTF8.GetBytes($"{last.Id}|{last.Time:O}"));
 
@@ -88,7 +91,7 @@ public class ManagerController : Controller
 
     public IActionResult Index([FromHeader(Name = "X-Requested-With")] string requestWith)
     {
-        IEnumerable<User> initialVal = _userService.GetAllUsersJoined();
+        IEnumerable<UserDto> initialVal = _userService.GetAllUsersJoined();
         return Utility.IsXmlHttpRequest(requestWith) ? PartialView(initialVal) : View("Index", initialVal);
     }
 

@@ -76,7 +76,7 @@ export class FileUploadTask {
         this.file = file;
         this.uid = uid;
         this.config = config;
-        this.chunkSize = config.chunkSize ?? 1024 * 512;
+        this.chunkSize = config.chunkSize ?? 4096 * 256;
         // totalChunks = ceil(file.size / chunkSize)
         this.totalChunks = Math.ceil(file.size / this.chunkSize);
         if (uploadedParts && uploadedParts.length > 0) {
@@ -205,10 +205,11 @@ export class FileUploadTask {
 
 export class Uploader {
     private config: UploaderConfig;
+    private xsrf: string;
     readonly events = new SimpleEmitter<'file-progress' | 'file-complete' | 'file-error' | 'error'>();
     private abortControllers = new Map<File, AbortController>();
 
-    constructor(config: UploaderConfig) {
+    constructor(config: UploaderConfig, xsrf: string) {
         // set defaults
         this.config = {
             chunkSize: 1024 * 512,
@@ -219,14 +220,14 @@ export class Uploader {
             resume: true,
             ...config
         };
+        this.xsrf = xsrf;
         if (!this.config.uploadUrl || !this.config.handshakeUrl) {
             throw new Error('uploadUrl and handshakeUrl required');
         }
     }
 
     async uploadFiles(files: File[]) {
-        // Upload files sequentially or in parallel? We'll upload files sequentially to avoid saturating too many parallel streams.
-        // If you want to upload multiple files concurrently, call uploadFile() in parallel externally.
+        // We'll upload files sequentially to avoid saturating too many parallel streams.
         for (const f of files) {
             try {
                 await this.uploadFile(f);
@@ -275,7 +276,10 @@ export class Uploader {
     private async handshake(file: File): Promise<HandshakeResponse> {
         const resp = await fetch(this.config.handshakeUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': this.xsrf
+            },
             body: JSON.stringify({
                 fileName: file.name,
                 fileSize: file.size,

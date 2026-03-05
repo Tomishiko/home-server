@@ -6,7 +6,7 @@ namespace web.Helpers;
 
 public static class Utility
 {
-    public static string BytesToStringOptimized(ulong value)
+    public static string BytesToStringOptimized(long value)
     {
         string suffix;
         double readable;
@@ -47,10 +47,10 @@ public static class Utility
         if (requestedWith == "XMLHttpRequest") return true;
         else return false;
     }
-    public static uint? TryGetUserId(ClaimsPrincipal claimsPrincipal){
+    public static long? TryGetUserId(ClaimsPrincipal claimsPrincipal){
 
-        uint userId;
-        if (!uint.TryParse(claimsPrincipal.FindFirstValue("Id"), out userId))
+        long userId;
+        if (!long.TryParse(claimsPrincipal.FindFirstValue("Id"), out userId))
             return null;
         return userId;
     }

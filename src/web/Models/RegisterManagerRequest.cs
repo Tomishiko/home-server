@@ -5,5 +5,5 @@ namespace web.Models;
 public record RegisterManagerRequest(
         [Required] string Username,
         [Required] string Password,
-        [Required] uint Role,
+        [Required] byte Role,
         string Email);

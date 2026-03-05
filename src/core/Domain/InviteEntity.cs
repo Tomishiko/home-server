@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Data.Models;
+namespace core.Domain;
 
 [Table("invites")]
 public sealed class InviteEntity : BaseEntity
@@ -9,7 +9,7 @@ public sealed class InviteEntity : BaseEntity
     public byte[] TokenHash { get; set; } = null!;
 
     [Column("created_by")]
-    public uint CreatedBy { get; set; }
+    public long CreatedBy { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; private set; }

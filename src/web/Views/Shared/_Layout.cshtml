@@ -5,6 +5,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="
+        base-uri 'self';
+        default-src 'self';
+        img-src data: https:;
+        object-src 'none';
+        script-src 'self';
+        style-src https:;
+        connect-src 'self';
+        upgrade-insecure-requests;" />
     <title>@ViewData["Title"] - Home Server</title>
         <!--<link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>-->
     <link rel="stylesheet" rel="preload" href="/css/bootstrap.css"/>

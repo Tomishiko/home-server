@@ -11,19 +11,22 @@ using web.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using core.Services;
 using System.Diagnostics;
+using System.IO.Pipelines;
 
 namespace web.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class StreamingController : ControllerBase
+[Route("api/streaming")]
+public class StreamingApiController : ControllerBase
 {
-    private StreamedFileCompositor _fileCompositor;
-    private FileMeta? _fileMeta;
-    private readonly ILogger<StreamingController> _logger;
+    private readonly StreamedFileCompositor _fileCompositor;
+    private readonly ILogger<StreamingApiController> _logger;
     private readonly ILogService _logService;
+    private const long maxPartSize = 1024 * 1024 * 10;//10 Mb
 
-    public StreamingController(StreamedFileCompositor compositor, ILogger<StreamingController> logger, ILogService logService)
+    public StreamingApiController(StreamedFileCompositor compositor,
+                               ILogger<StreamingApiController> logger,
+                               ILogService logService)
     {
         _fileCompositor = compositor;
         _logger = logger;
@@ -32,23 +35,27 @@ public class StreamingController : ControllerBase
 
     [HttpPost("uploadlarge")]
     [Authorize]
-    [DisableFormValueModelBinding]
     [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
     [DisableRequestSizeLimit]
+    [DisableFormValueModelBinding]
+    [IgnoreAntiforgeryToken]
+    [Consumes(MediaTypeNames.Multipart.FormData)]
     public async Task<IActionResult> UploadLargeFileAsync()
     {
         if (Request.ContentType is null)
             return BadRequest();
+
+        FilePartMeta? fileMeta = null;
+        var subDirectory = string.Empty;
+        var count = 0;
+        long totalSize = 0;
         try
         {
             if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
             {
-                return BadRequest("Form without multipart content.");
+                return BadRequest("Wrong contetnt type");
             }
 
-            var subDirectory = string.Empty;
-            var count = 0;
-            ulong totalSize = 0;
             // find the boundary
             string boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
             // use boundary to iterator through the multipart section
@@ -60,48 +67,59 @@ public class StreamingController : ControllerBase
                     break;
 
                 if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition,
-                    out var contentDisposition)) break;
+                    out var contentDisposition))
+                {
+                    break;
+                }
 
                 if (!MultipartRequestHelper.HasFileContentDisposition(contentDisposition))
                 {
-                    if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition) && contentDisposition.Name == "meta")
+                    if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition)
+                            && contentDisposition.Name == "meta")
                     {
-
-                        // there is no way we have null values propagated in this block.
-                        // all nulls returned with BadRequest
-#pragma warning disable 8602, 8600
 
                         string formData = await section.AsFormDataSection()
                                                     .GetValueAsync();
                         if (string.IsNullOrEmpty(formData)) return BadRequest();
 
-                        _fileMeta = JsonSerializer.Deserialize<FileMeta>(formData);
-                        if (_fileMeta is null) return BadRequest();
+                        fileMeta = JsonSerializer.Deserialize<FilePartMeta>(formData);
+
+                        if (fileMeta is null) return BadRequest();
 
                     }
                     section = await reader.ReadNextSectionAsync();
                     continue;
                 }
 
-                IStreamedFile file;
+                IStreamedFile? file;
 
-                if (_fileCompositor.StreamedFiles.TryGetValue(_fileMeta.uid, out file))
+                if (fileMeta is not null &&
+                        _fileCompositor.StreamedFiles.TryGetValue(fileMeta.uid, out file))
                 {
-                    using var owner = MemoryPool<byte>.Shared.Rent(_fileMeta.bytesRead);
-                    Memory<byte> buffer = owner.Memory;
+                    if (fileMeta.bytesRead >= maxPartSize)
+                    {
+                        BadRequest("File part is too bid");
+                    }
 
-                    await section.AsFileSection().FileStream
-                                 .ReadExactlyAsync(buffer.Slice(0, _fileMeta.bytesRead));
-                    await RandomAccess.WriteAsync(file.GetFileHandle,
-                             buffer.Slice(0, _fileMeta.bytesRead),
-                            _fileMeta.currentPart * file.PartSize);
+                    using var owner = MemoryPool<byte>.Shared.Rent(fileMeta.bytesRead);
+                    Memory<byte> buffer = owner.Memory[..fileMeta.bytesRead];
+                    Stream? fileStream = section.AsFileSection()?.FileStream;
 
-                    file.IncrementPartsWrittenLocked();
+                    if (fileStream is not null) //TODO: try pipe reader
+                    {
+                        await fileStream.ReadExactlyAsync(buffer);
 
+                        await RandomAccess.WriteAsync(file.GetFileHandle,
+                                 buffer.Slice(0, fileMeta.bytesRead),
+                                fileMeta.currentPart * file.PartSize);
+
+                        file.IncrementPartsWrittenLocked();
+
+
+                    }
 
                 }
 
-#pragma warning restore 8602,8600
 
                 section = await reader.ReadNextSectionAsync();
             } while (section != null);
@@ -109,9 +127,19 @@ public class StreamingController : ControllerBase
             return Ok(new { Count = count, Size = Utility.BytesToStringOptimized(totalSize) });
 
         }
+        catch (EndOfStreamException ex)
+        {
+            _logger.LogWarning(ex, "Client sent incomplete file chunk for UID: {Uid}", fileMeta?.uid);
+            return BadRequest("The uploaded file chunk was truncated or incomplete.");
+        }
+        catch (IOException ex)
+        {
+            _logger.LogError(ex, "Network I/O error occurred during stream reading.");
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Error while streaming file");
+            _logger.LogError(exception, "Unexpected error while streaming file");
             return BadRequest($"Error: {exception.Message}");
         }
     }
@@ -133,9 +161,13 @@ public class StreamingController : ControllerBase
         {
             string? encodeFileName = HttpUtility.HtmlEncode(requestModel.fileName);
             string UniqueID = Guid.NewGuid().ToString();
-            uint user_id;
-            if (!uint.TryParse(User.FindFirst("Id")?.Value, out user_id))
+            long user_id;
+            if (!long.TryParse(User.FindFirst("Id")?.Value, out user_id))
             {
+                foreach (var claim in User.Claims)
+                {
+                    _logger.LogDebug($"{claim.ValueType}:{claim.Value}");
+                }
                 return BadRequest("Bad auth data");
             }
 
@@ -185,7 +217,8 @@ public class StreamingController : ControllerBase
         return Ok(file.FileName);
 
     }
-    private sealed class FileMeta
+
+    private sealed class FilePartMeta
     {
         public string uid { get; set; } = string.Empty;
         public int currentPart { get; set; }

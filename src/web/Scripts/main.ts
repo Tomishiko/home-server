@@ -1,4 +1,4 @@
-import { Modules } from "./modules/resolver";
+import { activateModules } from "./shared/activateModules";
 import * as ajax from "./shared/ajax"
 
 declare global {
@@ -50,22 +50,6 @@ document.querySelectorAll('header .nav-link')
         target.classList.add('active');
     }));
 
-async function activateModules(container: HTMLElement | null, optionalData?: any) {
-    if (!container)
-        return;
-    const modules = container.querySelectorAll('[data-module]');
-    for (const el of modules) {
-        const modName = (<HTMLElement>el).dataset.module;
-        try {
-            if (modName && Modules[modName]) {
-                Modules[modName]().then(mod => mod.init(el,optionalData));
-            }
-
-        } catch (err) {
-            console.error(`Module "${modName}" failed to load`, err);
-        }
-    }
-}
 window.addAjaxListeners = function addAjaxListeners(container: HTMLElement) {
 
     const navigational = container.querySelectorAll('[data-ajax]');

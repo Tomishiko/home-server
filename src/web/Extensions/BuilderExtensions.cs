@@ -1,88 +1,51 @@
-﻿namespace web.Extensions;
-
-using System.Text;
-using Data.Shared;
+﻿using System.Text;
+using Serilog;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Data.Core;
 using Microsoft.AspNetCore.Identity;
 using web.Services;
+using web.Helpers;
 using Microsoft.EntityFrameworkCore;
 using core.Services;
+using core.Interfaces;
 using core.Models;
 using web.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Serilog.Filters;
+using System.Diagnostics;
+using web.Models;
 
-public static class ServiceExtensions
+namespace web.Extensions;
+
+public static class StartupExtensions
 {
-    public static IServiceCollection Startup(this IServiceCollection services, IConfiguration config)
-    {
-        services.AddOptions<JWT>().BindConfiguration("JWT");
-        services.AddSingleton<StreamedFileCompositor>();
-        services.AddSingleton<ICoreFS, CoreFS>();
-        services.AddSingleton<JWTGen>();
-        services.AddTransient<IMpvService, Mpv>();
-        services.AddTransient<FileUploadHelperService>();
-        services.AddTransient<InvitesService>();
-        services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(config.GetValue<string>("ConnectionString")));
-        services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));
-        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<ILogService, LogService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IFileService, FileService>();
-        services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
-        services.AddHostedService<BackgroundFileService>();
 
-        JWT jwt = new();
-        config.GetSection("JWT").Bind(jwt);
-        services.SetAuthentication(jwt);
-
-        return services;
-    }
-    public static IServiceCollection SetAuthentication(this IServiceCollection services, JWT jwt)
-    {
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwt.issuer,
-                    ValidAudience = jwt.issuer,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key))
-                };
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = ctx =>
-                    {
-                        if (string.IsNullOrEmpty(ctx.Token) && ctx.Request.Cookies.TryGetValue("AspNet.Id", out string? cookieToken))
-                        {
-                            if (!string.IsNullOrEmpty(cookieToken))
-                                ctx.Token = cookieToken;
-                        }
-
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-        return services;
-    }
-    public static IServiceCollection PerfomServicesCheckups(this IServiceCollection services, IConfiguration config)
-    {
-        var opt = new DbContextOptionsBuilder<ApplicationDbContext>();
-        opt.UseNpgsql(config.GetValue<string>("ConnectionString"));
-        using var db = new ApplicationDbContext(opt.Options);
-        if (!db.Database.CanConnect())
-            throw new Exception("Cannot connect to Database");
-        return services;
-    }
+    //public static void LogginSetup(string DBconnection)
+    //{
+    //    Log.Logger = new LoggerConfiguration()
+    //        .MinimumLevel.Information()
+    //        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    //        .Enrich.FromLogContext()
+    //        // A. Always write everything to Console
+    //        .WriteTo.Console()
+    //        // B. Write to DB only if "IsAudit" property is true
+    //        .WriteTo.Logger(lc => lc
+    //            .Filter.ByIncludingOnly(Matching.WithProperty("IsAudit", true))
+    //            .WriteTo.pos(
+    //                connectionString: connectionString,
+    //                sinkOptions: new MSSqlServerSinkOptions
+    //                {
+    //                    tableName = "AuditLogs",
+    //                    autoCreateSqlTable = true
+    //                }
+    //            ))
+    //        .CreateLogger();
+    //}
 }
 
 
-public static class ConfigurationExtensions
-{
-}

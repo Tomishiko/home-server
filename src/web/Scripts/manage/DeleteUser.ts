@@ -1,9 +1,10 @@
-//$('a.btn-outline-danger').on('click',deleteUserConfirmation);
-//
-export async function deleteUserConfirmation(e: Event, modalElement: HTMLElement) {
+import { Modal } from 'bootstrap';
+import { FileApiClient } from '../Api/Client.js'
+import { Action, ajaxPartial } from '../shared/ajax.js'
+import { activateModules } from '../shared/activateModules.js';
 
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
+export async function deleteUserConfirmation(target: HTMLElement, modalElement: HTMLElement, modalObj: Modal) {
+
     const user = target.dataset["tag"];
     const ref = target.getAttribute("href");
     if (!ref) {
@@ -16,20 +17,9 @@ export async function deleteUserConfirmation(e: Event, modalElement: HTMLElement
         return;
     }
     modalElement.querySelector('.modal-body p')!.innerHTML = `Are you sure you want to DELETE ${user} and all private files associated with this user?`;
+    const modalAccept = modalElement.querySelector('.modal-footer button#confirm')! as HTMLElement;
+    modalAccept.dataset["ref"] = ref;
 
-    const modalAccept = modalElement.querySelector('.modal-footer button#confirm')!;
 
-    modalAccept.addEventListener("click", async function(btn) {
-        try {
-            const response = await fetch(ref, { method: "DELETE" });
-            if (response.ok) {
-                location.reload();
-            }
-
-        } catch (ex) {
-            console.error(ex);
-            alert("something went wrong");
-        }
-    })
 
 }

@@ -20,9 +20,9 @@ public class JWTGen
         _handler = new JwtSecurityTokenHandler();
     }
 
-    public string GenerateNewToken(User user)
+    public string GenerateNewToken(UserDto user)
     {
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Uname);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Username);
         ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Role);
         ArgumentNullException.ThrowIfNull(user.Id);
 
@@ -31,9 +31,9 @@ public class JWTGen
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        Claim[] claims = [new Claim(ClaimTypes.Name,user.Uname),
-                                     new Claim(ClaimTypes.Role,user.Role),
-                                     new Claim("Id",user.Id.ToString()!)];
+        Claim[] claims = [new Claim(ClaimTypes.Name,user.Username),
+                          new Claim(ClaimTypes.Role,user.Role),
+                          new Claim("Id",user.Id.ToString()!)];
 
         double expires;
         if (!double.TryParse(jwt.expiration, out expires))

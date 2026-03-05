@@ -6,10 +6,10 @@ namespace web.Interfaces;
 public interface IStreamedFile : IDisposable
 {
     string Id { get; }
-    ulong FileSize { get; }
+    long FileSize { get; }
     uint TotalFileParts { get; }
     string FileName { get; }
-    uint OwnerId { get; }
+    long OwnerId { get; }
     uint PartSize { get; }
     SafeFileHandle GetFileHandle { get; }
     DateTime Created { get; }

@@ -3,7 +3,7 @@ enum Action {
     Append = "append"
 };
 
-async function ajaxPartial(action: Action, method: string, contentContainer: HTMLElement, href: string) {
+async function ajaxPartial(action: Action, method: string, contentContainer: HTMLElement, href: string, pushState: boolean = false) {
     try {
 
         const response = await fetch(href, {
@@ -31,7 +31,10 @@ async function ajaxPartial(action: Action, method: string, contentContainer: HTM
                     console.error("Undefined ajax action");
             }
 
-            window.mainNavHandler(x, href, contentContainer,response.headers);
+            if (pushState) {
+
+                window.mainNavHandler(x, href, contentContainer, response.headers);
+            }
             window.addAjaxListeners(contentContainer);
         });
 
@@ -49,7 +52,7 @@ async function glolbalNvaigationClickHandle(event: Event) {
     const action = target.dataset["ajaxAction"];
     const method = target.dataset["ajaxMethod"];
     if (container && ref && action && method)
-        await ajaxPartial(action as Action, method, container, ref);
+        await ajaxPartial(action as Action, method, container, ref,true);
 }
 export { Action, ajaxPartial, glolbalNvaigationClickHandle };
 

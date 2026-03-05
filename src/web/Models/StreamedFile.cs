@@ -11,11 +11,11 @@ public sealed class StreamedFile : IStreamedFile
     private bool _isDisposed = false;
 
     public string Id { get; init; }
-    public ulong FileSize { get; init; }
+    public long FileSize { get; init; }
     public uint TotalFileParts { get; init; }
     public string FileName { get; init; }
     public uint PartSize { get; init; }
-    public uint OwnerId { get; init; }
+    public long OwnerId { get; init; }
     public SafeFileHandle GetFileHandle { get => fileHandleProvider; }
     public bool IsClosed { get => fileHandleProvider.IsClosed; }
     public DateTime Created { get; init; }
@@ -34,7 +34,7 @@ public sealed class StreamedFile : IStreamedFile
     public event EventHandler<CloseFileEventArgs>? CloseEvent;
 
     public StreamedFile(FileHandleConfig fconfig, string uuid, uint totalFileParts,
-            string fileName, uint partSize, uint ownerId)
+            string fileName, uint partSize, long ownerId)
     {
         Id = uuid;
         TotalFileParts = totalFileParts;

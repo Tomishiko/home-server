@@ -5,7 +5,7 @@ using Microsoft.Net.Http.Headers;
 namespace web.Helpers;
 public static class MultipartRequestHelper
 {
-    // get the boundary information, for above exmaple would be: --------------------------156313382635509050530525
+    // get the boundary information, for above exmaple would be
     public static string GetBoundary(MediaTypeHeaderValue contentType)
     {
         var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary).Value;

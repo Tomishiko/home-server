@@ -2,8 +2,8 @@ using core.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Identity;
 using Moq;
+using core.Domain;
 using Data.Core;
 using core.Models;
 namespace UnitTest;
@@ -11,7 +11,7 @@ namespace UnitTest;
 public class UserServiceTests
 {
     private readonly ApplicationDbContext _context;
-    private readonly Mock<IPasswordHasher<User>> _mockHasher;
+    private readonly Mock<IPasswordHasher<UserEntity>> _mockHasher;
     private readonly Mock<ILogger<UserService>> _mockLogger;
     private readonly IUserService _service;
 
@@ -20,7 +20,7 @@ public class UserServiceTests
 
         var moqContext = new Mock<ApplicationDbContext>(new DbContextOptions<ApplicationDbContext>());
         _context = moqContext.Object;
-        _mockHasher = new Mock<IPasswordHasher<User>>();
+        _mockHasher = new Mock<IPasswordHasher<UserEntity>>();
         _mockLogger = new Mock<ILogger<UserService>>();
 
         _service = new UserService(_mockHasher.Object, _context, _mockLogger.Object);
@@ -30,7 +30,7 @@ public class UserServiceTests
     public async Task AddUserShouldTrhowForNullData()
     {
         IAuthService service = new AuthService(_context);
-        var user = new User("hello");
+        var user = new UserDto("hello");
         await Assert.ThrowsAsync<ArgumentNullException>(async () => await service.AuthenticateAsync(user));
     }
 

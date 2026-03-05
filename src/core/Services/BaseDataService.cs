@@ -1,11 +1,12 @@
 namespace core.Services;
-using Data.Core;
+
+using core.Interfaces;
 
 public class BaseDataService : IBaseDataService
 {
-    protected readonly ApplicationDbContext _context;
+    protected readonly IApplicationDbContext _context;
 
-    public BaseDataService(ApplicationDbContext context)
+    public BaseDataService(IApplicationDbContext context)
     {
         _context = context;
     }
