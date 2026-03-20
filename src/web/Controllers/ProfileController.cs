@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using core.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using web.Helpers;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using core.Services;
 
 [Authorize]
@@ -16,17 +17,17 @@ public class ProfileController : Controller
         _userService = userService;
     }
 
-    public async Task<IActionResult> Index([FromHeader(Name = "X-Requested-With")] string requestWith)
+    public async Task<IActionResult> Index([FromHeader(Name = "HX-Request")] bool isHtmx)
     {
-        uint? userId = Utility.TryGetUserId(User);
+        long? userId = Utility.TryGetUserId(User);
         if (userId is null) return BadRequest();
 
-        User user = await _userService.GetUserInfo(userId.Value);
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(user) : View(user);
+        UserDto? user = await _userService.GetUserInfo(userId.Value);
+        return isHtmx ? PartialView(user) : View(user);
     }
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        Response.Cookies.Delete("AspNet.Id");
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/");
     }
 }

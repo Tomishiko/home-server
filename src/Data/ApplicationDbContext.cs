@@ -1,10 +1,14 @@
-﻿namespace Data.Core;
-using Microsoft.EntityFrameworkCore;
-using Data.Shared;
-using Data.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using core.Domain;
+using core.Interfaces;
+using core.Models.Generic;
+using Npgsql;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
-public class ApplicationDbContext : DbContext
+namespace Data.Core;
+
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
@@ -19,21 +23,9 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UserEntity>();
-        modelBuilder.Entity<LogsEntity>();
-        modelBuilder.Entity<RolesEntity>();
-        modelBuilder.Entity<FileEntity>();
-        modelBuilder.Entity<InviteEntity>(e =>
-                {
-                    e.Property(i => i.TokenHash)
-                     .HasColumnName("token_hash")
-                     .HasColumnType("bytea")
-                     .IsRequired();
-                    e.Property(i => i.CreatedAt)
-                     .HasColumnType("timestamptz")
-                     .HasDefaultValueSql("now()")
-                     .ValueGeneratedOnAdd();
-                });
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -42,4 +34,47 @@ public class ApplicationDbContext : DbContext
         //              .EnableDetailedErrors();
     }
 
+    public async Task<UserEntity?> RemoveUserByIdStoredProc(long id, string issuer)
+    {
+        // FK link is removed by pstgres function
+        var userIdParam = new NpgsqlParameter
+        {
+            ParameterName = "p_user_id",
+            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bigint,
+            Value = id
+        };
+        var issuerNameParam = new NpgsqlParameter
+        {
+            ParameterName = "p_issuer_name",
+            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar,
+            Value = issuer
+        };
+
+        UserEntity? deleted = await Users
+            .FromSqlRaw("SELECT * FROM remove_user_by_id(@p_user_id,@p_issuer_name)",
+                        userIdParam,
+                        issuerNameParam)
+            .SingleOrDefaultAsync();
+
+        return deleted;
+
+    }
+    public async Task<UserEntity?> ValidateInviteTokenStoredProc(byte[] hashedToken, CancellationToken ct = default)
+    {
+        var tokenParam = new NpgsqlParameter
+        {
+            ParameterName = "token",
+            NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Bytea,
+            Value = hashedToken
+        };
+
+        UserEntity? issuer = await Users
+                            .FromSqlRaw($"SELECT * FROM GetInviteIssuerByToken(@token)",
+                                         tokenParam)
+                            .AsNoTracking()
+                            .SingleOrDefaultAsync(ct);
+        return issuer;
+
+
+    }
 }

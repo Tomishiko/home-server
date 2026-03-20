@@ -4,26 +4,26 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using Data.Core;
-using Data.Models;
-using Microsoft.Extensions.Configuration;
+using core.Interfaces;
+using core.Models;
+using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 
 public sealed class BackgroundFileService : BackgroundService
 {
-    readonly ILogger<BackgroundService> _logger;
-    readonly IServiceProvider _services;
-    readonly string _basePath;
+    private readonly ILogger<BackgroundService> _logger;
+    private readonly IServiceProvider _services;
+    private readonly FileUploadOptions _fileUploadOptions;
 
     Timer? _timer;
 
-    public BackgroundFileService(ILogger<BackgroundService> logger, IServiceProvider services, IConfiguration config)
+    public BackgroundFileService(ILogger<BackgroundService> logger,
+                                 IServiceProvider services,
+                                 IOptions<FileUploadOptions> config)
     {
         _logger = logger;
         _services = services;
-        _basePath = config.GetValue<string>("FilesLocation")
-            ?? throw new NullReferenceException("File storage location is not specified");
+        _fileUploadOptions = config.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,12 +31,12 @@ public sealed class BackgroundFileService : BackgroundService
         _logger.LogInformation("BackgroundFileService running...");
         try
         {
-            await PerformCheckForDatedFiles();
+            await PerformCheckForDatedFiles(stoppingToken);
 
             using PeriodicTimer timer = new(TimeSpan.FromHours(1));
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                await PerformCheckForDatedFiles();
+                await PerformCheckForDatedFiles(stoppingToken);
             }
         }
         catch (OperationCanceledException)
@@ -48,34 +48,58 @@ public sealed class BackgroundFileService : BackgroundService
             _logger.LogError(ex, "Unexpected error encountered");
         }
     }
-    public override void Dispose()
-    {
-        _timer?.Dispose();
-    }
-    private async Task PerformCheckForDatedFiles()
+    private async Task PerformCheckForDatedFiles(CancellationToken ct = default)
     {
         using var scope = _services.CreateAsyncScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var files = context.Files.Where(f => f.IsDeleted)
-                                 .AsAsyncEnumerable();
-
-        await Parallel.ForEachAsync(files, (file, cancelationToken) =>
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var filesToDelete = await context.Files.Where(f => f.IsDeleted)
+                                               .AsNoTracking()
+                                               .ToArrayAsync();
+        if (filesToDelete.Length == 0)
         {
-            var path = $"{_basePath}/{file.UUID}";
-            Debug.Assert(File.Exists(path));
+            return;
+        }
+
+        var deletedIds = new ConcurrentBag<long>();
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 10,
+            CancellationToken = ct
+        };
+
+        await Parallel.ForEachAsync(filesToDelete, parallelOptions, (file, cancelationToken) =>
+        {
+            string path = Path.Combine(_fileUploadOptions.StoragePath, file.UUID);
             try
             {
-                File.Delete(path);
-                context.Files.Remove(file);
-                _logger.LogInformation($"File {file.Name}-{file.UUID} was removed by background cleaning");
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    _logger.LogInformation("File {FileName}-{FileUUID} was removed by background cleaning",
+                    file.Name, file.UUID);
+                }
+                deletedIds.Add(file.Id);
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "IO error while deleting file {FileUUID}", file.UUID);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while deleting file");
+                _logger.LogError(ex, "Unexpected error while processing file {FileUUID}", file.UUID);
             }
             return ValueTask.CompletedTask;
         });
-        await context.SaveChangesAsync();
 
+        if (deletedIds.Any())
+        {
+            await context.Files
+            .Where(f => deletedIds.Contains(f.Id))
+            .ExecuteDeleteAsync(ct);
+        }
+    }
+    public override void Dispose()
+    {
+        _timer?.Dispose();
     }
 }

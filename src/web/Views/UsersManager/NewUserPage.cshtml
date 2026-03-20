@@ -1,0 +1,30 @@
+<style>
+    #createBtn {
+        --bs-btn-border-color: #19be72;
+        --bs-btn-color: #19be72;
+    }
+</style>
+
+<div class="modal fade" id="modalNotification" data-module="NewUser" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm action</h5>
+            </div>
+            <div class="modal-body">
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark border-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@if((bool)ViewData["isInvite"])
+{
+    @await Html.PartialAsync("/Views/Partials/_InviteRegisterForm.cshtml");
+}
+else
+{
+    @await Html.PartialAsync("_NewUserManagerForm.cshtml");
+}

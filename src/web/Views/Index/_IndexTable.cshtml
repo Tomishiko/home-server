@@ -1,0 +1,58 @@
+﻿@using web.Controllers
+@using web.ViewModels
+@model IndexPageViewModel
+
+
+<table id="partial_table" data-module="indexTable" class="table table-responsive table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Size</th>
+            <th scope="col">EXT</th>
+            <th scope="col">Owner</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @{
+            int i = 0;
+            if (!Model.IsPrivate)
+            {
+                <tr class="actionRow user-select-none" hx-get='@Url.Action(nameof(IndexController.PartialTableLoad), "Index")'
+                    hx-trigger="dblclick" hx-target="#partial_table" hx-vals='{"action":"@( (Int16)NavigationAction.Private)"}'
+                    hx-swap="outerHTML">
+                    <td>&#128193;Private</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            }
+            else
+            {
+                <tr class="actionRow user-select-none" hx-get='@Url.Action(nameof(IndexController.PartialTableLoad), "Index")'
+                    hx-trigger="dblclick" hx-target="#partial_table" hx-swap="outerHTML"
+                    hx-vals='{"action":"@( (Int16)NavigationAction.Public)"}'>
+                    <td style="padding-top: 0px; padding-bottom: 0px; font-size: 20px;">&#8629;</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+
+            }
+
+            await foreach (var item in Model.Files)
+            {
+
+                <tr data-id='@item.Id'>
+                    <td><a asp-controller="FileApi" asp-action="GetFile" asp-route-id="@item.Id">@item.Name</a></td>
+                    <td>@Utility.BytesToStringOptimized(item.Size)</td>
+                    <td>@item.Ext</td>
+                    <td>@item.Owner</td>
+                </tr>
+
+
+                i++;
+            }
+        }
+    </tbody>
+</table>

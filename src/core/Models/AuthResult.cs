@@ -1,3 +1,5 @@
 namespace core.Models;
 
-public record AuthResult(bool isSuccesful, User? user);
+public abstract record AuthResult;
+public record AuthSuccess(UserDto User) : AuthResult;
+public record AuthFailure(string Message) : AuthResult;

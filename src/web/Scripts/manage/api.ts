@@ -1,3 +1,5 @@
+import { loadMoreLogs } from "./loadMore";
+
 export interface User {
     Username: string,
     Password: string,
@@ -7,6 +9,10 @@ export interface User {
 export const enum UserRole {
     User = 1,
     Manager = 2,
+}
+export interface LoadMoreResponse {
+    tableContent: string,
+    cursor: string | null
 }
 export const RoleNames: Record<UserRole, string> = {
     [UserRole.User]: "Standard User",
@@ -22,7 +28,15 @@ export async function PostUser(user: User) {
     });
 
 }
-export async function FetchMoreLogs(cursor: string) {
-    return await fetch(`/manager/logspartialtable?lastitem=${cursor}`)
-        .then(response => response.text())
+export async function FetchMoreLogs(cursor: string | undefined): Promise<LoadMoreResponse | null> {
+
+    if (cursor) {
+        const response = await fetch(`/manager/logspartialtable?pagination=${cursor}`);
+        if (response.ok) {
+            const responseText = await response.text();
+            const cursor = response.headers.get("X-Next-Cursor");
+            return { cursor: cursor, tableContent: responseText };
+        }
+    }
+    return null;
 }

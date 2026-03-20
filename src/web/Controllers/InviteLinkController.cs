@@ -5,6 +5,7 @@ using core.utils.extensions;
 using Microsoft.AspNetCore.WebUtilities;
 using core.Models;
 using System.Diagnostics;
+using core.Models.Generic;
 
 namespace web.Controllers;
 
@@ -31,7 +32,7 @@ public class InviteLinkController : Controller
     public async Task<IActionResult> GetRegisterFormInvite(string token)
     {
 
-        User? issuer = await _invites.ValidateToken(token);
+        UserDto? issuer = await _invites.ValidateToken(token);
         if (issuer is null)
         {
             return BadRequest("Invalid invite token");
@@ -53,8 +54,9 @@ public class InviteLinkController : Controller
 
     [HttpPost("register")]
     public async Task<IActionResult> NewUserRegisterFromInvite(
-            [FromForm] RegisterFromInviteRequest request)
+            [FromForm] RegisterFromInviteRequest request) // TODO: shit is null for some reson
     {
+        _logger.LogDebug(request.ToString());
         if (!Request.Cookies.TryGetValue("regID", out string? invToken)
             || invToken.IsNullOrEmpty())
         {
@@ -62,21 +64,25 @@ public class InviteLinkController : Controller
 
         }
 
-        User? issuer = await _invites.ValidateToken(invToken);
+        UserDto? issuer = await _invites.ValidateToken(invToken);
         if (issuer is null)
             return BadRequest();
 
-        Debug.Assert(issuer.Uname is not null);
-        Result<string> result = await _userService.AddUserAsync(request.Username,
-                                                                request.Password,
-                                                                issuer.Uname,
-                                                                request.Email);
+        Debug.Assert(issuer.Username is not null);
 
-        if (result.status == ResultStatus.Fail)
+        var userCreation = new UserCreationDto(request.Username,
+                request.Password, issuer.Username, (byte)Roles.User, request.Email);
+        Result<UserDto> result = await _userService.AddUserAsync(userCreation);
+        Response.Cookies.Delete("regID");
+        return result switch
         {
-            return Conflict(result.resultObject);
-        }
+            Success<UserDto> s => CreatedAtAction(nameof(ManagerApiController.GetUser),
+                                               new { id = s.Value.Id },
+                                               s.Value),
+            Failure<UserDto> f => BadRequest(f.Error),
 
-        return Created();
+            _ => StatusCode(500)
+        };
+
     }
 }

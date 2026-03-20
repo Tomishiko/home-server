@@ -1,0 +1,25 @@
+@using System.Collections.Immutable;
+@using web.Controllers
+@using web.ViewModels
+@model LogsPartialTableViewModel
+
+<h2>Logs Table</h2>
+<div data-module="logs" class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Event</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody id="logTable">
+            @await Html.PartialAsync("_LogsTableBody.cshtml", Model)
+        </tbody>
+    </table>
+
+</div>
+<button id="loadmoreBtn" class="btn btn-dark position-relative start-50 translate-middle border-secondary"
+        style="margin-top: 24px;" hx-vals='{"pagination": "@Model.Cursor"}'
+        hx-get='@Url.Action(nameof(LogsManagerController.PartialLogsTable), "LogsManager")' hx-target="#logTable"
+        hx-swap="beforeend">Load more</button>

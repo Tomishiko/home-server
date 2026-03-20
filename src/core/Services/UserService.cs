@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using core.Models;
-using Data.Models;
-using Data.Core;
+using core.Domain;
+using core.Interfaces;
+using core.Models.Generic;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 
 namespace core.Services;
 
@@ -11,100 +13,87 @@ namespace core.Services;
 /// <inheritdoc />
 public class UserService : BaseDataService, IUserService
 {
-    private readonly IPasswordHasher<User> _hasher;
+    private readonly IPasswordHasher<UserEntity> _hasher;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IPasswordHasher<User> hasher,
-                       ApplicationDbContext context,
+    public UserService(IPasswordHasher<UserEntity> hasher,
+                       IApplicationDbContext context,
                        ILogger<UserService> logger) : base(context)
     {
         _hasher = hasher;
         _logger = logger;
     }
 
-    public IEnumerable<User> GetAllUsersJoined()
+    public async IAsyncEnumerable<UserDto> GetAllUsersJoinedAsync([EnumeratorCancellation] CancellationToken ct = default)
     {
-        return _context.Users
-                .Include("Role")
-                .Select(u => User.FromEntity(u));
+        var stream = _context.Users
+                    .Include("Role")
+                    .AsNoTracking()
+                    .AsAsyncEnumerable()
+                    .WithCancellation(ct);
+
+        await foreach (var user in stream)
+        {
+            yield return user.ToDto();
+        }
     }
 
-    public Task<User?> GetUserInfo(uint id) =>
+    public Task<UserDto?> GetUserInfo(long id) =>
         _context.Users.Where(u => u.Id == id)
                       .Include("Role")
-                      .Select(u => User.FromEntity(u))
+                      .AsNoTracking()
+                      .Select(u => u.ToDto())
                       .SingleOrDefaultAsync();
 
-    public async Task<Result<string>> AddUserAsync(string uname,
-                                                   string password,
-                                                   string initiatorUname,
-                                                   string? email = null,
-                                                   uint? role = null)
+    public async Task<Result<UserDto>> AddUserAsync(UserCreationDto dto)
     {
-        ArgumentNullException.ThrowIfNullOrEmpty(uname, nameof(uname));
-        ArgumentNullException.ThrowIfNullOrEmpty(password, nameof(password));
-        ArgumentNullException.ThrowIfNullOrEmpty(initiatorUname,
-                                             nameof(initiatorUname));
+        ArgumentException.ThrowIfNullOrEmpty(dto.Username);
+        ArgumentException.ThrowIfNullOrEmpty(dto.Password);
+        ArgumentException.ThrowIfNullOrEmpty(dto.CreatedBy);
+        ArgumentNullException.ThrowIfNull(dto.RoleId);
 
 
-        _logger.LogInformation($"Request to create new user from {initiatorUname}");
+        _logger.LogInformation($"Request to create new user from {dto.CreatedBy}");
 
-        bool unameExists = await _context.Users.AnyAsync(u => u.Uname == uname);
+        bool unameExists = await _context.Users.AnyAsync(u => u.Uname == dto.Username);
         if (unameExists)
         {
-            return new Result<string>(ResultStatus.Fail,
-                                      $"Username \"{uname}\" is already taken");
+            return new Error($"Username \"{dto.Username}\" is already taken");
         }
 
-        uint? roleId = await _context.Roles
-                                    .Where(r => r.Id == (role ?? (uint)Roles.Default)) //It is what it is
-                                    .Select(r => (uint?)r.Id)
-                                    .SingleOrDefaultAsync();
-        if (roleId is null)
+        var userEntity = new UserEntity()
         {
-            return new Result<string>(ResultStatus.Fail,
-                                      $"Provided role does not exist");
-        }
+            Uname = dto.Username,
+            Email = dto.Email,
+            RoleId = dto.RoleId
+        };
+        userEntity.Password = _hasher.HashPassword(userEntity, dto.Password);
 
-        var userEntity = CreateUserEntity(
-                            new User(uname, password, Email: email),
-                            (uint)roleId);
         var logEntity = new LogsEntity
         {
             Time = DateTime.UtcNow,
-            Uname = initiatorUname,
+            Uname = dto.CreatedBy,
             Event = $"New user added {userEntity.Uname}"
         };
 
-        //TODO: fix reporting the count of changes
         _context.Logs.Add(logEntity);
         _context.Users.Add(userEntity);
         await SaveChangesAsync();
 
-        return new Result<string>(ResultStatus.Success, null);
+
+        return new Success<UserDto>(userEntity.ToDto());
     }
 
-    public async Task RemoveUserById(uint id)
+    public async Task<Result<UserDto>> RemoveUserById(long id, string issuer)
     {
-        // Remove file link
-        await _context.Files
-            .Where(f => f.owner_id == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(f => f.owner_id,
-                                                               (uint?)null));
 
-        await _context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
-    }
-
-    private UserEntity CreateUserEntity(User user, uint roleId)
-    {
-        var hashed = _hasher.HashPassword(user, user.Password!);
-        return new UserEntity()
+        var result = await _context.RemoveUserByIdStoredProc(id, issuer);
+        if (result is null)
         {
-            Uname = user.Uname!,
-            Password = hashed,
-            Email = user.Email,
-            role_id = roleId
-        };
+            return new Error("No such user");
+        }
+        return new Success<UserDto>(result.ToDto());
+
     }
 
 

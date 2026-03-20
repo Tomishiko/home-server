@@ -1,29 +1,21 @@
 using core.Models;
+using core.Models.Generic;
 
 namespace core.Services;
 
 
-public interface IUserService
+public interface IUserService : IBaseDataService
 {
 
-    IEnumerable<User> GetAllUsersJoined();
+    IAsyncEnumerable<UserDto> GetAllUsersJoinedAsync(CancellationToken ct = default);
     ///<summary>
     ///Create entity and begin tracking user.
     ///Makes a trip to DB to fetch role data,
     ///dont use to consecutively add users
     ///</summary>
-    Task<Result<string>> AddUserAsync(string uname,
-                                                   string password,
-                                                   string initiatorUname,
-                                                   string? email = null,
-                                                   uint? role = null);
+    Task<Result<UserDto>> AddUserAsync(UserCreationDto dto);
 
-    Task RemoveUserById(uint id);
+    Task<Result<UserDto>> RemoveUserById(long id, string issuer);
 
-    ///<summary>
-    ///Performed on main DbContext
-    ///</summary>
-    Task<int> SaveChangesAsync();
-
-    Task<User?> GetUserInfo(uint id);
+    Task<UserDto?> GetUserInfo(long id);
 }

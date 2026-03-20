@@ -1,17 +1,18 @@
-using Data.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using core.Models;
-using Data.Core;
 using System.Diagnostics;
+using core.Interfaces;
+using core.Domain;
+using core.Models;
+using System.Runtime.CompilerServices;
 
 namespace core.Services;
 
 public class FileService : BaseDataService, IFileService
 {
-    public FileService(ApplicationDbContext context) : base(context) { }
+    public FileService(IApplicationDbContext context) : base(context) { }
 
-    public async Task NewFileRecordAsync(string UUID, string ext, string fileName, ulong fileSize, uint owner_id, bool shared)
+    public async Task StageNewFileRecord(string UUID, string ext, string fileName,
+            long fileSize, long owner_id, bool shared) // TODO: make a dto for this crap ffs
     {
         var fileEnt = new FileEntity
         {
@@ -19,10 +20,10 @@ public class FileService : BaseDataService, IFileService
             Ext = ext,
             Size = fileSize,
             Name = fileName,
-            Public = shared,
-            owner_id = owner_id
+            IsPublic = shared,
+            OwnerId = owner_id
         };
-        await _context.Files.AddAsync(fileEnt);
+        _context.Files.Add(fileEnt);
 
     }
     ///<summary>If <paramref name="shared"/> is false
@@ -30,44 +31,69 @@ public class FileService : BaseDataService, IFileService
     ///</summary>
     ///<exception cref="ArgumentNullException"> Throws if shared is false
     ///and owner id is not provided or null</exception>
-    private IAsyncEnumerable<FileMeta> GetFiles(bool shared, uint? owner_id = null)
+    private async IAsyncEnumerable<FileMeta> GetFiles(bool shared,
+                                                      long? owner_id = null,
+                                                      [EnumeratorCancellation] CancellationToken ct = default)
     {
         if (shared)
-            return _context.Files
+        {
+
+            var stream = _context.Files
+                .AsNoTracking()
                 .Include("Owner")
-                .Where(f => f.Public && !f.IsDeleted)
-                .Select(f => new FileMeta(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
-                .AsAsyncEnumerable();
+                .Where(f => f.IsPublic && !f.IsDeleted)
+                .AsAsyncEnumerable()
+                .WithCancellation(ct);
+
+            await foreach (FileEntity f in stream)
+            {
+                yield return new FileMeta(f.UUID, f.Name, f.Size, f.Ext,
+                            f.Owner?.Uname, f.Id);
+            }
+        }
         else
         {
             Debug.Assert(owner_id is not null);
-            return _context.Files
+            var stream = _context.Files
+                .AsNoTracking()
                 .Include("Owner")
-                .Where(f => f.Private && f.owner_id == owner_id && !f.IsDeleted)
-                .Select(f => new FileMeta(f.UUID, f.Name, f.Size, f.Ext, f.Owner.Uname, f.Id))
-                .AsAsyncEnumerable();
+                .Where(f => !f.IsPublic && f.OwnerId == owner_id && !f.IsDeleted)
+                .AsAsyncEnumerable()
+                .WithCancellation(ct);
+
+            await foreach (FileEntity f in stream)
+            {
+                yield return new FileMeta(f.UUID, f.Name, f.Size, f.Ext,
+                            f.Owner?.Uname, f.Id);
+            }
 
         }
 
     }
-    public Task<FileEntity> GetFile(uint id)
+    public Task<FileEntity?> GetFile(long id)
     {
-        return _context.Files.Where(f => f.Id == id && !f.IsDeleted).SingleAsync();
+        return _context.Files
+                       .Where(f => f.Id == id && !f.IsDeleted)
+                       .SingleOrDefaultAsync();
     }
-    public IAsyncEnumerable<FileMeta> GetSharedFilesAsync()
+    public IAsyncEnumerable<FileMeta> GetSharedFilesAsync(CancellationToken ct = default)
     {
-        return GetFiles(true);
+        return GetFiles(true, ct: ct);
     }
 
-    public IAsyncEnumerable<FileMeta> GetPrivateFilesAsync(uint owner_id)
+    public IAsyncEnumerable<FileMeta> GetPrivateFilesAsync(long owner_id, CancellationToken ct = default)
     {
-        return GetFiles(false, owner_id);
+        return GetFiles(false, owner_id, ct);
     }
-    public async Task<FileMeta?> RequestFileAsync(uint? userId, uint fileId)
+    public async Task<FileMeta?> RequestFileAsync(long? userId, long fileId)
     {
         var fileInfo = await GetFile(fileId);
+        if (fileInfo is null)
+        {
+            return null;
+        }
 
-        if (fileInfo.Private && (userId == null || fileInfo.owner_id != userId))
+        if (fileInfo.IsPrivate && (userId == null || fileInfo.OwnerId != userId))
             return null;
 
         return new FileMeta(fileInfo.UUID, fileInfo.Name, fileInfo.Size, fileInfo.Ext);
@@ -77,23 +103,23 @@ public class FileService : BaseDataService, IFileService
     /// Marks a file for a deletion
     ///</summary>
     ///<returns>Amount of records marked for deletion</returns>
-    public Task<int> MarkAsDeletedAsync(uint userId, uint fileId)
+    public Task<int> MarkAsDeletedAsync(long userId, long fileId)
     {
         return _context.Files
-            .Where(f => f.Id == fileId && f.owner_id == userId)
+            .Where(f => f.Id == fileId && f.OwnerId == userId)
             .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsDeleted, true));
 
     }
     ///<summary>
     ///Returns a list of file names which are flagged deleted in DB
     ///</summary>
-   // public IAsyncEnumerable<File> GetDeletedFiles()
-   // {
-   //     return _context.Files.Where(f => f.IsDeleted)
-   //                          .Select(f=>new File("",$"wwwroot/files/{f.UUID}",))
-   //                          .AsAsyncEnumerable();
-   // }
-    public void StageDeletion(uint fileId)
+    // public IAsyncEnumerable<File> GetDeletedFiles()
+    // {
+    //     return _context.Files.Where(f => f.IsDeleted)
+    //                          .Select(f=>new File("",$"wwwroot/files/{f.UUID}",))
+    //                          .AsAsyncEnumerable();
+    // }
+    public void StageDeletion(long fileId)
     {
         _context.Files.Remove(new FileEntity { Id = fileId });
 

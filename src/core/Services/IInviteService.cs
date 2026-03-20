@@ -9,7 +9,7 @@ public interface IInviteService
     ///Checks if token exist in DB and is not expired or used
     ///</summary>
     ///<returns>Issuer of the token or null when token is not valid</returns>
-    public Task<User?> ValidateToken(string token, CancellationToken ct = default);
+    public Task<UserDto?> ValidateToken(string token, CancellationToken ct = default);
 
-    public Task<byte[]> GenNewInvite(string issuerName, CancellationToken ct = default);
+    public Task<InviteTokenModel> GenNewInviteAsync(string issuerName);
 }

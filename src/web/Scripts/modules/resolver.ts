@@ -1,8 +1,11 @@
 export const Modules = {
     indexPage: () => import('./indexPage'),
-    newUser: () => import('./NewUser'),
+    //newUser: () => import('./NewUser'),
     manager: () => import('./managerIndex'),
     logs: () => import("../manage/logs"),
-    newUserInvite:()=>import('./NewUserInvite')
+    newUserInvite: () => import('./NewUserInvite'),
+    login: () => import('./LogIn'),
+    users: () => import('./users'),
+    indexTable: () => import('./indexTable'),
 
 };

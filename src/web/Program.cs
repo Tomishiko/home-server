@@ -1,82 +1,70 @@
-using web.Services;
 using core.Services;
 using Data.Core;
 using System.Net;
 using web.Extensions;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Mvc;
+using Serilog;
+using core.Models.Generic;
 
 namespace web;
 
 public static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.PerfomServicesCheckups(builder.Configuration);
-        builder.Services.Startup(builder.Configuration);
-        // Add services to the container.
-        //        if (builder.Environment.IsDevelopment())
-        //        {
-        //            builder.Services.AddWebOptimizer(minifyJavaScript: false, minifyCss: false);
-        //        }
-        //        else
-            //{
-            //    builder.Services.AddWebOptimizer(pipeline =>
-            //    {
-            //        pipeline.AddJavaScriptBundle("/js/site.js", "js/index/*.js");
-        //    });
-        //}
-        builder.Services.AddControllersWithViews();
-        //builder.Services.AddScoped<Irepos>
+        var isDev = builder.Environment.IsDevelopment();
 
-        //TODO: AntiForgery token
-        // builder.Services.AddRazorPages(options =>
-        // {
-        //     options.Conventions
-        //         .AddPageApplicationModelConvention("/Home",
-        //             model =>
-        //             {
-        //                 model.Filters.Add(
-        //                     new GenerateAntiforgeryTokenCookieAttribute());
-        //                 model.Filters.Add(
-        //                     new DisableFormValueModelBindingAttribute());
-        //             });
-        // });
-        //var jwtIssuer = builder.Configuration.GetSection("JWT:issuer").Get<string>();
-        //var jwtKey = builder.Configuration.GetSection("JWT:key").Get<string>();
+        builder.Services.RegisterCoreServices(builder.Configuration);
+        builder.SetPostConfig();
+        builder.Services.SetAuthentication();
 
+        // MVC setup
+        builder.Services
+            .AddControllersWithViews(options =>
+            {
+                options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+            });
+        //.ConfigureApiBehaviorOptions(options =>
+        //{
+        //    options.InvalidModelStateResponseFactory = context =>
+        //    {
+        //        var error = new Error
+        //        (
+        //             Message: "Model validation failed.",
+        //             Code: "VALIDATION_ERROR"
+        //         );
+        //        return new BadRequestObjectResult(error);
+        //    };
+        //});
 
-        var app = builder.Build();
+        if (isDev) builder.Services.SwaggerConfig();
 
-        if (!app.Environment.IsDevelopment())
+        var app = await builder.Build().PerformServicesCheckups();
+
+        if (!isDev)
         {
             app.UseExceptionHandler("/Home/Error");
             app.UseHsts();
         }
-        app.UseStatusCodePages(async context =>
+        else
         {
-            var request = context.HttpContext.Request;
-            var response = context.HttpContext.Response;
-            if (response.StatusCode == (int)HttpStatusCode.Unauthorized //TODO change this retarded shit to check for ajax requests
-                    && request.Headers.Accept.Any(x => x.Contains("text/html")))
-            {
-                response.Redirect("/login");
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
 
-            }
-            if (response.StatusCode >= 400)
-            {
-                var req = context.HttpContext.Request;
-                Console.WriteLine($"Failed request: {req.Method} {req.Path} => {response.StatusCode}");
-            }
-        });
 
-        app.UseAuthentication();
+        app.UseFailedRequestLogging();
+        //app.UseSecurityHeaders();
         app.UseHttpsRedirection();
-        //app.UseWebOptimizer();
-        app.UseStaticFiles();
         app.UseCors();
+        app.UseStaticFiles();
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
+        app.UseAntiforgery();
 
         app.MapControllerRoute(
             name: "default",

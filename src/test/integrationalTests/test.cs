@@ -60,7 +60,7 @@ public class UnitTest1
         var inserted = userRepo.Query().Where(u => u.Uname.Contains("test")).ToList();
         Assert.Equal(4, inserted.Count());
         //Add couple of referenced logs
-        uint id = userRepo.Query().Where(u=>u.Uname=="testuname2").Select(u=>u.Id).Single();
+        long id = userRepo.Query().Where(u=>u.Uname=="testuname2").Select(u=>u.Id).Single();
         logsRepo.AddAsync(new LogsEntity { user_id = id, Id = 0, Time = DateTime.MinValue, Event = "Event" });
         await logsRepo.SaveContextAsync();
         //Delete Users

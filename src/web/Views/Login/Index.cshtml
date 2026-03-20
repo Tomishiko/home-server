@@ -1,20 +1,30 @@
-<div class="text-center">
-    <h2 class="" >Login</h2>
-</div>
-<div class="container">
-    <form id="loginform" method="post" asp-controller="Authentication" asp-action="Authentication">
-        <div class="mb-3">
-            <label for="exampleInputEmail1" class="form-label">Username</label>
-            <input type="text" class="form-control" name="Uname" id="exampleInputEmail1"
-                aria-describedby="emailHelp">
-        </div>
-        <div class="mb-3">
-            <label for="exampleInputPassword1" class="form-label">Password</label>
-            <input type="password" class="form-control" name="Password" id="exampleInputPassword1">
-        </div>
-        <div class="text-center" style="margin-top: 32px;">
-            <button type="submit" class="btn btn-dark border-secondary" >Log in</button>
-        </div>
-    </form>
-</div>
+@using web.Models.RequestModels;
+@model AuthRequest
 
+<div data-module="login">
+    <div class="text-center">
+        <h2 class="">Login</h2>
+    </div>
+    <div class="container">
+        <form id="loginform" hx-post="/Login?ReturnUrl=@Context.Request.Query["ReturnUrl"]" hx-target="#main" hx-swap="innerHTML">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="Username" class="form-label">Username</label>
+                <input type="text" class="form-control" asp-for='Username' name="Username" id="Username"
+                       aria-describedby="emailHelp" required>
+                <span asp-validation-for="Username" class="validation-warn"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="Password" class="form-label">Password</label>
+                    <input type="password" class="form-control" asp-for='Password' name="Password" id="Password" required>
+                        <span asp-validation-for="Password" class="validation-warn"></span>
+                    </div>
+                    <span class="validation-warn">@ViewData["ErrorMessage"]</span>
+
+                    <div class="text-center" style="margin-top: 32px;">
+                        <button type="submit"  class="btn btn-dark border-secondary">Log in</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>

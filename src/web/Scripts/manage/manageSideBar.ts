@@ -5,7 +5,7 @@ export async function navbarClickHandler(e) {
     const current: HTMLElement = e.target;
     if (current.classList.contains('active'))
         return;
-    document.querySelector("#sidebar-item.nav-link.active").classList.remove('active');
+    document.querySelector("#sidebar-item.nav-link.active")?.classList.remove('active');
     //await loadContent(current.getAttribute("href"))
     current.classList.add('active');
 }
@@ -26,7 +26,7 @@ export async function loadContent(path) {
         response.text().then(function(string) {
             const content = document.getElementById('content');
             content.innerHTML = string;
-            const scripts = content.getElementsByTagName('script');
+            const scripts = content?.getElementsByTagName('script');
             for(var script in scripts)
                 eval(script);
         });
