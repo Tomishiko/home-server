@@ -4,6 +4,7 @@ using core.Extensions;
 using core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace core.Services;
 
@@ -12,36 +13,52 @@ public class LogService : BaseDataService, ILogService
 
     public LogService(IApplicationDbContext context) : base(context) { }
 
-    public IAsyncEnumerable<LogDto> GetAll(string? timeZone)
+    public async IAsyncEnumerable<LogDto> GetAll(string? timeZone,
+                                                 [EnumeratorCancellation] CancellationToken ct = default)
     {
-        return _context.Logs
+        var stream = _context.Logs
             .AsNoTracking()
-            .Select(l => new LogDto(
+            .AsAsyncEnumerable()
+            .WithCancellation(ct);
+
+        await foreach (LogsEntity l in stream)
+        {
+            yield return new LogDto(
                 l.Id,
                 l.Event,
                 TimeZoneInfo.ConvertTimeBySystemTimeZoneId(l.Time,
                                                            timeZone ?? "UTC"),
-                l.Uname))
-            .AsAsyncEnumerable();
+                l.Uname);
+        }
     }
 
-    public async Task NewLogAsync(LogDto log)
+    public Task<int> AddNewLog(LogDto log)
     {
-        var time = log.Time.ToUniversalTime();
-
-        _context.Logs.Add(new LogsEntity
+        StageNewLog(log);
+        return SaveChangesAsync();
+    }
+    public Task<int> AddNewLogs(IEnumerable<LogDto> logs)
+    {
+        foreach (var log in logs)
         {
-            Uname = log.Uname,
-            Time = time,
-            Event = log.Event
-        });
-        await SaveChangesAsync();
+            StageNewLog(log);
+        }
+        return SaveChangesAsync();
     }
 
-    public async Task<ImmutableArray<LogDto>> GetPage(int perPage,
-                                                      string? timeZone,
-                                                      long lastId = default,
-                                                      DateTimeOffset lastTime = default)
+    public Task<int> AddNewLogs(params LogDto[] logs)
+    {
+        foreach (var log in logs)
+        {
+            StageNewLog(log);
+        }
+        return SaveChangesAsync();
+    }
+
+    public Task<ImmutableArray<LogDto>> GetPage(int perPage,
+                                                string? timeZone,
+                                                long lastId = default,
+                                                DateTimeOffset lastTime = default)
     {
 
         IQueryable<LogsEntity> query = _context.Logs;
@@ -50,14 +67,12 @@ public class LogService : BaseDataService, ILogService
         if (lastId > 0)
         {
 
-            //Console.WriteLine($"{lastId}");
-            //Console.WriteLine($"{lastTime}");
             lastTime = lastTime.ToUniversalTime();
             query = query.Where(l => l.Time < lastTime ||
                        (l.Time == lastTime && l.Id < lastId));
         }
 
-        var test = await query.OrderByDescending(l => l.Time)
+        return query.OrderByDescending(l => l.Time)
                           .ThenByDescending(l => l.Id)
                           .Take(perPage)
                           .AsNoTracking()
@@ -67,13 +82,20 @@ public class LogService : BaseDataService, ILogService
                                          TimeZoneInfo.ConvertTimeBySystemTimeZoneId(l.Time,
                                                                                     timeZone ?? "UTC"),
                                          l.Uname))
-                          .ToImmutableArrayAsync();
-        foreach (var entry in test)
-        {
-            Console.WriteLine(entry);
-        }
-        return test;
+                          .ToImmutableArrayAsync(10);
 
+    }
+    private void StageNewLog(LogDto log)
+    {
+
+        var time = log.Time.ToUniversalTime();
+
+        _context.Logs.Add(new LogsEntity
+        {
+            Uname = log.Uname,
+            Time = time,
+            Event = log.Event
+        });
     }
 
 }

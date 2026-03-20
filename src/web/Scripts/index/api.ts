@@ -8,7 +8,7 @@ export async function GetPartialTable(action: number): Promise<PartialTableRespo
     const postBody = JSON.stringify({
         action: action,
     });
-    const response = await fetch(`/partialtable?action=${action}`, {
+    const response = await fetch(`/index/partialtableload?action=${action}`, {
         method: 'GET',
         headers: {
             "Accept": "text/html",

@@ -1,7 +1,16 @@
 ﻿/* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
-
+#spinnerOverlay{
+    position: absolute;
+    width: 3rem;
+    height: 3rem;
+    top: 50%; left: 50%;
+    z-index: 10;
+}
+#main.htmx-request {
+    display: none;
+}
 #createBtn {
     --bs-btn-border-color: #19be72;
     --bs-btn-color: #19be72;

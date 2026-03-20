@@ -37,17 +37,17 @@ public class InvitesService : BaseDataService, IInviteService
         return issuer!.ToDto();
     }
 
-    public async Task<InviteTokenModel> GenNewInvite(string issuerName, CancellationToken ct = default)
+    public async Task<InviteTokenModel> GenNewInviteAsync(string issuerName)
     {
         byte[] bytes = RandomNumberGenerator.GetBytes(32);
         long issuerId = await GetUserIdByName(issuerName);
-        var entity = AddNewInvite(bytes, issuerId, ct);
+        var entity = AddNewInvite(bytes, issuerId);
         _logger.LogInformation($"New invite was added by {issuerName}");
         await SaveChangesAsync();
         return new InviteTokenModel(bytes, entity.Entity.ExpiresAt);
     }
 
-    private EntityEntry<InviteEntity> AddNewInvite(byte[] token, long issuerId, CancellationToken ct)
+    private EntityEntry<InviteEntity> AddNewInvite(byte[] token, long issuerId)
     {
 
         byte[] hashedToken = SHA256.HashData(token);

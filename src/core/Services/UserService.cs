@@ -5,6 +5,7 @@ using core.Domain;
 using core.Interfaces;
 using core.Models.Generic;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 
 namespace core.Services;
 
@@ -23,24 +24,32 @@ public class UserService : BaseDataService, IUserService
         _logger = logger;
     }
 
-    public IEnumerable<UserDto> GetAllUsersJoined()
+    public async IAsyncEnumerable<UserDto> GetAllUsersJoinedAsync([EnumeratorCancellation] CancellationToken ct = default)
     {
-        return _context.Users
-                .Include("Role")
-                .Select(u => u.ToDto());
+        var stream = _context.Users
+                    .Include("Role")
+                    .AsNoTracking()
+                    .AsAsyncEnumerable()
+                    .WithCancellation(ct);
+
+        await foreach (var user in stream)
+        {
+            yield return user.ToDto();
+        }
     }
 
     public Task<UserDto?> GetUserInfo(long id) =>
         _context.Users.Where(u => u.Id == id)
                       .Include("Role")
+                      .AsNoTracking()
                       .Select(u => u.ToDto())
                       .SingleOrDefaultAsync();
 
     public async Task<Result<UserDto>> AddUserAsync(UserCreationDto dto)
     {
-        ArgumentNullException.ThrowIfNullOrEmpty(dto.Username);
-        ArgumentNullException.ThrowIfNullOrEmpty(dto.Password);
-        ArgumentNullException.ThrowIfNullOrEmpty(dto.CreatedBy);
+        ArgumentException.ThrowIfNullOrEmpty(dto.Username);
+        ArgumentException.ThrowIfNullOrEmpty(dto.Password);
+        ArgumentException.ThrowIfNullOrEmpty(dto.CreatedBy);
         ArgumentNullException.ThrowIfNull(dto.RoleId);
 
 
@@ -78,13 +87,11 @@ public class UserService : BaseDataService, IUserService
     public async Task<Result<UserDto>> RemoveUserById(long id, string issuer)
     {
 
-        // TODO: add worker for deleting private files without owner
         var result = await _context.RemoveUserByIdStoredProc(id, issuer);
         if (result is null)
         {
             return new Error("No such user");
         }
-        //return new Success<UserDto>(new UserDto("stub","stub",2,"stub@stub.com"));
         return new Success<UserDto>(result.ToDto());
 
     }

@@ -1,36 +1,36 @@
-using web.Interfaces;
 using System.Collections.Concurrent;
-using core.Services;
 using core.Models;
-using web.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using core.Interfaces;
 
-namespace web.Services;
+namespace core.Services;
 
-public class StreamedFileCompositor
+public class UploadSessionMonitor
 {
     private readonly IServiceScopeFactory scopeFactory;
-    private ILogger<StreamedFileCompositor> _logger;
-    public ConcurrentDictionary<string, IStreamedFile> StreamedFiles;
+    private readonly ILogger<UploadSessionMonitor> _logger;
+    public ConcurrentDictionary<Guid, IPhysicalFileWriter> ActiveSessions;
 
-    public StreamedFileCompositor(ILogger<StreamedFileCompositor> logger, IServiceScopeFactory scopeFactory)
+    public UploadSessionMonitor(ILogger<UploadSessionMonitor> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        StreamedFiles = new ConcurrentDictionary<string, IStreamedFile>();
+        ActiveSessions = new ConcurrentDictionary<Guid, IPhysicalFileWriter>();
         this.scopeFactory = scopeFactory;
     }
+
     public async void OnCloseEventAsync(object? sender, CloseFileEventArgs e)
     {
         using var scope = scopeFactory.CreateScope();
         var logService = scope.ServiceProvider.GetRequiredService<ILogService>();
         var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
-        IStreamedFile? finishedFile;
 
-        if (!StreamedFiles.TryRemove(e.FileId, out finishedFile))
+        if (!ActiveSessions.TryRemove(e.FileId, out IPhysicalFileWriter? finishedFile))
         {
             // TODO: handle error of removing
-            LogDto log = new LogDto( 0, $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
+            var log = new LogDto(0, $"Was not able to remove file {e.FileName}:{e.FileId} from streaming queue",
                     e.ClosedAt.ToUniversalTime(), "StreamedFileCompositor");
-            await logService.NewLogAsync(log);
+            await logService.AddNewLog(log);
             await logService.SaveChangesAsync();
             return;
         }
@@ -41,8 +41,8 @@ public class StreamedFileCompositor
 
         if (extIndex != -1)
         {
-            ext = finishedFile.FileName.Substring(extIndex);
-            fname = finishedFile.FileName.Substring(0, extIndex);
+            ext = finishedFile.FileName[extIndex..];
+            fname = finishedFile.FileName[..extIndex];
         }
         else
         {
@@ -50,7 +50,7 @@ public class StreamedFileCompositor
             fname = finishedFile.FileName;
         }
 
-        await fileService.NewFileRecordAsync(finishedFile.Id, ext, fname,
+        await fileService.StageNewFileRecord(finishedFile.Id.ToString(), ext, fname,
                     finishedFile.FileSize, finishedFile.OwnerId, true);
 
         int changes = await fileService.SaveChangesAsync();
@@ -60,3 +60,4 @@ public class StreamedFileCompositor
     }
 
 }
+

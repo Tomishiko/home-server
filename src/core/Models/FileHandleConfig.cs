@@ -1,4 +1,4 @@
-namespace web.Models;
+namespace core.Models;
 
 public record FileHandleConfig(string path,
                                FileMode fileMode,

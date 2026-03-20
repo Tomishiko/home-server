@@ -38,11 +38,10 @@ public class ManagerApiController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
-    public async Task<IActionResult> PostJson(
+    public async Task<IActionResult> PostUser(
             [FromBody] RegisterManagerRequest userRequest)
     {
-        _logger.LogCritical("TO");
-        var currentUserName = User.FindFirstValue(ClaimTypes.Name);
+        var currentUserName = User.FindFirstValue(AppClaimTypes.Name);
 
         if (currentUserName.IsNullOrEmpty())
         {
@@ -78,7 +77,7 @@ public class ManagerApiController : ControllerBase
     {
 
 
-        var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value;
+        var currentUserName = User.FindFirst(AppClaimTypes.Name)?.Value;
         if (currentUserName.IsNullOrEmpty())
         {
             return Unauthorized("User identity could not be determined");
@@ -96,7 +95,6 @@ public class ManagerApiController : ControllerBase
     [HttpGet("user/{id}")]
     [ProducesResponseType(404)]
     [ProducesResponseType(200)]
-
     public async Task<ActionResult<UserDto>> GetUser(long id)
     {
         UserDto? userData = await _userService.GetUserInfo(id);
@@ -110,14 +108,13 @@ public class ManagerApiController : ControllerBase
     }
 
     [HttpGet("geninvite")]
-    //[ProducesResponseType(typeof(InviteTokenModel), StatusCodes.Status200OK, "application/json")]
     public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
     {
         Debug.Assert(User.Identity?.Name is not null);
-        InviteTokenModel token = await _invitesService.GenNewInvite(User.Identity.Name);
+        InviteTokenModel token = await _invitesService.GenNewInviteAsync(User.Identity.Name);
         string encoded = WebEncoders.Base64UrlEncode(token.Value);
 
-        return Ok(token);
+        return Ok(new { token = encoded, expires_at = token.Expiration });
     }
     [HttpGet("init-xsrf")]
     [AllowAnonymous]
@@ -125,5 +122,13 @@ public class ManagerApiController : ControllerBase
     {
         var tokens = antiforgery.GetAndStoreTokens(HttpContext);
         return Ok(tokens.RequestToken);
+    }
+    [HttpGet("logs")]
+    public IAsyncEnumerable<LogDto> GetLogs([FromServices] ILogService logs, CancellationToken ct)
+    {
+        var timezone = HttpContext.Request.Cookies["utcOffset"];
+        if (timezone.IsNullOrEmpty())
+            timezone = "UTC";
+        return logs.GetAll(timezone, ct);
     }
 }

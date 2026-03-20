@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Data.Core;
 using Microsoft.AspNetCore.Identity;
-using web.Services;
 using web.Helpers;
 using Microsoft.EntityFrameworkCore;
 using core.Services;

@@ -11,5 +11,5 @@ public interface IInviteService
     ///<returns>Issuer of the token or null when token is not valid</returns>
     public Task<UserDto?> ValidateToken(string token, CancellationToken ct = default);
 
-    public Task<InviteTokenModel> GenNewInvite(string issuerName, CancellationToken ct = default);
+    public Task<InviteTokenModel> GenNewInviteAsync(string issuerName);
 }

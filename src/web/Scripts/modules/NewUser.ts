@@ -9,6 +9,7 @@ export async function init(component, optionalData: any) {
         const form = document.forms["signIn"];
         const uname = form.elements.uname.value;
         const client = new ManagerApiClient();
+
         if (form.checkValidity()) {
             const selected = form.elements.role.selectedIndex;
             const request = new RegisterManagerRequest(

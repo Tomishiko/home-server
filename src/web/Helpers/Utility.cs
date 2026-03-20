@@ -1,11 +1,16 @@
 using System;
 using System.Globalization;
 using System.Security.Claims;
+using core.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using web.Models;
 
 namespace web.Helpers;
 
 public static class Utility
 {
+    public const long maxPartSize = 1024 * 1024 * 10;//10 Mb
+
     public static string BytesToStringOptimized(long value)
     {
         string suffix;
@@ -47,11 +52,29 @@ public static class Utility
         if (requestedWith == "XMLHttpRequest") return true;
         else return false;
     }
-    public static long? TryGetUserId(ClaimsPrincipal claimsPrincipal){
+    public static long? TryGetUserId(ClaimsPrincipal claimsPrincipal)
+    {
 
         long userId;
         if (!long.TryParse(claimsPrincipal.FindFirstValue("Id"), out userId))
             return null;
         return userId;
+    }
+    public static ClaimsIdentity BuildClaims(UserDto user)
+    {
+
+        var claims = new List<Claim>
+        {
+            new (AppClaimTypes.Name, user.Username),
+            new (AppClaimTypes.Role, user.Role),
+            new (AppClaimTypes.Identity, user.Id.ToString())
+        };
+
+        return new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            AppClaimTypes.Name,
+            AppClaimTypes.Role);
+
     }
 }

@@ -30,10 +30,8 @@ public class FileConfiguration : BaseConfiguration<FileEntity>
         builder.Property(x => x.IsDeleted)
                .HasColumnName("is_deleted");
 
-        // Replicate [NotMapped]
         builder.Ignore(x => x.IsPrivate);
 
-        // Replicate [ForeignKey("Owner")]
         builder.Property(x => x.OwnerId)
                .HasColumnName("owner_id");
 

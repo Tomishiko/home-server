@@ -1,5 +1,20 @@
+
+.manager-container {
+    margin-bottom: 20px;
+}
+
+.offcanvas-lg {
+    transition: transform 0.2s ease-out;
+}
+
+a.nav-link {
+    color: var(--bs-nav-bar-color);
+    ;
+}
+
 #content {
     margin-top: 16px;
+    padding-left: 1rem;
 }
 
 #transparent-button {
@@ -22,4 +37,11 @@
 /* Custom styling for the close button */
 .glassy-offcanvas .btn-close {
     filter: invert(1) brightness(1.8);
+}
+
+aside {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    /* Light border for dark themes */
+    padding-right: 1.5rem;
+    width: 15%;
 }

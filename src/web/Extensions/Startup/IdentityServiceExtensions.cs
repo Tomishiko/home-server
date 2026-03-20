@@ -1,8 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using core.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using web.Helpers;
+using web.Models;
 
 namespace web.Extensions;
 
@@ -11,10 +13,10 @@ public static class IdentityServiceExtensions
 
     public static IServiceCollection SetAuthentication(this IServiceCollection services)
     {
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        services.AddAuthentication("Cookies")
         .AddCookie(options =>
         {
-            options.Cookie.Name = "AspNet.Id";
+            options.Cookie.Name = "auth";
             options.Cookie.HttpOnly = true;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.Cookie.SameSite = SameSiteMode.Strict;
@@ -38,19 +40,20 @@ public static class IdentityServiceExtensions
                 return Task.CompletedTask;
             };
         });
+        //JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-        services.AddAuthorization(options =>
-        {
-            options.DefaultPolicy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .RequireClaim(ClaimTypes.Name)
-                .RequireClaim("Id")
-                .RequireClaim(ClaimTypes.Role)
-                .Build();
-            options.AddPolicy("ManagerOnly",
-                              policy => policy.RequireClaim(ClaimTypes.Name)
-                                              .RequireRole("manager"));
-        });
+        services.AddAuthorizationBuilder()
+            .SetDefaultPolicy(new AuthorizationPolicyBuilder()
+                                .RequireAuthenticatedUser()
+                                .RequireClaim(AppClaimTypes.Name)
+                                .RequireClaim(AppClaimTypes.Identity)
+                                .RequireClaim(AppClaimTypes.Role)
+                                .Build()
+                              )
+            .AddPolicy("ManagerOnly", policy => policy.RequireAuthenticatedUser()
+                                                      .RequireRole("manager")
+                                                      .RequireClaim(AppClaimTypes.Name)
+                                                      .RequireClaim(AppClaimTypes.Identity));
         return services;
     }
 }

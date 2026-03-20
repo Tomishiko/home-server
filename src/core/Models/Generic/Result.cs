@@ -9,4 +9,4 @@ public sealed record Success<T>(T Value) : Result<T>;
 
 public sealed record Failure<T>(Error Error) : Result<T>;
 
-public sealed record Error(string Message, string? Code = null);
+public sealed record Error(string Message, int? Code = null);

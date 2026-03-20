@@ -1,24 +1,24 @@
-﻿<!DOCTYPE html>
+﻿@using web.Controllers
+<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-
-@{string path = Context.Request.Path.Value.ToLower();}
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="
         base-uri 'self';
         default-src 'self';
         img-src data: https:;
         object-src 'none';
         script-src 'self';
-        style-src https:;
+        style-src 'self' 'unsafe-inline';
         connect-src 'self';
         upgrade-insecure-requests;" />
+@{string? path = Context.Request.Path.Value?.ToLower();}
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Home Server</title>
         <!--<link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>-->
-    <link rel="stylesheet" rel="preload" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="/web.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="/css/site.css"/>
 </head>
 <body class="d-flex flex-column min-vh-100" data-bs-no-jquery="true">
     <header>
@@ -32,34 +32,36 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between" id="navbar-main">
                     <ul class="nav-underline navbar-nav d-flex">
                         <li class="nav-item">
-                            <a class='nav-link @(path =="/" ? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="main"
-                                data-ajax-url='@Url.Action("Index","Index")' data-ajax-method="GET"
-                                data-ajax-success="window.mainNavHandler" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
+                            <a class='nav-link @(path =="/" ? "active":"") navbar-element'
+                                    hx-get='@Url.Action("Index","Index")' hx-target='#main' hx-swap='innerHTML' hx-push-url="true"
+                                   data-ajax-success="window.mainNavHandler" asp-controller="Index" asp-action="Index" asp-area=""  aria-current="page">Index</a>
+                                   </li>
                         @{
 
-                        if (!User.Identity.IsAuthenticated)
+                        if (!User.Identity?.IsAuthenticated ?? false)
                         {
                         <li class="nav-item">
-                            <a class="nav-link" data-ajax="true" data-ajax-action="substitute"
-                                data-ajax-url='@Url.Action("Index","Login")' data-ajax-method="GET"
-                                asp-controller="Login" data-ajax-container="main" asp-action="Index">Log in</a>
+                            <a class='nav-link @(path.StartsWith("/login")? "active":"") navbar-element'
+                                hx-get='@Url.Action("Index","Login")' hx-target='#main' hx-push-url="true" hx-swap='innerHTML'
+                                asp-controller="Login"  asp-action="Index">Log in</a>
 
                         </li>
                         }
                         else
                         {
 
-                        if (User.IsInRole("manager")) //Claims.Any(c => c is { Type: ClaimTypes.Role, Value: "manager" }))
+                        if (User.IsInRole("manager"))
                         {
                         <li class="nav-item">
-                            <a class='nav-link @(path.StartsWith("/manager")? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="#main"
-                                data-ajax-url='@Url.Action("Index","Manager")' data-ajax-method="GET"
-                                data-ajax-success="mainNavHandler"asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
+                            <a class='nav-link @(path.StartsWith("/manager")? "active":"") navbar-element'
+                                hx-get='@Url.Action(nameof(UsersManagerController.Index),"UsersManager")'
+                                hx-target='#main' hx-swap='innerHTML' hx-push-url="true" hx-indicator="#spinnerOverlay, #main"
+                                asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>
                         </li>
                         }
-                            <a class='nav-link @(path.StartsWith("/profile")? "active":"")' data-ajax="true" data-ajax-action="substitute" data-ajax-container="#main"
-                                data-ajax-url='@Url.Action("Index","Profile")' data-ajax-method="GET"
-                                data-ajax-success="mainNavHandler"asp-controller="Profile" asp-action="Index" asp-area="">@User?.FindFirstValue(ClaimTypes.Name)
+                            <a class='nav-link @(path.StartsWith("/profile")? "active":"") navbar-element'
+                                hx-get='@Url.Action("Index","Profile")' hx-target='#main' hx-swap='innerHTML' hx-push-url="true"
+                                data-ajax-success="mainNavHandler"asp-controller="Profile" asp-action="Index" asp-area="">@User?.FindFirstValue(AppClaimTypes.Name)
                             </a>
                         }
                         }
@@ -72,12 +74,18 @@
              @RenderBody()
     </main>
 
+     <div  id="spinnerOverlay" class="d-flex justify-content-center htmx-indicator">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
     <footer class="border-top footer mt-auto  text-muted">
         <div class="container-fluid">
             &copy; 2025 - <a href="https://tomishiko.iusevimbtw.com">Tomishiko</a>
         </div>
     </footer>
-@await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
     <script src="/js/main.js" type="module"></script>
+    <script src="/dist/htmx.min.js"></script>
 </html>

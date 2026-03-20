@@ -1,0 +1,48 @@
+@using web.Controllers
+@model IAsyncEnumerable<core.Models.UserDto>
+@{
+    ViewData["Title"] = "User List";
+}
+<div data-module="users">
+
+    <h1>User List</h1>
+    <a href="#" hx-get='@Url.Action(nameof(UsersManagerController.AddUser), "UsersManager")'
+       hx-target="#main" hx-swap="innerHTML" hx-push-url="true"
+       class="btn btn-dark border-secondary mb-3">Create New User</a>
+
+<div class="table-responsive">
+    <table class="table table-bordered text-nowrap">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @await foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Username</td>
+                    <td>@user.Role</td>
+                    <td>@user.Email</td>
+                    <td>
+                        <a href="@Url.Action("Edit", "Manager", new { id = user.Id })"
+                           class="btn btn-dark btn-outline-warning">Edit</a>
+                        <a href=""
+                           hx-delete="@Url.Action(nameof(UsersManagerController.DeleteUser), "UsersManager", new { id = user.Id, uname = user.Username })"
+                           hx-target="#content" hx-swap="innerHTML"
+                           hx-confirm="@($"Are you sure you want to delete {user.Username} and all private files associated with this user?")"
+                           class="btn btn-delete btn-dark btn-outline-danger">Delete</a>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+    @Html.AntiForgeryToken()
+</div>

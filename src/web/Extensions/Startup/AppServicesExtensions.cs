@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using web.Helpers;
-using web.Services;
 
 namespace web.Extensions;
 
@@ -35,23 +34,25 @@ public static class AppServicesExtensions
         });
 
         services.AddEndpointsApiExplorer();
-        services.AddSingleton<StreamedFileCompositor>();
+        services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));
+
+        services.AddSingleton<UploadSessionMonitor>();
         services.AddSingleton<ICoreFS, CoreFS>();
-        services.AddSingleton<JWTGen>();
-        services.AddTransient<IMpvService, Mpv>();
         services.AddTransient<FileUploadHelperService>();
         services.AddTransient<InvitesService>();
-        services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));
+        services.AddScoped<IUploadProcessor, UploadProcessor>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
         services.AddHostedService<BackgroundFileService>();
+        services.AddHttpContextAccessor();
 
         services.AddAntiforgery(options =>
         {
             options.HeaderName = "X-XSRF-TOKEN";
+            options.Cookie.Name = "Antiforgery";
         });
 
 
@@ -78,22 +79,22 @@ public static class AppServicesExtensions
 
         services.AddSwaggerGen(c =>
         {
-            c.DocInclusionPredicate((docName, apiDesc) =>
-            {
-                if (apiDesc.ActionDescriptor is
-                        ControllerActionDescriptor controllerDescriptor)
-                {
-                    // Check if the controller has the [ApiController] attribute
-                    var hasApiControllerAttribute = controllerDescriptor.ControllerTypeInfo
-                        .GetCustomAttributes(typeof(ApiControllerAttribute), true)
-                        .Any();
-                    var hasApiRoute = apiDesc.RelativePath != null && apiDesc.RelativePath.StartsWith("api/");
+            //   c.DocInclusionPredicate((docName, apiDesc) =>
+            //   {
+            //       if (apiDesc.ActionDescriptor is
+            //               ControllerActionDescriptor controllerDescriptor)
+            //       {
+            //           // Check if the controller has the [ApiController] attribute
+            //           var hasApiControllerAttribute = controllerDescriptor.ControllerTypeInfo
+            //               .GetCustomAttributes(typeof(ApiControllerAttribute), true)
+            //               .Any();
+            //           var hasApiRoute = apiDesc.RelativePath != null && apiDesc.RelativePath.StartsWith("api/");
 
-                    return hasApiControllerAttribute || hasApiRoute;
-                }
+            //           return hasApiControllerAttribute || hasApiRoute;
+            //       }
 
-                return false;
-            });
+            //       return false;
+            //   });
         });
         return services;
     }

@@ -8,7 +8,7 @@ public class FileEntity : BaseEntity
     public string Name { get; set; } = string.Empty;
 
     public long? OwnerId { get; set; }
-    public bool IsPublic { get; set; } // Changed from 'Public' to avoid keyword confusion
+    public bool IsPublic { get; set; }
     public bool IsDeleted { get; set; } = false;
 
     public bool IsPrivate

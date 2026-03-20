@@ -1,13 +1,10 @@
-﻿@using web.Helpers;
-@model IAsyncEnumerable<core.Models.FileMeta>
+﻿@using web.Controllers
+@using web.Helpers;
+@using web.ViewModels
+@model IndexPageViewModel;
 @{
-ViewData["Title"] = "Index";
+    ViewData["Title"] = "Index";
 }
-@* TODO: #4 add antiforgery token for this page *@
-
-<!--<link rel="modulepreload" href="~/js/index/preload.js" as="script" async/>
-<link rel="modulepreload" href="~/js/index/partialTable.js" as="script" async/>
--->
 <div data-module="indexPage">
     <div id='fileBlock'>
         <div class="row g-3">
@@ -15,7 +12,7 @@ ViewData["Title"] = "Index";
 
             <div class="col-auto w-auto">
                 <input class="form-control" type="file" id="file" multiple>
-                 @Html.AntiForgeryToken()
+                @Html.AntiForgeryToken()
             </div>
             <div class="col-auto ">
                 <button id="submitBtn" class="btn btn-dark border-secondary">Upload</button>
@@ -23,13 +20,16 @@ ViewData["Title"] = "Index";
 
         </div>
     </div>
-    <div class="container-list-group-horizontal" id="table-container">
-        @await Html.PartialAsync("/Views/Partials/_IndexTable.cshtml", Model, ViewData)
+    <div class="container-list-group-horizontal table-responsive" id="table-container"
+         hx-get='@Url.Action(nameof(IndexController.PartialTableLoad), "Index")' hx-trigger="upload-complete from:body">
+        @await Html.PartialAsync("_IndexTable", Model)
     </div>
-    <ul id="contextMenu" class="dropdown-menu" role="menu">
+    <ul id="contextMenu" class="dropdown-menu" role="menu" hx-trigger="menu-open from:body">
         <li><a id="print" class="dropdown-item" href="#">Print</a></li>
         <li><a id="download" class="dropdown-item" href="#">Download</a></li>
-        <li><a id="delete" class="dropdown-item" href="#">Delete</a></li>
+        <li><a id="deleteBtn" hx-delete='@Url.Action(nameof(IndexController.DeleteFile), "Index")'
+                   hx-confirm="Are you sure you want to delete this file?" hx-swap="innerHTML" hx-target="#table-container"
+                   class="dropdown-item" href="#">Delete</a>
+        </li>
     </ul>
 </div>
-

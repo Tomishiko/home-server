@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication;
 using core.Models.Generic;
 using web.Models.RequestModels;
 using Microsoft.AspNetCore.Antiforgery;
+using web.Helpers;
 
 [ApiController]
 public class AuthenticationApiController : ControllerBase
@@ -38,33 +39,25 @@ public class AuthenticationApiController : ControllerBase
         Result<UserDto> result = await _authService.AuthenticateAsync(
                 new UserAuthDto(creds.Username, creds.Password));
 
-        return result switch
+        switch (result)
         {
-            Success<UserDto> success => await SignInHandle(success.Value),
-            Failure<UserDto> failuer => Unauthorized(failuer.Error),
-            _ => BadRequest()
-        };
+            case Success<UserDto> success:
+                var claimsIdentity = Utility.BuildClaims(success.Value);
 
+                await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity));
+
+                return Ok();
+
+
+            case Failure<UserDto> failuer:
+                return Unauthorized(failuer.Error);
+
+            default: return BadRequest();
+        }
     }
 
-    private async Task<IActionResult> SignInHandle(UserDto user)
-    {
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("Id", user.Id.ToString())
-        };
-
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity));
-
-        return Ok();
-
-    }
 
 
 }

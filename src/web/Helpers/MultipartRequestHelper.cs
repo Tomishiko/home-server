@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Net.Http.Headers;
 
 namespace web.Helpers;
+
 public static class MultipartRequestHelper
 {
     // get the boundary information, for above exmaple would be
@@ -52,6 +53,7 @@ public class DisableFormValueModelBindingAttribute : Attribute, IResourceFilter
     {
         var factories = context.ValueProviderFactories;
         factories.RemoveType<FormValueProviderFactory>();
+        factories.RemoveType<FormFileValueProviderFactory>();
         factories.RemoveType<JQueryFormValueProviderFactory>();
     }
 

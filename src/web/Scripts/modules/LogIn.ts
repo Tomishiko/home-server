@@ -4,11 +4,12 @@ import {
     ErrorDto,
     ProblemDetails
 } from '../Api/Client.js'
+import { ajaxPartial } from '../shared/ajax.js';
 import { getCookie } from '../utils.js'
 
 export function init(component: HTMLElement, optionalData: any) {
     const form = component.querySelector("form");
-  //  form?.addEventListener('submit', onSubmitHandle);
+    //form?.addEventListener('submit', onSubmitHandle);
 }
 
 async function onSubmitHandle(e: SubmitEvent) {
@@ -16,18 +17,11 @@ async function onSubmitHandle(e: SubmitEvent) {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const client = new AuthenticationApiClient();
-    const { Username, Password} = Object.fromEntries(formData.entries());
-    //const token = formData.get("__RequestVerificationToken");
+    const { Username, Password } = Object.fromEntries(formData.entries());
+    const token = formData.get("__RequestVerificationToken");
     try {
-        await client.auth(Username as string, Password as string);
-        const queryString: string = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-        var returnUrl = urlParams.get("ReturnUrl");
-        if (!returnUrl) {
-            returnUrl = "/";
-        }
+        const response = await fetch("/login", { method: "POST", body: formData });
 
-        window.location.href = returnUrl;
     } catch (error) {
         if (error instanceof ProblemDetails) {
             console.error("Validation Failed:", error);

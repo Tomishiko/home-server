@@ -1,78 +1,65 @@
 import { activateModules } from "./shared/activateModules";
-import * as ajax from "./shared/ajax"
-
-declare global {
-    interface Window { mainNavHandler: Function; subNavHandler: Function; addAjaxListeners: Function }
-}
+import Collapse from 'bootstrap/js/dist/collapse';
 
 document.querySelectorAll('nav a.nav-link').forEach(x => x.addEventListener('click', function() {
     document.getElementById('#navbar-main')?.collapse('hide');
 }));
 // handling back/forward navigation
-window.addEventListener('popstate', async function(e) {
-    if (e.state && e.state.html) {
-        document.getElementsByTagName('main')[0].innerHTML = e.state.html;
-        document.querySelector('header .nav-link.active')?.classList.remove('active');
-        document.querySelectorAll('header .nav-link')[e.state.active].classList.add('active');
-        //$('header .nav-link').removeClass('active');
-        //$('header .nav-link')[e.state.active].classList.add("active");
-    } else if (e.state && e.state.url) {
-        const response = await fetch(e.state.url);
-        if (response.status != 200) {
-            this.alert(`Something unexpected happend ${response.statusText}`);
-            return;
-        }
-        document.getElementsByTagName('main')[0].innerHTML = await response.text();
-    } else {
-        // Fallback: reload
-        location.reload();
-    }
-});
 // initial module load
 document.addEventListener('DOMContentLoaded', async () => {
     const content = document.getElementById("main");
     const utcOffset = Intl.DateTimeFormat().resolvedOptions().timeZone;
     document.cookie = `utcOffset=${utcOffset}`;
 
-    window.addAjaxListeners(document.body);
-    await activateModules(content);
+    const navElement = document.getElementById('navbar-main'); // The ID of your collapsible div
+    const navToggle = document.querySelector('.navbar-toggler');
 
+    if (navElement && navToggle) {
+        const bsCollapse = new Collapse(navElement, { toggle: false });
+
+        navToggle.addEventListener('click', () => {
+            bsCollapse.toggle();
+        });
+
+        const navLinks = navElement.querySelectorAll('.nav-link');
+        navLinks.forEach((link) => {
+            link.addEventListener('click', () => {
+                // Only collapse if the menu is currently visible (to avoid flickering)
+                if (navElement.classList.contains('show')) {
+                    bsCollapse.hide();
+                }
+            });
+        });
+    }
 });
-// main navbar class manipulation on navigation
-document.querySelectorAll('header .nav-link')
-    .forEach(x => x.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (target.hasAttribute('active'))
-            return;
 
-        document.querySelectorAll('header .nav-link')
-            .forEach(x => x.classList.remove('active'));
-        target.classList.add('active');
-    }));
+document.addEventListener("htmx:load", async function(e: any) {
+    await activateModules(e.detail.elt);
+});
+document.addEventListener("htmx:afterOnLoad", (e: any) => {
 
-window.addAjaxListeners = function addAjaxListeners(container: HTMLElement) {
-
-    const navigational = container.querySelectorAll('[data-ajax]');
-    for (const el of navigational) {
-        el.addEventListener("click", ajax.glolbalNvaigationClickHandle);
+    const target = e.detail.elt as HTMLElement;
+    if (!target.matches(".nav-link.navbar-element")) {
+        return;
     }
-}
+    document.querySelector('header .nav-link.navbar-element.active')?.classList.remove('active');
 
 
-window.mainNavHandler = async function partialSuccess(data: string, href: string, container: HTMLElement, optionalData?: any) {
-    const newContent = data;
-    const newUrl: string = href;
-    //const active:number = $('header .nav-link.active').index("header .nav-link");
-    var active = 0;
-    document.querySelectorAll("header .nav-link").forEach((node, index) => {
-        if (node.classList.contains("active"))
-            active = index;
-    });
-    if (newUrl) {
-        history.pushState({ html: newContent, url: newUrl, active: active }, '', newUrl);
+    target.classList.add('active');
+});
+
+document.addEventListener('htmx:configRequest', (evt: any) => {
+    const tokenInBody = evt.detail.parameters['__RequestVerificationToken'];
+
+    if (!tokenInBody && evt.detail.verb !== 'get') {
+        const token = (document.querySelector('input[name="__RequestVerificationToken"]') as HTMLInputElement).value;
+
+        if (token) {
+            evt.detail.headers['X-XSRF-TOKEN'] = token;
+        }
     }
-    await activateModules(container, optionalData);
-}
-window.subNavHandler = async function subnavigationSuccess(data: string, status, xhr) {
-    activateModules(document.getElementById("content"));
-}
+});
+document.addEventListener("htmx:responseError", (e: any) => {
+    const xhr = e.detail.xhr as XMLHttpRequest;
+    alert(`${xhr.statusText}\n${xhr.responseText}`);
+});

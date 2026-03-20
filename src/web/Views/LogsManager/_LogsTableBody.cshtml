@@ -1,0 +1,26 @@
+@using System.Collections.Immutable;
+@using web.Controllers
+@using web.ViewModels
+@model LogsPartialTableViewModel
+
+
+@for (int i = 0; i < Model.Logs.Length; i++)
+{
+    <tr>
+        <td>@Model.Logs[i].Uname</td>
+        <td>@Model.Logs[i].Event</td>
+        <td>
+            <time datetime="@Model.Logs[i].Time.ToString("O")">
+                @Model.Logs[i].Time.ToString("g")
+            </time>
+
+        </td>
+    </tr>
+}
+@if (!Model.HideLoadMoreBtn)
+{
+    <button id="loadmoreBtn"
+            class="btn btn-dark position-relative start-50 translate-middle border-secondary @(Model.BtnDisabled ? "disabled" : "")"
+            style="margin-top: 24px;" hx-swap-oob="true" hx-swap="beforeend" hx-vals='{"pagination": "@Model.Cursor"}'
+            hx-get='@Url.Action(nameof(LogsManagerController.PartialLogsTable), "LogsManager")' hx-target="#logTable">Load more</button>
+}

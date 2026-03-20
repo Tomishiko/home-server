@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace web.Models;
+namespace web.ViewModels;
 
 public class HomeViewModel : PageModel
 {

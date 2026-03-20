@@ -7,7 +7,7 @@ namespace core.Services;
 public interface IUserService : IBaseDataService
 {
 
-    IEnumerable<UserDto> GetAllUsersJoined();
+    IAsyncEnumerable<UserDto> GetAllUsersJoinedAsync(CancellationToken ct = default);
     ///<summary>
     ///Create entity and begin tracking user.
     ///Makes a trip to DB to fetch role data,

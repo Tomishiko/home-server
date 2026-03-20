@@ -19,7 +19,6 @@ export async function deleteUserConfirmation(target: HTMLElement, modalElement: 
     modalElement.querySelector('.modal-body p')!.innerHTML = `Are you sure you want to DELETE ${user} and all private files associated with this user?`;
     const modalAccept = modalElement.querySelector('.modal-footer button#confirm')! as HTMLElement;
     modalAccept.dataset["ref"] = ref;
-
-
+    modalAccept.setAttribute("hx-delete", ref);
 
 }

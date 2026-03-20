@@ -129,3 +129,6 @@ deploy_local.sh
 *todo*
 node_modules
 managerapicontrollerreview
+wwwroot/js
+deploy-local.sh
+publish

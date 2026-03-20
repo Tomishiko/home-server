@@ -6,21 +6,25 @@
         <h2 class="">Login</h2>
     </div>
     <div class="container">
-        <form id="loginform" method="post" asp-controller="AuthenticationApi" asp-action="Authentication">
+        <form id="loginform" hx-post="/Login?ReturnUrl=@Context.Request.Query["ReturnUrl"]" hx-target="#main" hx-swap="innerHTML">
+            @Html.AntiForgeryToken()
             <div class="mb-3">
                 <label for="Username" class="form-label">Username</label>
                 <input type="text" class="form-control" asp-for='Username' name="Username" id="Username"
-                    aria-describedby="emailHelp">
-                <span asp-validation-for="Username" class="text-danger"></span>
+                       aria-describedby="emailHelp" required>
+                <span asp-validation-for="Username" class="validation-warn"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="Password" class="form-label">Password</label>
+                    <input type="password" class="form-control" asp-for='Password' name="Password" id="Password" required>
+                        <span asp-validation-for="Password" class="validation-warn"></span>
+                    </div>
+                    <span class="validation-warn">@ViewData["ErrorMessage"]</span>
+
+                    <div class="text-center" style="margin-top: 32px;">
+                        <button type="submit"  class="btn btn-dark border-secondary">Log in</button>
+                    </div>
+                </form>
+
             </div>
-            <div class="mb-3">
-                <label for="Password" class="form-label">Password</label>
-                <input type="password" class="form-control" asp-for='Username' name="Password" id="Password">
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            <div class="text-center" style="margin-top: 32px;">
-                <button type="submit" class="btn btn-dark border-secondary">Log in</button>
-            </div>
-        </form>
-    </div>
-</div>
+        </div>

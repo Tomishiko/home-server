@@ -17,13 +17,13 @@ public class ProfileController : Controller
         _userService = userService;
     }
 
-    public async Task<IActionResult> Index([FromHeader(Name = "X-Requested-With")] string requestWith)
+    public async Task<IActionResult> Index([FromHeader(Name = "HX-Request")] bool isHtmx)
     {
         long? userId = Utility.TryGetUserId(User);
         if (userId is null) return BadRequest();
 
         UserDto? user = await _userService.GetUserInfo(userId.Value);
-        return Utility.IsXmlHttpRequest(requestWith) ? PartialView(user) : View(user);
+        return isHtmx ? PartialView(user) : View(user);
     }
     public async Task<IActionResult> Logout()
     {

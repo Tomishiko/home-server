@@ -12,8 +12,8 @@ export function init(component: HTMLElement, optionalData: any) {
     const element = document.getElementsByName("__RequestVerificationToken")[0] as HTMLInputElement;
     const token = element ? element.value : "";
     const uploader = new Uploader({
-        uploadUrl: '/api/streaming/uploadlarge',
-        handshakeUrl: '/api/streaming/handshake',
+        uploadUrl: '/api/upload/part',
+        handshakeUrl: '/api/upload/handshake',
         chunkSize: 4096 * 1024, // 4 Mb
         concurrency: 4,
         maxRetries: 3,
@@ -36,7 +36,7 @@ export function init(component: HTMLElement, optionalData: any) {
             });
         }
         await uploader.uploadFiles(files);
-        FetchTable(1);
+        (window as any).htmx.trigger("body", "upload-complete");
     })
     uploader.events.on('file-progress', (payload: ProgressEventPayload) => {
         barCtrl.updateProgressBar(payload.file.name, payload.percent);
@@ -57,6 +57,4 @@ export function init(component: HTMLElement, optionalData: any) {
         alert(`${err}`);
         barCtrl.hideUploadProgressBars()
     });
-    // Context menu for main table
-    setContext();
 }

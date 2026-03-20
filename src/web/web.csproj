@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
+        <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
@@ -24,5 +24,8 @@
         <ProjectReference Include="../core/core.csproj" />
         <ProjectReference Include="..\Data\Data.csproj" />
     </ItemGroup>
+    <PropertyGroup>
+        <RollForward>LatestMajor</RollForward>
+    </PropertyGroup>
 
 </Project>
