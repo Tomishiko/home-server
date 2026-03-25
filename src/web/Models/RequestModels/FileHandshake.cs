@@ -6,7 +6,7 @@ public sealed class FileHandshake
 {
     [Required]
     [Range(64, Helpers.Utility.maxPartSize)]
-    public uint ExpectedPartSize { get; set; }
+    public int ExpectedPartSize { get; set; }
 
     [Required(AllowEmptyStrings = false)]
     public string FileName { get; set; } = string.Empty;
@@ -16,5 +16,5 @@ public sealed class FileHandshake
     public long FileSize { get; set; }
 
     [Required]
-    public uint TotalParts { get; set; }
+    public int TotalParts { get; set; }
 }

@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.IO.Pipelines;
 using core.Interfaces;
 using core.Models;
 using core.Models.Generic;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace core.Services;
 
-public class UploadProcessor:IUploadProcessor
+public class UploadProcessor : IUploadProcessor
 {
 
     private readonly UploadSessionMonitor _fileCompositor;
@@ -22,18 +24,20 @@ public class UploadProcessor:IUploadProcessor
         _logger = logger;
         _fileOptions = fileOptions.Value;
     }
-    public async Task<Result<string>> ProcessFilePart(FilePartDto filePart)
+    public Task<Result<UploadPartSuccess>> ProcessFilePart(FilePartDto filePart)
     {
         if (!_fileCompositor.ActiveSessions
                 .TryGetValue(filePart.Id, out IPhysicalFileWriter? fileWriter))
         {
 
-            return new Error("No open file handle coresponding to provided key");
+            return Task.FromResult<Result<UploadPartSuccess>>(
+                new Error("No open file handle coresponding to provided key")
+            );
         }
-        await fileWriter.WritePartAsync(filePart.Data, filePart.BytesRead, filePart.CurrentPart);
-
-        return new Success<string>("");
-
+        return fileWriter.WritePartAsync(filePart.Data,
+                                        filePart.BytesRead,
+                                        filePart.CurrentPart,
+                                        _logger);
     }
 
     public Result<string> AddNewFileHandle(FileCreationDto fileDto)
@@ -51,7 +55,26 @@ public class UploadProcessor:IUploadProcessor
         }
         _logger.LogInformation($"FileHandle opened(OK) Filename: {fileDto.FileName}, Filesize:{fileDto.FileSize}");
 
-        return new Success<string>(UniqueID.ToString());
+        return UniqueID.ToString();
+
+
+    }
+
+    public Task<Result<UploadPartSuccess>> ProcessFilePartPipe(Guid uuid,
+                                            int currentPart,
+                                            PipeReader reader,
+                                            CancellationToken ct = default)
+    {
+        if (!_fileCompositor.ActiveSessions
+                .TryGetValue(uuid, out IPhysicalFileWriter? fileWriter))
+        {
+
+            return Task.FromResult<Result<UploadPartSuccess>>(
+                new Error("No open file handle coresponding to provided key")
+            );
+        }
+
+        return fileWriter.WritePartFromPipeAsync(currentPart, reader, ct, _logger);
 
 
     }

@@ -117,9 +117,62 @@ export class FileUploadTask {
             percent: this.percent
         } as ProgressEventPayload);
     }
+    async uploadChunk(index: number, signal?: AbortSignal): Promise<void> {
+        if (this.aborted) throw new Error('Task aborted');
+        if (this.isPartUploaded(index)) return;
+
+        const start = index * this.chunkSize;
+        const end = Math.min(start + this.chunkSize, this.file.size);
+        const chunk = this.file.slice(start, end);
+
+        const controller = new AbortController();
+
+        const onExternalAbort = () => controller.abort('aborted');
+        if (signal) {
+            if (signal.aborted) throw new Error('aborted');
+            signal.addEventListener('abort', onExternalAbort, { once: true });
+        }
+
+        let timerId: number | undefined;
+        if (this.config.timeoutMs) {
+            timerId = window.setTimeout(() => {
+                controller.abort('timeout');
+            }, this.config.timeoutMs);
+        }
+
+        try {
+            const response = await fetch(`${this.config.uploadUrl}/${this.uid}`, {
+                method: 'POST',
+                body: chunk,
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'X-Part': index.toString(),
+                },
+                credentials: 'omit',
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            this.markPartUploaded(index, chunk.size);
+
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                const reason = controller.signal.reason;
+                throw new Error(reason === 'timeout' ? 'timeout' : 'aborted');
+            }
+
+            throw new Error('network error');
+        } finally {
+            if (timerId) clearTimeout(timerId);
+            if (signal) signal.removeEventListener('abort', onExternalAbort);
+        }
+    }
 
     // upload a single chunk using XMLHttpRequest so we can get upload progress events
-    uploadChunk(index: number, signal?: AbortSignal): Promise<void> {
+    uploadChunkXhrOld(index: number, signal?: AbortSignal): Promise<void> {
         if (this.aborted) return Promise.reject(new Error('Task aborted'));
 
         // if that part is already uploaded (resume), skip
@@ -128,13 +181,6 @@ export class FileUploadTask {
         const start = index * this.chunkSize;
         const end = Math.min(start + this.chunkSize, this.file.size);
         const chunk = this.file.slice(start, end);
-        const form = new FormData();
-        form.append('meta', JSON.stringify({
-            uid: this.uid,
-            currentPart: index,
-            bytesRead: chunk.size
-        }));
-        form.append('file', chunk);
 
         return new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -154,7 +200,10 @@ export class FileUploadTask {
                 signal.addEventListener('abort', onAbort, { once: true });
             }
 
-            xhr.open('POST', this.config.uploadUrl, true);
+            xhr.open('POST', `${this.config.uploadUrl}/${this.uid}`, true);
+            xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+            xhr.setRequestHeader('X-Part', index.toString());
+            xhr.withCredentials = false;
 
             if (this.config.timeoutMs) {
                 timerId = window.setTimeout(() => {
@@ -194,7 +243,7 @@ export class FileUploadTask {
             };
 
             try {
-                xhr.send(form);
+                xhr.send(chunk);
             } catch (err) {
                 if (timerId !== undefined) clearTimeout(timerId);
                 reject(err);

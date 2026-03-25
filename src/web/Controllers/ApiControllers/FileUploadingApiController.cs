@@ -38,105 +38,109 @@ public class FileUploadApiController : ControllerBase
     [DisableFormValueModelBinding]
     [IgnoreAntiforgeryToken]
     [Consumes(MediaTypeNames.Multipart.FormData)]
-    public async Task<IActionResult> UploadLargeFile()
+    public async Task<IActionResult> UploadLargeFile_Old()
     {
         if (Request.ContentType is null)
             return BadRequest();
 
         FilePartMetaData? fileMeta = null;
 
-        try
+        if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
         {
-            if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
+            return BadRequest("Wrong contetnt type");
+        }
+
+        // find the boundary
+        string boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
+        // use boundary to iterator through the multipart section
+        var reader = new MultipartReader(boundary, HttpContext.Request.Body);
+        MultipartSection? section = await reader.ReadNextSectionAsync();
+        while (section != null)
+        {
+
+            if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition,
+                out var contentDisposition))
             {
-                return BadRequest("Wrong contetnt type");
+                break;
             }
 
-            // find the boundary
-            string boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(Request.ContentType));
-            // use boundary to iterator through the multipart section
-            var reader = new MultipartReader(boundary, HttpContext.Request.Body);
-            MultipartSection? section = await reader.ReadNextSectionAsync();
-            while (section != null)
+            if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition)
+                    && contentDisposition.Name == "meta")
             {
-
-                if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition,
-                    out var contentDisposition))
+                if (section.AsFormDataSection() is not { } formDataSection)
                 {
-                    break;
+                    return BadRequest("Invalid form data section.");
                 }
 
-                if (MultipartRequestHelper.HasFormDataContentDisposition(contentDisposition)
-                        && contentDisposition.Name == "meta")
+                string? formData = await formDataSection.GetValueAsync();
+                if (formData.IsNullOrEmpty())
                 {
-                    if (section.AsFormDataSection() is not { } formDataSection)
-                    {
-                        return BadRequest("Invalid form data section.");
-                    }
-
-                    string? formData = await formDataSection.GetValueAsync();
-                    if (formData.IsNullOrEmpty())
-                    {
-                        return BadRequest("Metadata content is empty");
-                    }
-
-                    fileMeta = JsonSerializer.Deserialize<FilePartMetaData>(formData);
-                    if (fileMeta is null)
-                    {
-                        return BadRequest("Failed to deserialize metadata");
-                    }
-
-                    continue;
+                    return BadRequest("Metadata content is empty");
                 }
 
-                if (MultipartRequestHelper.HasFileContentDisposition(contentDisposition))
+                fileMeta = JsonSerializer.Deserialize<FilePartMetaData>(formData);
+                if (fileMeta is null)
                 {
-
-                    if (fileMeta is null)
-                    {
-                        return BadRequest("Metadata section must precede file section");
-                    }
-                    if (fileMeta.BytesRead >= Utility.maxPartSize)
-                    {
-                        BadRequest("Bad file part size");
-                    }
-
-                    if (section.AsFileSection() is not { FileStream: not null } fileSection)
-                    {
-                        return BadRequest("Invalid or missing file stream.");
-                    }
-                    var filePart = new FilePartDto(fileMeta.Uid,
-                                                   fileMeta.CurrentPart,
-                                                   fileMeta.BytesRead,
-                                                   fileSection.FileStream);
-                    await _uploadProcessor.ProcessFilePart(filePart);
-
+                    return BadRequest("Failed to deserialize metadata");
                 }
-
-
-                section = await reader.ReadNextSectionAsync();
             }
 
-            return NoContent();
+            if (MultipartRequestHelper.HasFileContentDisposition(contentDisposition))
+            {
 
+                if (fileMeta is null)
+                {
+                    return BadRequest("Metadata section must precede file section");
+                }
+                if (fileMeta.BytesRead >= Utility.maxPartSize)
+                {
+                    BadRequest("Bad file part size");
+                }
+
+                if (section.AsFileSection() is not { FileStream: not null } fileSection)
+                {
+                    return BadRequest("Invalid or missing file stream.");
+                }
+                var filePart = new FilePartDto(fileMeta.Uid,
+                                               fileMeta.CurrentPart,
+                                               fileMeta.BytesRead,
+                                               fileSection.FileStream);
+                await _uploadProcessor.ProcessFilePart(filePart);
+
+            }
+
+
+            section = await reader.ReadNextSectionAsync();
         }
-        catch (EndOfStreamException ex)
-        {
-            _logger.LogWarning(ex, "Client sent incomplete file chunk for UID: {Uid}", fileMeta?.Uid);
-            return BadRequest("The uploaded file chunk was truncated or incomplete.");
-        }
-        catch (IOException ex)
-        {
-            _logger.LogError(ex, "Network I/O error occurred during stream reading.");
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception, "Unexpected error while streaming file");
-            return BadRequest($"Error: {exception.Message}");
-        }
+
+        return NoContent();
+
     }
 
+    [HttpPost("part/{uuid}")]
+    [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
+    [DisableRequestSizeLimit]
+    [DisableFormValueModelBinding]
+    [IgnoreAntiforgeryToken]
+    [Consumes(MediaTypeNames.Application.OctetStream)]
+    public async Task<IActionResult> UploadLargeFile(Guid uuid, [FromHeader(Name = "X-Part")] int currentPart, CancellationToken ct)
+    {
+
+        Result<UploadPartSuccess> result = await _uploadProcessor.ProcessFilePartPipe(uuid,
+                                                                   currentPart,
+                                                                   HttpContext.Request.BodyReader, ct);
+        switch (result)
+        {
+            case Success<UploadPartSuccess> s:
+                return Ok(s.Value);
+
+            case Failure<UploadPartSuccess> f:
+                var statusCode = f.Error.Code ?? StatusCodes.Status400BadRequest;
+                return StatusCode(statusCode, f.Error.Message);
+
+            default: throw new Exception("Something went wrong while processing file_part");
+        }
+    }
     [HttpPost("handshake")]
     [Authorize]
     public IActionResult Handshake([FromBody] FileHandshake requestModel)
