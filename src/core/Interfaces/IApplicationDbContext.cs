@@ -11,7 +11,8 @@ public interface IApplicationDbContext
     DbSet<RolesEntity> Roles { get; set; }
     DbSet<FileEntity> Files { get; set; }
     DbSet<InviteEntity> Invites { get; set; }
+    DbSet<FileUploadStateEntity> FileUploadState { get; set; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    Task<UserEntity?> RemoveUserByIdStoredProc(long id, string issuer);
-    Task<UserEntity?> ValidateInviteTokenStoredProc(byte[] hashedToken, CancellationToken ct = default);
+    Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id, string issuer);
+    Task<UserEntity?> ValidateInviteTokenStoredProcAsync(byte[] hashedToken, CancellationToken ct = default);
 }

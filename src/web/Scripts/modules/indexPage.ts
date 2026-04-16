@@ -14,7 +14,7 @@ export function init(component: HTMLElement, optionalData: any) {
     const uploader = new Uploader({
         uploadUrl: '/api/upload/part',
         handshakeUrl: '/api/upload/handshake',
-        chunkSize: 4096 * 1024, // 4 Mb
+        chunkSize: 8 * 1024 * 1024,//4096 * 1024, // 4 Mb
         concurrency: 4,
         maxRetries: 3,
         backoffBaseMs: 500,

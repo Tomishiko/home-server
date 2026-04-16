@@ -87,7 +87,7 @@ public class UserService : BaseDataService, IUserService
     public async Task<Result<UserDto>> RemoveUserById(long id, string issuer)
     {
 
-        var result = await _context.RemoveUserByIdStoredProc(id, issuer);
+        var result = await _context.RemoveUserByIdStoredProcAsync(id, issuer);
         if (result is null)
         {
             return new Error("No such user");

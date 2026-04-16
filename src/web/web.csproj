@@ -24,8 +24,17 @@
         <ProjectReference Include="../core/core.csproj" />
         <ProjectReference Include="..\Data\Data.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="../../tests/IntegrationTests/IntegrationTests.csproj" />
+    </ItemGroup>
+
     <PropertyGroup>
         <RollForward>LatestMajor</RollForward>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
 </Project>

@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols;
 using web.Helpers;
+using web.Models;
 
 namespace web.Extensions;
 
@@ -24,9 +26,9 @@ public static class AppServicesExtensions
             switch (provider)
             {
                 case "postgres":
-                    options.UseNpgsql(connectionString)
-                           .LogTo(Console.WriteLine,
-                                  LogLevel.Information).EnableSensitiveDataLogging();
+                    options.UseNpgsql(connectionString);
+                    //.LogTo(Console.WriteLine,
+                    //       LogLevel.Information).EnableSensitiveDataLogging();
                     break;
                 default: throw new Exception("DB provider is not supported");
             }
@@ -34,7 +36,11 @@ public static class AppServicesExtensions
         });
 
         services.AddEndpointsApiExplorer();
-        services.Configure<FileUploadOptions>(config.GetSection("FileServingMode"));
+        services.Configure<FileUploadOptions>(config.GetSection(FileUploadOptions.SectionName));
+        services.AddOptions<FileDownloadOptions>()
+                .Bind(config.GetSection(FileDownloadOptions.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
         services.AddSingleton<UploadSessionMonitor>();
         services.AddSingleton<ICoreFS, CoreFS>();
@@ -46,6 +52,8 @@ public static class AppServicesExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
+        services.AddScoped<IDirectDbQueryService, DirectDbQueryService>();
+        services.AddHostedService<FileStateBackupWorker>();
         services.AddHostedService<BackgroundFileService>();
         services.AddHttpContextAccessor();
 

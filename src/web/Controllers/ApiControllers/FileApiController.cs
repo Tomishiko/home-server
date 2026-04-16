@@ -3,6 +3,7 @@ using core.Services;
 using web.Helpers;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
+using core.Models;
 
 namespace web.Controllers;
 
@@ -40,6 +41,19 @@ public class FileApiController : ControllerBase
             return NotFound();
 
         return _upload.ServeFile(this, fileRec);
+    }
+
+    [HttpGet("files")]
+    public async IAsyncEnumerable<FileMeta> GetFiles()
+    {
+
+        long? userId = Utility.TryGetUserId(User);
+
+        var enumerable = _fileService.GetSharedFilesAsync(CancellationToken.None);
+        await foreach(var item in enumerable){
+            yield return item;
+        }
+
     }
     [HttpGet("pfile/{id}")]
     [Authorize]

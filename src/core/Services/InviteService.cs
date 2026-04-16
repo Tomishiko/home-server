@@ -26,7 +26,7 @@ public class InvitesService : BaseDataService, IInviteService
     {
         byte[] hashedToken = SHA256.HashData(WebEncoders
                                             .Base64UrlDecode(token));
-        UserEntity? issuer = await _context.ValidateInviteTokenStoredProc(hashedToken);
+        UserEntity? issuer = await _context.ValidateInviteTokenStoredProcAsync(hashedToken);
         if (issuer is null)
         {
             _logger.LogInformation($"Request with invalid invite token");

@@ -9,7 +9,7 @@ using core.Models.Generic;
 
 namespace web;
 
-public static class Program
+public class Program
 {
     public static async Task Main(string[] args)
     {

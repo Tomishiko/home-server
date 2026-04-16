@@ -1,8 +1,10 @@
 using System.Buffers;
 using System.IO.Pipelines;
+using core.Domain;
 using core.Interfaces;
 using core.Models;
 using core.Models.Generic;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -24,38 +26,40 @@ public class UploadProcessor : IUploadProcessor
         _logger = logger;
         _fileOptions = fileOptions.Value;
     }
-    public Task<Result<UploadPartSuccess>> ProcessFilePart(FilePartDto filePart)
-    {
-        if (!_fileCompositor.ActiveSessions
-                .TryGetValue(filePart.Id, out IPhysicalFileWriter? fileWriter))
-        {
 
-            return Task.FromResult<Result<UploadPartSuccess>>(
-                new Error("No open file handle coresponding to provided key")
-            );
-        }
-        return fileWriter.WritePartAsync(filePart.Data,
-                                        filePart.BytesRead,
-                                        filePart.CurrentPart,
-                                        _logger);
-    }
-
-    public Result<string> AddNewFileHandle(FileCreationDto fileDto)
+    public async Task<Result<FileHandshakeResponseDto>> AddNewFileHandleAsync(FileCreationDto fileDto, IApplicationDbContext db)
     {
 
         var UniqueID = Guid.NewGuid();
-        var streamedFile = new PhysicalFileWriter(fileDto,
-                                            _fileOptions.StoragePath,
-                                            UniqueID);
+        var streamedFile = new UploadingFileState(fileDto, _fileOptions.StoragePath,
+                UniqueID, fileDto.Fingerprint);
 
         streamedFile.CloseEvent += _fileCompositor.OnCloseEventAsync;
+
         if (!_fileCompositor.ActiveSessions.TryAdd(UniqueID, streamedFile))
         {
             return new Error("Unexpected UUID collision", 500);
         }
-        _logger.LogInformation($"FileHandle opened(OK) Filename: {fileDto.FileName}, Filesize:{fileDto.FileSize}");
 
-        return UniqueID.ToString();
+
+        db.FileUploadState.Add(new FileUploadStateEntity
+        {
+            Id = streamedFile.Id,
+            Fingerprint = streamedFile.FileFingerprint,
+            Metadata = new FileWriterMeta(streamedFile.FileSize,
+                                          streamedFile.PartSize,
+                                          streamedFile.FileName,
+                                          streamedFile.OwnerId,
+                                          streamedFile.TotalFileParts),
+            PartsBitfield = null,
+            PartsWritten = 0
+        });
+
+        _logger.LogInformation(
+                $"New file registered for uplaod Filename: {fileDto.FileName}, Filesize:{fileDto.FileSize}");
+
+        await db.SaveChangesAsync();
+        return new FileHandshakeResponseDto(UniqueID.ToString(), fileDto.PartSize);
 
 
     }
@@ -66,7 +70,7 @@ public class UploadProcessor : IUploadProcessor
                                             CancellationToken ct = default)
     {
         if (!_fileCompositor.ActiveSessions
-                .TryGetValue(uuid, out IPhysicalFileWriter? fileWriter))
+                .TryGetValue(uuid, out IUploadingFileState? fileWriter))
         {
 
             return Task.FromResult<Result<UploadPartSuccess>>(

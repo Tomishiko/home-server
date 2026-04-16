@@ -3,6 +3,7 @@ namespace core.Models;
 public record FileCreationDto(
         string FileName,
         long FileSize,
-        int TotalFileParts,
+        long TotalFileParts,
         int PartSize,
-        long OwnerId);
+        long OwnerId,
+        byte[] Fingerprint);

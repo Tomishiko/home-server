@@ -5,7 +5,7 @@ namespace core.Services;
 public interface IFileService
 {
 
-    public Task StageNewFileRecord(string UUID,
+    public void StageNewFileRecord(string UUID,
                                    string ext,
                                    string fileName,
                                    long fileSize,

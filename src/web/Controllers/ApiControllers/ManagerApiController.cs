@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using web.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
+using System.Runtime.CompilerServices;
 
 namespace web.Controllers;
 
@@ -107,6 +108,24 @@ public class ManagerApiController : ControllerBase
         return userData;
     }
 
+    [HttpGet("users")]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(200)]
+    public async IAsyncEnumerable<UserDto> GetUsers(CancellationToken ct)
+    {
+        IAsyncEnumerable<UserDto> userData = _userService.GetAllUsersJoinedAsync(ct);
+
+        if (userData is null)
+        {
+            yield break;
+        }
+
+        await foreach (var user in userData)
+        {
+            yield return user;
+        }
+
+    }
     [HttpGet("geninvite")]
     public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
     {

@@ -11,6 +11,9 @@ using core.Services;
 using core.Models;
 using core.Models.Generic;
 using core.utils.extensions;
+using core.Interfaces;
+using core.Domain;
+using Microsoft.Extensions.Options;
 
 namespace web.Controllers;
 
@@ -19,15 +22,12 @@ namespace web.Controllers;
 public class FileUploadApiController : ControllerBase
 {
     private readonly ILogger<FileUploadApiController> _logger;
-    private readonly ILogService _logService;
     private readonly IUploadProcessor _uploadProcessor;
 
     public FileUploadApiController(ILogger<FileUploadApiController> logger,
-                                   ILogService logService,
                                    IUploadProcessor uploadProcessor)
     {
         _logger = logger;
-        _logService = logService;
         _uploadProcessor = uploadProcessor;
     }
 
@@ -38,8 +38,12 @@ public class FileUploadApiController : ControllerBase
     [DisableFormValueModelBinding]
     [IgnoreAntiforgeryToken]
     [Consumes(MediaTypeNames.Multipart.FormData)]
+    /// <summary>
+    /// Deprecated, use <c cref="UploadLargeFile(Guid, int, CancellationToken)">UploadLargeFile</c> instead
+    /// </summary>
     public async Task<IActionResult> UploadLargeFile_Old()
     {
+        return NotFound("Deprecated");
         if (Request.ContentType is null)
             return BadRequest();
 
@@ -105,7 +109,7 @@ public class FileUploadApiController : ControllerBase
                                                fileMeta.CurrentPart,
                                                fileMeta.BytesRead,
                                                fileSection.FileStream);
-                await _uploadProcessor.ProcessFilePart(filePart);
+                //await _uploadProcessor.ProcessFilePart(filePart);
 
             }
 
@@ -143,30 +147,39 @@ public class FileUploadApiController : ControllerBase
     }
     [HttpPost("handshake")]
     [Authorize]
-    public IActionResult Handshake([FromBody] FileHandshake requestModel)
+    public async Task<IActionResult> Handshake([FromBody] FileHandshake requestModel,
+                                               [FromServices] IApplicationDbContext db,
+                                               [FromServices] IOptions<FileDownloadOptions> options)
     {
+
         Debug.Assert(User.Identity?.Name is not null, "User identity should not be null in this context");
 
         if (!long.TryParse(User.FindFirst("Id")?.Value, out long user_id))
         {
             return BadRequest("Bad auth data");
         }
+        var partSize = options.Value.PartSize;
+        var totalParts = (requestModel.FileSize + partSize - 1) / partSize;
 
         var fileDto = new FileCreationDto(HttpUtility.HtmlEncode(requestModel.FileName),
                                           requestModel.FileSize,
-                                          requestModel.TotalParts,
-                                          requestModel.ExpectedPartSize,
-                                          user_id);
+                                          totalParts,
+                                          partSize,
+                                          user_id,
+                                          []);
 
-        Result<string> result = _uploadProcessor.AddNewFileHandle(fileDto);
+        Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(fileDto, db);
 
         switch (result)
         {
-            case Success<string> success:
+            case Success<FileHandshakeResponseDto> success:
                 _logger.LogInformation($"FileHandle opened(OK) Filename: {requestModel.FileName}, Filesize:{fileDto.FileSize}");
-                return Ok(success.Value);
 
-            case Failure<string> f:
+                return CreatedAtAction(nameof(UploadLargeFile),
+                        success.Value.Uuid.ToString(),
+                        success.Value);
+
+            case Failure<FileHandshakeResponseDto> f:
                 _logger.LogError("Failed to add new file handle", f.Error);
                 return StatusCode(f.Error.Code ?? StatusCodes.Status400BadRequest);
 

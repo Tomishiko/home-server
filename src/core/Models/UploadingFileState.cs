@@ -1,74 +1,62 @@
-using Microsoft.Win32.SafeHandles;
 using core.Interfaces;
 using System.Buffers;
 using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using core.Models.Generic;
+using System.Diagnostics;
+using Microsoft.Win32.SafeHandles;
+using core.Domain;
 
 namespace core.Models;
 
 
-public sealed class PhysicalFileWriter : IPhysicalFileWriter
+public sealed class UploadingFileState : IUploadingFileState
 {
-    private readonly int _totalFileParts;
-    private readonly SafeFileHandle _fileHandleProvider;
-    private int _partsWritten = 0;
-    private bool _isDisposed = false;
 
+    private readonly SafeFileHandle _fileHandleProvider;
+    private readonly Lock _syncObject = new();
+
+    // "Bitfield" to represent file parts recieved, 8 parts per byte
+    private readonly byte[] _partsBitfield;
+
+    private bool _isDisposed = false;
+    private int _partsWritten = 0;
+
+    public ReadOnlySpan<byte> PartsBitfield { get => _partsBitfield.AsSpan(); }
+    public byte[] FileFingerprint { get; } //32 bytes
+    public int PartsWritten { get => _partsWritten; }
+    public long TotalFileParts { get; }
+    public bool IsDirty { get; private set; }
     public Guid Id { get; }
     public long FileSize { get; }
     public int PartSize { get; }
     public string FileName { get; }
     public long OwnerId { get; }
     public bool IsClosed { get => _fileHandleProvider.IsClosed; }
-    public DateTime Created { get; }
 
-    public PhysicalFileWriter(FileCreationDto fileDto, string storagePath, Guid UUID)
+    public event EventHandler<CloseFileEventArgs>? CloseEvent;
+
+    public UploadingFileState(FileCreationDto fileDto, string storagePath, Guid UUID, byte[] fingerprint)
     {
         Id = UUID;
-        _totalFileParts = fileDto.TotalFileParts;
+        TotalFileParts = fileDto.TotalFileParts;
         FileName = fileDto.FileName;
         OwnerId = fileDto.OwnerId;
         FileSize = fileDto.FileSize;
         PartSize = fileDto.PartSize;
 
-        _fileHandleProvider = File.OpenHandle(
-                        Path.Combine(storagePath, UUID.ToString()),
-                        FileMode.CreateNew,
-                        FileAccess.Write,
-                        FileShare.Write,
-                        FileOptions.Asynchronous | FileOptions.RandomAccess, //| FileOptions.WriteThrough,
-                        preallocationSize: fileDto.FileSize);
-
-
+        _partsBitfield = new byte[(TotalFileParts + 7) / 8]; // +7 for edge cases
+        FileFingerprint = fingerprint;
     }
 
-    public async Task<Result<UploadPartSuccess>> WritePartAsync(Stream incomingData, int size, int currentPart, ILogger logger)
-    {
-        ArgumentNullException.ThrowIfNull(incomingData);
 
-        try
-        {
-
-            using var memOwner = MemoryPool<byte>.Shared.Rent(size);
-            Memory<byte> buffer = memOwner.Memory[..size];
-            await incomingData.ReadExactlyAsync(buffer);
-            await RandomAccess.WriteAsync(_fileHandleProvider, buffer, currentPart * PartSize);
-            IncrementPartsWrittenLocked();
-            return new UploadPartSuccess(currentPart, buffer.Length);
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "Error processing file part {part}", currentPart);
-            return new Error("Something unexpected happened", 500);
-        }
-    }
 
     public async Task<Result<UploadPartSuccess>> WritePartFromPipeAsync(int currentPart,
                                                                         PipeReader reader,
                                                                         CancellationToken ct,
                                                                         ILogger logger)
     {
+
         const int writeBufferSize = 128 * 1024;
 
         long currentOffset = PartSize * currentPart;
@@ -81,11 +69,13 @@ public sealed class PhysicalFileWriter : IPhysicalFileWriter
         {
             while (true)
             {
+
                 ReadResult result = await reader.ReadAsync(ct);
                 ReadOnlySequence<byte> buffer = result.Buffer;
 
                 if (!buffer.IsEmpty)
                 {
+
                     foreach (ReadOnlyMemory<byte> segment in buffer)
                     {
                         int segmentOffset = 0;
@@ -110,7 +100,7 @@ public sealed class PhysicalFileWriter : IPhysicalFileWriter
                             }
 
 
-                            // If the buffer is full, flush it to disk
+                            // If the buffer is full - write to disk
                             if (writeBufferIndex == writeBufferSize)
                             {
                                 await RandomAccess.WriteAsync(_fileHandleProvider,
@@ -125,7 +115,6 @@ public sealed class PhysicalFileWriter : IPhysicalFileWriter
                 }
 
                 reader.AdvanceTo(buffer.End);
-
                 if (result.IsCompleted)
                 {
                     if (writeBufferIndex > 0)
@@ -138,7 +127,9 @@ public sealed class PhysicalFileWriter : IPhysicalFileWriter
                 }
             }
 
-            IncrementPartsWrittenLocked();
+            MarkPartAsDone(currentPart);
+
+
             return new UploadPartSuccess(currentPart, totalBytes);
         }
         catch (Exception ex)
@@ -154,33 +145,60 @@ public sealed class PhysicalFileWriter : IPhysicalFileWriter
 
     }
 
-    public void IncrementPartsWrittenLocked()
-    {
-        Interlocked.Increment(ref _partsWritten);
 
-        if (_partsWritten == _totalFileParts)
-        {
-            RandomAccess.FlushToDisk(_fileHandleProvider);
-            Close();
-        }
+    public void Dispose()// TODO: better implementation of disposable maybe
+    {
+        if (_isDisposed) return;
+
+        _fileHandleProvider?.Dispose();
+        CloseEvent = null;
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 
+    public FileStateBackupContext GetSnapshot()
+    {
 
-    public event EventHandler<CloseFileEventArgs>? CloseEvent;
+        FileStateBackupContext backupTask;
 
-    void Close()
+        lock (_syncObject)
+        {
+            backupTask = new FileStateBackupContext(_partsWritten,
+                                                     _partsBitfield,
+                                                     Id);
+        }
+
+        return backupTask;
+    }
+
+    private void Close()
     {
         CloseEvent?.Invoke(this, new CloseFileEventArgs(Id, FileName,
                     FileSize, DateTime.Now));
     }
 
-    public void Dispose()
+    private void MarkPartAsDone(int index)
     {
-        if (_isDisposed) return;
+        int byteIdx = index / 8;
+        byte mask = (byte)(1 << (index % 8));
 
-        _fileHandleProvider?.Dispose();
-        GC.SuppressFinalize(this);
-        CloseEvent = null;
-        _isDisposed = true;
+        lock (_syncObject)
+        {
+            // Only increment if we haven't seen this part before
+            if ((_partsBitfield[byteIdx] & mask) == 0)
+            {
+                _partsBitfield[byteIdx] |= mask;
+                _partsWritten++;
+                IsDirty = true;
+            }
+        }
+
+
+        if (_partsWritten == TotalFileParts)
+        {
+            RandomAccess.FlushToDisk(_fileHandleProvider);
+            Close();
+        }
+
     }
 }

@@ -15,7 +15,6 @@ public sealed class BackgroundFileService : BackgroundService
     private readonly IServiceProvider _services;
     private readonly FileUploadOptions _fileUploadOptions;
 
-    Timer? _timer;
 
     public BackgroundFileService(ILogger<BackgroundService> logger,
                                  IServiceProvider services,
@@ -97,9 +96,5 @@ public sealed class BackgroundFileService : BackgroundService
             .Where(f => deletedIds.Contains(f.Id))
             .ExecuteDeleteAsync(ct);
         }
-    }
-    public override void Dispose()
-    {
-        _timer?.Dispose();
     }
 }

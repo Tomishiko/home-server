@@ -1,0 +1,14 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="src/core/core.csproj" />
+        <Project Path="src/Data/Data.csproj" />
+        <Project Path="src/SQL/SQL.csproj" />
+        <Project Path="src/web/web.csproj">
+            <Configuration Position="1" />
+        </Project>
+    </Folder>
+
+    <Folder Name="/tests/">
+        <Project Path="tests/IntegrationTests/IntegrationTests.csproj" />
+    </Folder>
+</Solution>

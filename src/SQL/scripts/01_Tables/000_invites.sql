@@ -1,7 +1,5 @@
 DROP TABLE IF EXISTS invites;
--- Enable UUID generation if not already
 
--- Table: invites
 CREATE TABLE invites (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     token_hash BYTEA NOT NULL UNIQUE,
