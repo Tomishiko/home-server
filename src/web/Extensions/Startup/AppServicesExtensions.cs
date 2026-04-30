@@ -2,6 +2,7 @@ using core.Interfaces;
 using core.Models;
 using core.Services;
 using Data.Core;
+using Data.Infra;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -17,7 +18,7 @@ public static class AppServicesExtensions
 
     public static IServiceCollection RegisterCoreServices(this IServiceCollection services, IConfiguration config)
     {
-        string connectionString = config.GetValue<string>("ConnectionString") ??
+        string connectionString = config.GetConnectionString("DefaultDb") ??
             throw new Exception("No DB connection string was provided");
 
         services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
@@ -37,8 +38,8 @@ public static class AppServicesExtensions
 
         services.AddEndpointsApiExplorer();
         services.Configure<FileUploadOptions>(config.GetSection(FileUploadOptions.SectionName));
-        services.AddOptions<FileDownloadOptions>()
-                .Bind(config.GetSection(FileDownloadOptions.SectionName))
+        services.AddOptions<FileUploadOptionsClient>()
+                .Bind(config.GetSection(FileUploadOptionsClient.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
@@ -46,6 +47,7 @@ public static class AppServicesExtensions
         services.AddSingleton<ICoreFS, CoreFS>();
         services.AddTransient<FileUploadHelperService>();
         services.AddTransient<InvitesService>();
+        services.AddTransient<IPhysicalFileWriterFactory,PhysicalFileWriterFactory>();
         services.AddScoped<IUploadProcessor, UploadProcessor>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();

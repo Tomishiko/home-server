@@ -13,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<InviteEntity> Invites { get; set; }
     DbSet<FileUploadStateEntity> FileUploadState { get; set; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    int SaveChanges();
     Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id, string issuer);
     Task<UserEntity?> ValidateInviteTokenStoredProcAsync(byte[] hashedToken, CancellationToken ct = default);
 }

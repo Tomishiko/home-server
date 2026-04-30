@@ -3,8 +3,6 @@ using System.Buffers;
 using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using core.Models.Generic;
-using System.Diagnostics;
-using Microsoft.Win32.SafeHandles;
 using core.Domain;
 
 namespace core.Models;
@@ -13,7 +11,8 @@ namespace core.Models;
 public sealed class UploadingFileState : IUploadingFileState
 {
 
-    private readonly SafeFileHandle _fileHandleProvider;
+    //private readonly SafeFileHandle _fileHandleProvider;
+    private readonly IPhysicalFileWriter _writer;
     private readonly Lock _syncObject = new();
 
     // "Bitfield" to represent file parts recieved, 8 parts per byte
@@ -27,26 +26,31 @@ public sealed class UploadingFileState : IUploadingFileState
     public int PartsWritten { get => _partsWritten; }
     public long TotalFileParts { get; }
     public bool IsDirty { get; private set; }
-    public Guid Id { get; }
+    public Guid Uuid { get; }
     public long FileSize { get; }
     public int PartSize { get; }
     public string FileName { get; }
     public long OwnerId { get; }
-    public bool IsClosed { get => _fileHandleProvider.IsClosed; }
+    public bool IsClosed { get => _writer.IsClosed; }
 
     public event EventHandler<CloseFileEventArgs>? CloseEvent;
 
-    public UploadingFileState(FileCreationDto fileDto, string storagePath, Guid UUID, byte[] fingerprint)
+    public UploadingFileState(FileCreationDto fileDto,
+                              string storagePath,
+                              Guid UUID,
+                              IPhysicalFileWriterFactory physicalFileWriterFactory)
     {
-        Id = UUID;
+        Uuid = UUID;
         TotalFileParts = fileDto.TotalFileParts;
         FileName = fileDto.FileName;
         OwnerId = fileDto.OwnerId;
         FileSize = fileDto.FileSize;
         PartSize = fileDto.PartSize;
+        _writer = physicalFileWriterFactory
+            .Create(Path.Combine(storagePath, UUID.ToString()), fileDto.FileSize);
 
-        _partsBitfield = new byte[(TotalFileParts + 7) / 8]; // +7 for edge cases
-        FileFingerprint = fingerprint;
+        _partsBitfield = new byte[(TotalFileParts + 7) / 8]; // +7 for edge cases int division
+        FileFingerprint = fileDto.Fingerprint;
     }
 
 
@@ -103,9 +107,11 @@ public sealed class UploadingFileState : IUploadingFileState
                             // If the buffer is full - write to disk
                             if (writeBufferIndex == writeBufferSize)
                             {
-                                await RandomAccess.WriteAsync(_fileHandleProvider,
-                                    writeBuffer.AsMemory(0, writeBufferSize),
-                                    currentOffset, ct);
+                                //await RandomAccess.WriteAsync(_fileHandleProvider,
+                                //    writeBuffer.AsMemory(0, writeBufferSize),
+                                //    currentOffset, ct);
+                                await _writer.Write(writeBuffer.AsMemory(0, writeBufferSize),
+                                              currentOffset, ct);
 
                                 currentOffset += writeBufferSize;
                                 writeBufferIndex = 0;
@@ -119,9 +125,11 @@ public sealed class UploadingFileState : IUploadingFileState
                 {
                     if (writeBufferIndex > 0)
                     {
-                        await RandomAccess.WriteAsync(_fileHandleProvider,
-                            writeBuffer.AsMemory(0, writeBufferIndex),
-                            currentOffset, ct);
+                        //await RandomAccess.WriteAsync(_fileHandleProvider,
+                        //    writeBuffer.AsMemory(0, writeBufferIndex),
+                        //    currentOffset, ct);
+                        await _writer.Write(writeBuffer.AsMemory(0, writeBufferIndex),
+                                      currentOffset, ct);
                     }
                     break;
                 }
@@ -150,10 +158,9 @@ public sealed class UploadingFileState : IUploadingFileState
     {
         if (_isDisposed) return;
 
-        _fileHandleProvider?.Dispose();
+        _writer?.Dispose();
         CloseEvent = null;
         _isDisposed = true;
-        GC.SuppressFinalize(this);
     }
 
     public FileStateBackupContext GetSnapshot()
@@ -165,7 +172,7 @@ public sealed class UploadingFileState : IUploadingFileState
         {
             backupTask = new FileStateBackupContext(_partsWritten,
                                                      _partsBitfield,
-                                                     Id);
+                                                     Uuid);
         }
 
         return backupTask;
@@ -173,7 +180,7 @@ public sealed class UploadingFileState : IUploadingFileState
 
     private void Close()
     {
-        CloseEvent?.Invoke(this, new CloseFileEventArgs(Id, FileName,
+        CloseEvent?.Invoke(this, new CloseFileEventArgs(Uuid, FileName,
                     FileSize, DateTime.Now));
     }
 
@@ -196,7 +203,7 @@ public sealed class UploadingFileState : IUploadingFileState
 
         if (_partsWritten == TotalFileParts)
         {
-            RandomAccess.FlushToDisk(_fileHandleProvider);
+            _writer.FlushToDisk();
             Close();
         }
 

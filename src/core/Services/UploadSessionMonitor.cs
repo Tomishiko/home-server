@@ -51,10 +51,11 @@ public class UploadSessionMonitor
             fname = finishedFile.FileName;
         }
 
-        fileService.StageNewFileRecord(finishedFile.Id.ToString(), ext, fname,
+        fileService.StageNewFileRecord(finishedFile.Uuid.ToString(), ext, fname,
                     finishedFile.FileSize, finishedFile.OwnerId, true);
 
-        await db.FileUploadState.Where(f=>f.Id == finishedFile.Id).ExecuteDeleteAsync();
+        //TODO: we might be able to optimize this double trip
+        await db.FileUploadState.Where(f=>f.Id == finishedFile.Uuid).ExecuteDeleteAsync();
 
         int changes = await db.SaveChangesAsync();
         finishedFile.CloseEvent -= OnCloseEventAsync;

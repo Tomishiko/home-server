@@ -9,7 +9,7 @@ namespace core.Interfaces;
 
 public interface IUploadingFileState : IDisposable
 {
-    Guid Id { get; }
+    Guid Uuid { get; }
     long FileSize { get; }
     //uint TotalFileParts { get; }
     string FileName { get; }

@@ -18,21 +18,23 @@ public class UploadProcessor : IUploadProcessor
     private readonly FileUploadOptions _fileOptions;
 
 
-    public UploadProcessor(UploadSessionMonitor fileCompositor,
-                                 ILogger<IUploadProcessor> logger,
-                                 IOptions<FileUploadOptions> fileOptions)
+    public UploadProcessor(UploadSessionMonitor fileCompositor, ILogger<IUploadProcessor> logger)
     {
         _fileCompositor = fileCompositor;
         _logger = logger;
-        _fileOptions = fileOptions.Value;
     }
 
-    public async Task<Result<FileHandshakeResponseDto>> AddNewFileHandleAsync(FileCreationDto fileDto, IApplicationDbContext db)
+    /// We pass DI args this way here to avoid  allocations and unimportant
+    /// logic on hot path as much as possible
+    public async Task<Result<FileHandshakeResponseDto>> AddNewFileHandleAsync(FileCreationDto fileDto,
+                                                                              IApplicationDbContext db,
+                                                                              IPhysicalFileWriterFactory physicalFileWriterFactory,
+                                                                              FileUploadOptions fileUploadOptions)
     {
 
         var UniqueID = Guid.NewGuid();
-        var streamedFile = new UploadingFileState(fileDto, _fileOptions.StoragePath,
-                UniqueID, fileDto.Fingerprint);
+        var streamedFile = new UploadingFileState(fileDto, fileUploadOptions.StoragePath,
+                UniqueID, physicalFileWriterFactory);
 
         streamedFile.CloseEvent += _fileCompositor.OnCloseEventAsync;
 
@@ -44,7 +46,7 @@ public class UploadProcessor : IUploadProcessor
 
         db.FileUploadState.Add(new FileUploadStateEntity
         {
-            Id = streamedFile.Id,
+            Id = streamedFile.Uuid,
             Fingerprint = streamedFile.FileFingerprint,
             Metadata = new FileWriterMeta(streamedFile.FileSize,
                                           streamedFile.PartSize,

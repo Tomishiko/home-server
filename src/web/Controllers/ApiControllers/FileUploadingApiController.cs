@@ -127,7 +127,9 @@ public class FileUploadApiController : ControllerBase
     [DisableFormValueModelBinding]
     [IgnoreAntiforgeryToken]
     [Consumes(MediaTypeNames.Application.OctetStream)]
-    public async Task<IActionResult> UploadLargeFile(Guid uuid, [FromHeader(Name = "X-Part")] int currentPart, CancellationToken ct)
+    public async Task<IActionResult> UploadLargeFile(Guid uuid,
+                                                     [FromHeader(Name = "X-Part")] int currentPart,
+                                                     CancellationToken ct)
     {
 
         Result<UploadPartSuccess> result = await _uploadProcessor.ProcessFilePartPipe(uuid,
@@ -145,20 +147,23 @@ public class FileUploadApiController : ControllerBase
             default: throw new Exception("Something went wrong while processing file_part");
         }
     }
+    ///
+    ///We pass DI args this way here to avoid as much allocations and unimportant
+    ///logic on hot path as possible
     [HttpPost("handshake")]
     [Authorize]
     public async Task<IActionResult> Handshake([FromBody] FileHandshake requestModel,
                                                [FromServices] IApplicationDbContext db,
-                                               [FromServices] IOptions<FileDownloadOptions> options)
+                                               [FromServices] IOptions<FileUploadOptionsClient> clientOptions,
+                                               [FromServices] IOptions<FileUploadOptions> fileUploadOptions,
+                                               [FromServices] IPhysicalFileWriterFactory fileWriterFactory)
     {
-
-        Debug.Assert(User.Identity?.Name is not null, "User identity should not be null in this context");
 
         if (!long.TryParse(User.FindFirst("Id")?.Value, out long user_id))
         {
             return BadRequest("Bad auth data");
         }
-        var partSize = options.Value.PartSize;
+        var partSize = clientOptions.Value.PartSize;
         var totalParts = (requestModel.FileSize + partSize - 1) / partSize;
 
         var fileDto = new FileCreationDto(HttpUtility.HtmlEncode(requestModel.FileName),
@@ -166,9 +171,10 @@ public class FileUploadApiController : ControllerBase
                                           totalParts,
                                           partSize,
                                           user_id,
-                                          []);
+                                          requestModel.FileFingerprint);
 
-        Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(fileDto, db);
+        Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(
+                fileDto, db, fileWriterFactory, fileUploadOptions.Value);
 
         switch (result)
         {

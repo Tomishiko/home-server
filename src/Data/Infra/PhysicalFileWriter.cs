@@ -1,10 +1,22 @@
 using Microsoft.Win32.SafeHandles;
+using core.Interfaces;
 
 namespace Data.Infra;
 
-public class PhysicalFileWriter : IDisposable
+public sealed class PhysicalFileWriterFactory():IPhysicalFileWriterFactory
+{
+
+    public IPhysicalFileWriter Create(string filePath, long preallocationSize)
+    {
+        return new PhysicalFileWriter(filePath, preallocationSize);
+    }
+}
+
+internal sealed class PhysicalFileWriter : IPhysicalFileWriter
 {
     private readonly SafeFileHandle _fileHandle;
+
+    public bool IsClosed => _fileHandle.IsClosed;
 
     public PhysicalFileWriter(string filePath, long fileSize)
     {
@@ -30,4 +42,10 @@ public class PhysicalFileWriter : IDisposable
     {
         _fileHandle.Dispose();
     }
+
+    public void FlushToDisk()
+    {
+        RandomAccess.FlushToDisk(_fileHandle);
+    }
 }
+

@@ -83,10 +83,6 @@ public sealed class BackgroundFileService : BackgroundService
             {
                 _logger.LogError(ex, "IO error while deleting file {FileUUID}", file.UUID);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while processing file {FileUUID}", file.UUID);
-            }
             return ValueTask.CompletedTask;
         });
 

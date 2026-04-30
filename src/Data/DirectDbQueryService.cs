@@ -11,7 +11,7 @@ public class DirectDbQueryService : IDirectDbQueryService
 
     public DirectDbQueryService(IConfiguration config)
     {
-        _connectionString = config.GetConnectionString("DefaultConnection")
+        _connectionString = config.GetConnectionString("DefaultDb")
             ?? throw new Exception("Db connection string is not provided");
     }
 
@@ -61,7 +61,7 @@ public class DirectDbQueryService : IDirectDbQueryService
             return ValueTask.CompletedTask;
 
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             transaction.Rollback();
             return ValueTask.FromException(ex);

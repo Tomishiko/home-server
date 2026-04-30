@@ -18,13 +18,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
+using Moq;
+using core.Interfaces;
+using FluentAssertions;
+using Data.Core;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
+using web.Models;
+using Microsoft.Extensions.Options;
 
 
-namespace Tests.Infra;
+namespace Tests.Integration.Infra;
 
 public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private const string DbConnectionString = "Host=localhost;Username=postgres;Database=testDB;Port=5432";
+    public ITestOutputHelper Output { get; set; }
+
+    private const string DbConnectionString = "Host=localhost;Username=postgres;Port=5432;Database=testDB";
     private Respawner _respawner = default!;
     private NpgsqlConnection _dbConnection = default!;
 
@@ -39,7 +50,8 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToInclude = ["public"],
-            TablesToIgnore = ["schemaversions"]
+            TablesToIgnore = ["schemaversions"],
+            WithReseed = true
         });
 
     }
@@ -57,14 +69,51 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
     {
         builder.ConfigureTestServices(services =>
         {
+
+
+            // Physical file writer mock
+            var writerMock = new Mock<IPhysicalFileWriter>();
+            writerMock
+                .Setup(x => x.Write(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<long>(), CancellationToken.None))
+                .Returns(ValueTask.CompletedTask);
+            var factoryMock = new Mock<IPhysicalFileWriterFactory>();
+            factoryMock
+                .Setup(x => x.Create(It.IsAny<string>(), It.IsAny<long>()))
+                .Returns(writerMock.Object);
+            services.AddTransient(_ => factoryMock.Object);
+            services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
+            {
+                //Uncomment for more logs from DB
+
+                //options.UseNpgsql(DbConnectionString)
+                //       .LogTo(message =>
+                //       {
+                //           try
+                //           {
+
+                //               Output.WriteLine(message);
+                //           }
+                //           catch (InvalidOperationException ex)
+                //           {
+                //               // The test has already finished, but the background service is still logging.
+                //               // We swallow this to prevent the background service from crashing the test process.
+                //           }
+
+                //       }, LogLevel.Information)
+                //       .EnableSensitiveDataLogging();
+            });
+
+            //Fake Antiforgery
             services.AddSingleton<IAntiforgery, FakeAntiforgery>();
         });
+
+        //Fake Config file
         var testConfiguration = new Dictionary<string, string?>
         {
             ["DbProvider"] = "postgres",
-            ["ConnectionString"] = DbConnectionString,
+            ["ConnectionStrings:DefaultDb"] = DbConnectionString,
             ["FilesLocation"] = "/test-files",
-            ["FileUpload:PartSize"] = (8 * 1024 * 1024).ToString(),
+            ["FileUpload:PartSize"] = "1024",
             ["JWT:Key"] = "uKI5pLFkkFrKa1DaIyNe1wL3K3vadfa36IKlQYYI8iE=",
             ["JWT:Issuer"] = "test-server",
             ["JWT:Expiration"] = "60",
@@ -77,13 +126,13 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
             .Build();
         builder.UseConfiguration(config);
 
+        //Fake auth services
         builder.ConfigureServices(services =>
         {
             services.Configure<ApiBehaviorOptions>(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
                 {
-                    // This will return the ACTUAL internal error message
                     return new BadRequestObjectResult(context.ModelState);
                 };
             });
@@ -122,4 +171,8 @@ internal class FakeAntiforgery : IAntiforgery
     public Task<bool> IsRequestValidAsync(HttpContext httpContext) => Task.FromResult(true);
     public Task ValidateRequestAsync(HttpContext httpContext) => Task.CompletedTask;
     public void SetCookieTokenAndHeader(HttpContext httpContext) { }
+}
+internal class TestFileUploadOptions : FileUploadOptionsClient
+{
+    // We leave this empty; it inherits properties but NOT attributes
 }
