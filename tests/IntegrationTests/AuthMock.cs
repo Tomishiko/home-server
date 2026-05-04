@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -7,9 +8,12 @@ using web.Models;
 
 namespace Tests.Integration.Infra;
 
-public class SampleMockAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+public class MockAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    public SampleMockAuthenticationHandler(
+    private static string mockedUsername = "MockUser";
+
+    public static string MockedUsername => mockedUsername;
+    public MockAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder)
@@ -21,7 +25,7 @@ public class SampleMockAuthenticationHandler : AuthenticationHandler<Authenticat
     {
         var claims = new[]
         {
-            new Claim(AppClaimTypes.Name, "MockUser"),
+            new Claim(AppClaimTypes.Name, mockedUsername),
             new Claim(AppClaimTypes.Role, "manager"),
             new Claim(AppClaimTypes.Identity, "1")
         };

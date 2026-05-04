@@ -140,7 +140,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
             {
                 options.DefaultAuthenticateScheme = MockScheme;
                 options.DefaultChallengeScheme = MockScheme;
-            }).AddScheme<AuthenticationSchemeOptions, SampleMockAuthenticationHandler>(MockScheme, null);
+            }).AddScheme<AuthenticationSchemeOptions, MockAuthenticationHandler>(MockScheme, null);
 
             services.AddAuthorization(options =>
             {

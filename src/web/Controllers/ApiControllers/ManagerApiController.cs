@@ -21,12 +21,12 @@ public class ManagerApiController : ControllerBase
 {
     private readonly ILogger<ManagerApiController> _logger;
     private readonly IUserService _userService;
-    private readonly InvitesService _invitesService;
+    private readonly IInvitesService _invitesService;
 
 
     public ManagerApiController(ILogger<ManagerApiController> logger,
                                 IUserService userService,
-                                InvitesService invites)
+                                IInvitesService invites)
     {
         _logger = logger;
         _userService = userService;
@@ -133,7 +133,7 @@ public class ManagerApiController : ControllerBase
         InviteTokenModel token = await _invitesService.GenNewInviteAsync(User.Identity.Name);
         string encoded = WebEncoders.Base64UrlEncode(token.Value);
 
-        return Ok(new { token = encoded, expires_at = token.Expiration });
+        return Ok(new NewInviteTokenResponse(encoded, token.Expiration));
     }
     [HttpGet("init-xsrf")]
     [AllowAnonymous]
@@ -151,3 +151,4 @@ public class ManagerApiController : ControllerBase
         return logs.GetAll(timezone, ct);
     }
 }
+

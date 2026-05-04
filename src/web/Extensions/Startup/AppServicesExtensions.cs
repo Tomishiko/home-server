@@ -46,8 +46,8 @@ public static class AppServicesExtensions
         services.AddSingleton<UploadSessionMonitor>();
         services.AddSingleton<ICoreFS, CoreFS>();
         services.AddTransient<FileUploadHelperService>();
-        services.AddTransient<InvitesService>();
-        services.AddTransient<IPhysicalFileWriterFactory,PhysicalFileWriterFactory>();
+        services.AddTransient<IPhysicalFileWriterFactory, PhysicalFileWriterFactory>();
+        services.AddScoped<IInvitesService, InvitesService>();
         services.AddScoped<IUploadProcessor, UploadProcessor>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ILogService, LogService>();

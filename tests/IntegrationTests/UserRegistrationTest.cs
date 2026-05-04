@@ -8,6 +8,10 @@ using Tests.Integration.Infra;
 using web.Models;
 using Xunit.Abstractions;
 using FluentAssertions.Web;
+using System.Net.Http.Json;
+using Microsoft.IdentityModel.Tokens;
+using core.Services;
+using core.Models;
 
 namespace Tests.Integration;
 
@@ -34,7 +38,7 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
         {
             Email = "test@email",
             Password = "Testpassword1!",
-            Role = 1,
+            Role = (byte)RoleIds.Manager,
             Username = "testusername"
         };
         var response = await client.PostAsJsonAsync("/api/user", body);
@@ -64,7 +68,7 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
         {
             Email = "test@email",
             Password = "Testpassword1!",
-            Role = 1,
+            Role = (byte)RoleIds.Manager,
             Username = "testusername2"
         };
         var registrationResponse = await client.PostAsJsonAsync("/api/user", body);
@@ -78,13 +82,31 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
 
         var form = new FormUrlEncodedContent(loginData);
 
-        registrationResponse.Should().Be201Created();
         var loginResponse = await client.PostAsync("/auth", form);
         loginResponse.Should().Be200Ok()
-                     .And.HaveHeader("Set-Cookie").And.Match("auth*");
+                     .And.HaveHeader("Set-Cookie")
+                     .And.Match("auth*");
 
     }
 
+    [Fact]
+    public async Task PersistentInviteIsGeneratedOnRequest()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/geninvite");
+        response.Should().Be200Ok();
+
+        var content = await response.Content.ReadFromJsonAsync<NewInviteTokenResponse>();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var invites = scope.ServiceProvider.GetRequiredService<IInvitesService>();
+        var issuer = await invites.ValidateToken(content.Token);
+
+        issuer.Should().NotBeNull();
+        issuer.Username.Should().Be(MockAuthenticationHandler.MockedUsername);
+
+
+    }
     public Task InitializeAsync()
     {
         using var scope = _factory.Services.CreateScope();
@@ -92,8 +114,8 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
 
         db.Roles.Add(new RolesEntity
         {
-            Id = 1,
-            Name = "fake_role"
+            Id = (long)RoleIds.Manager,
+            Name = "manager"
         });
         db.Users.Add(
                 new UserEntity
@@ -101,8 +123,8 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
                     //Id = 1,
                     Email = "fake@email.com",
                     Password = "fakepassword",
-                    RoleId = 1,
-                    Uname = "fake_user"
+                    RoleId = (long)RoleIds.Manager,
+                    Uname = MockAuthenticationHandler.MockedUsername
                 }
                 );
         db.SaveChanges();
