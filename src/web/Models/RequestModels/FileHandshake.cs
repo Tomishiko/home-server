@@ -17,8 +17,8 @@ public sealed class FileHandshake
     public required long FileSize { get; set; }
 
     [Required]
-    [MaxLength(32), MinLength(32)]
-    public required byte[] FileFingerprint { get; set; }//sha256 bytes
+    [Length(32, 32)]
+    public required string FileFingerprint { get; set; }
 
     //[Required]
     //public required int TotalParts { get; set; }

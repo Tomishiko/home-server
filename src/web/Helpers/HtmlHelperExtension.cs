@@ -9,7 +9,7 @@ public static class HtmlHelperExtension
     {
         var routeData = htmlHelper.ViewContext.RouteData;
 
-        var pageRoute = routeData.Values["action"].ToString();
+        var pageRoute = routeData?.Values["action"]?.ToString();
 
         return route == pageRoute ? "active" : "";
     }

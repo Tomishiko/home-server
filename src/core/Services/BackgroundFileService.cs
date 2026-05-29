@@ -33,6 +33,7 @@ public sealed class BackgroundFileService : BackgroundService
             await PerformCheckForDatedFiles(stoppingToken);
 
             using PeriodicTimer timer = new(TimeSpan.FromHours(1));
+
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
                 await PerformCheckForDatedFiles(stoppingToken);
@@ -62,7 +63,7 @@ public sealed class BackgroundFileService : BackgroundService
         var deletedIds = new ConcurrentBag<long>();
         var parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = 10,
+            MaxDegreeOfParallelism = 8,
             CancellationToken = ct
         };
 

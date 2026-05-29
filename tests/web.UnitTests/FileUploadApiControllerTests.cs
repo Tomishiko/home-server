@@ -88,7 +88,8 @@ public class FileUploadApiControllerTests
         var mockDb = new Mock<IApplicationDbContext>();
         var mockFactory = new Mock<IPhysicalFileWriterFactory>();
 
-        var handshake = new FileHandshakeResponseDto(Guid.NewGuid().ToString(), 256);
+        var handshake = new FileHandshakeResponseDto(Guid.NewGuid().ToString(), 256,0);
+
         mockProcessor.Setup(p => p.AddNewFileHandleAsync(
             It.IsAny<FileCreationDto>(),
             It.IsAny<IApplicationDbContext>(),
@@ -137,7 +138,7 @@ public class FileUploadApiControllerTests
                                                        It.IsAny<IApplicationDbContext>(),
                                                        It.IsAny<IPhysicalFileWriterFactory>(),
                                                        It.IsAny<FileUploadOptions>()))
-                     .ReturnsAsync(new FileHandshakeResponseDto(stabUUid.ToString(), 1024));
+                     .ReturnsAsync(new FileHandshakeResponseDto(stabUUid.ToString(), 1024,0));
 
         var mockDb = new Mock<IApplicationDbContext>();
         var mockFactory = new Mock<IPhysicalFileWriterFactory>();

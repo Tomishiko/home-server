@@ -12,11 +12,14 @@ public class UploadSessionMonitor
     private readonly IServiceScopeFactory scopeFactory;
     private readonly ILogger<UploadSessionMonitor> _logger;
     public readonly ConcurrentDictionary<Guid, IUploadingFileState> ActiveSessions;
+    public readonly ConcurrentDictionary<string, Guid> UuidByFingerprint;
 
     public UploadSessionMonitor(ILogger<UploadSessionMonitor> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         ActiveSessions = new ConcurrentDictionary<Guid, IUploadingFileState>();
+        UuidByFingerprint =
+            new ConcurrentDictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
         this.scopeFactory = scopeFactory;
     }
 
@@ -55,7 +58,7 @@ public class UploadSessionMonitor
                     finishedFile.FileSize, finishedFile.OwnerId, true);
 
         //TODO: we might be able to optimize this double trip
-        await db.FileUploadState.Where(f=>f.Id == finishedFile.Uuid).ExecuteDeleteAsync();
+        await db.FileUploadState.Where(f => f.Id == finishedFile.Uuid).ExecuteDeleteAsync();
 
         int changes = await db.SaveChangesAsync();
         finishedFile.CloseEvent -= OnCloseEventAsync;

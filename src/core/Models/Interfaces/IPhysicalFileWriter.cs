@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using core.Domain;
 using core.Models;
@@ -19,9 +20,11 @@ public interface IUploadingFileState : IDisposable
     event EventHandler<CloseFileEventArgs>? CloseEvent;
     //uint PartsWritten { get; }
     bool IsDirty { get; }
-    byte[] FileFingerprint { get; }
+    string FileFingerprint { get; }
+    long WindowStart { get; }
+    uint PartsBitfield { get; }
 
-    FileStateBackupContext GetSnapshot();
+    bool TryGetSnapshotBackup([NotNullWhen(true)] out FileUploadStateBackupContext? value);
     Task<Result<UploadPartSuccess>> WritePartFromPipeAsync(int currentPart, PipeReader reader, CancellationToken ct, ILogger logger);
 
 }

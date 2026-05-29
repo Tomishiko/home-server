@@ -1,9 +1,9 @@
 CREATE OR REPLACE FUNCTION batch_update_file_upload_state(
     p_ids UUID[],
-    p_bitfields BYTEA[],
+    p_bitfields INT[],
     p_writtens INT[]
 )
-RETURNS INTEGER AS $$
+RETURNS INT AS $$
 DECLARE
     updated_count INTEGER;
 BEGIN

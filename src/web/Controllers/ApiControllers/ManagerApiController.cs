@@ -111,7 +111,7 @@ public class ManagerApiController : ControllerBase
     [HttpGet("users")]
     [ProducesResponseType(404)]
     [ProducesResponseType(200)]
-    public async IAsyncEnumerable<UserDto> GetUsers(CancellationToken ct)
+    public async IAsyncEnumerable<UserDto> GetUsers([EnumeratorCancellation] CancellationToken ct)
     {
         IAsyncEnumerable<UserDto> userData = _userService.GetAllUsersJoinedAsync(ct);
 

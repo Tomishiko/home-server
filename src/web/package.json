@@ -1,20 +1,21 @@
 {
+    "type": "module",
     "scripts": {
+        "dev": "bun build Scripts/main.ts --outdir=wwwroot/js --splitting --format=esm --watch",
         "build-css": "purgecss -c purgecss.config.js",
-        "build-js": "esbuild Scripts/main.ts --bundle --splitting --outdir=wwwroot/js --format=esm  --target=es2017",
-        "build": "npm-run-all build-js build-css"
+        "build-js": "bun build Scripts/main.ts --outdir=wwwroot/js --splitting --format=esm --minify",
+        "build": "bun run build-js && bun run build-css"
     },
     "devDependencies": {
         "@fullhuman/postcss-purgecss": "^7.0.2",
         "@types/bootstrap": "^5.2.10",
         "@types/jquery": "^3.5.1",
-        "esbuild": "^0.25.8",
-        "npm-run-all": "^4.1.5",
+        "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.13.1",
         "purgecss": "^5.0.0",
         "typescript": "^5.8.3"
     },
     "dependencies": {
-        "bootstrap": "^5.3.8",
-        "bootstrap-icons": "^1.13.1"
+        "blueimp-md5": "^2.19.0"
     }
 }

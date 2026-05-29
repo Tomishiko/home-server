@@ -133,3 +133,4 @@ wwwroot/js
 deploy-local.sh
 publish
 files
+*.lock

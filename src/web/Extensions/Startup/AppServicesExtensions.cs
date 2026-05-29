@@ -18,24 +18,9 @@ public static class AppServicesExtensions
 
     public static IServiceCollection RegisterCoreServices(this IServiceCollection services, IConfiguration config)
     {
-        string connectionString = config.GetConnectionString("DefaultDb") ??
-            throw new Exception("No DB connection string was provided");
 
-        services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
-        {
-            var provider = config.GetValue<string>("DbProvider");
-            switch (provider)
-            {
-                case "postgres":
-                    options.UseNpgsql(connectionString);
-                    //.LogTo(Console.WriteLine,
-                    //       LogLevel.Information).EnableSensitiveDataLogging();
-                    break;
-                default: throw new Exception("DB provider is not supported");
-            }
 
-        });
-
+        services.AddDbSupport(config);
         services.AddEndpointsApiExplorer();
         services.Configure<FileUploadOptions>(config.GetSection(FileUploadOptions.SectionName));
         services.AddOptions<FileUploadOptionsClient>()
@@ -54,7 +39,7 @@ public static class AppServicesExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
-        services.AddScoped<IDirectDbQueryService, DirectDbQueryService>();
+        services.AddScoped<IDirectDbQuery, DirectDbQuery>();
         services.AddHostedService<FileStateBackupWorker>();
         services.AddHostedService<BackgroundFileService>();
         services.AddHttpContextAccessor();

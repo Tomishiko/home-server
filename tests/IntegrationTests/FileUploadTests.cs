@@ -96,7 +96,7 @@ public sealed class FileUploadTest : IClassFixture<WebAppFactory>, IAsyncLifetim
 
     }
 
-    [Fact]
+    [Fact(DisplayName = "BackupTest")]
     public async Task UploadedPartsIndexesAreBackedupToDbAfterTimeout()
     {
         var client = _factory.CreateClient();
@@ -141,7 +141,7 @@ public sealed class FileUploadTest : IClassFixture<WebAppFactory>, IAsyncLifetim
 
         Assert.Equal(partIndex, partResponse.PartIndex);
         Assert.Equal(partSize, partResponse.BytesWritten);
-        await Task.Delay(6000); //Wait for background worker to kick in
+        await Task.Delay(10000); //Wait for background worker to kick in
 
         await using var scope = _factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
@@ -153,7 +153,7 @@ public sealed class FileUploadTest : IClassFixture<WebAppFactory>, IAsyncLifetim
 
         byte mask = 0b0010_0010;
 
-        Assert.Equal(mask, dbRecord.PartsBitfield[0] & mask);
+        Assert.Equal(mask, dbRecord.PartsBitfield & mask);
 
     }
 

@@ -1,10 +1,12 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using core.Domain;
 using core.Interfaces;
 using core.Models;
 using core.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,8 +33,34 @@ public class UploadProcessor : IUploadProcessor
                                                                               IPhysicalFileWriterFactory physicalFileWriterFactory,
                                                                               FileUploadOptions fileUploadOptions)
     {
-
         var UniqueID = Guid.NewGuid();
+
+        if (!_fileCompositor.UuidByFingerprint.TryAdd(fileDto.Fingerprint, UniqueID))
+        {
+
+            var existingId = _fileCompositor.UuidByFingerprint[fileDto.Fingerprint];
+
+            if (!_fileCompositor.ActiveSessions
+                    .TryGetValue(existingId, out var entry))
+            {
+                return new Error("Something unexpected happened", 500);
+            }
+
+            return new FileHandshakeResponseDto(entry.Uuid.ToString(),
+                                                fileDto.PartSize,
+                                                entry.WindowStart,
+                                                entry.PartsBitfield);
+        }
+
+        //if (await db.FileUploadState
+        //        .FirstOrDefaultAsync(x => x.Fingerprint == fileDto.Fingerprint)
+        //        is FileUploadStateEntity entry)
+        //{
+        //    return new FileHandshakeResponseDto(entry.Id.ToString(),
+        //                                        fileDto.PartSize,
+        //                                        entry.PartsWritten);
+        //}
+
         var streamedFile = new UploadingFileState(fileDto, fileUploadOptions.StoragePath,
                 UniqueID, physicalFileWriterFactory);
 
@@ -40,6 +68,7 @@ public class UploadProcessor : IUploadProcessor
 
         if (!_fileCompositor.ActiveSessions.TryAdd(UniqueID, streamedFile))
         {
+            _fileCompositor.UuidByFingerprint.Remove(fileDto.Fingerprint, out _);
             return new Error("Unexpected UUID collision", 500);
         }
 
@@ -53,7 +82,7 @@ public class UploadProcessor : IUploadProcessor
                                           streamedFile.FileName,
                                           streamedFile.OwnerId,
                                           streamedFile.TotalFileParts),
-            PartsBitfield = null,
+            PartsBitfield = 0,
             PartsWritten = 0
         });
 
@@ -61,8 +90,9 @@ public class UploadProcessor : IUploadProcessor
                 $"New file registered for uplaod Filename: {fileDto.FileName}, Filesize:{fileDto.FileSize}");
 
         await db.SaveChangesAsync();
-        return new FileHandshakeResponseDto(UniqueID.ToString(), fileDto.PartSize);
 
+        string uuid = UniqueID.ToString();
+        return new FileHandshakeResponseDto(uuid, fileDto.PartSize, 0, 0);
 
     }
 
@@ -84,4 +114,5 @@ public class UploadProcessor : IUploadProcessor
 
 
     }
+
 }

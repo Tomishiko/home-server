@@ -25,11 +25,11 @@ public class FileUploadStateConfiguration : IEntityTypeConfiguration<FileUploadS
 
         builder.Property(x => x.PartsBitfield)
             .HasColumnName("parts_bitfield")
-            .HasColumnType("bytea");
+            .HasConversion(v => (int)v,
+                           v => (uint)v);
 
         builder.Property(x => x.PartsWritten)
             .HasColumnName("parts_written")
-            .HasColumnType("integer")
             .IsRequired();
 
         builder.OwnsOne(x => x.Metadata, nav =>

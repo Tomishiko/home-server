@@ -5,15 +5,9 @@ using System.Security.Cryptography;
 namespace core.Domain;
 
 
-public record FileWriterMeta(
-    long FileSize,
-    int PartSize,
-    string FileName,
-    long OwnerId,
-    long TotalFileParts
-);
 
-public class FileStateBackupContext : IDisposable
+[Obsolete]
+public class FileStateBackupContextLegacy : IDisposable
 {
     private readonly byte[] _bitfieldBuffer;
     private bool _isDisposed = false;
@@ -27,7 +21,7 @@ public class FileStateBackupContext : IDisposable
         ? Memory<byte>.Empty
         : _bitfieldBuffer.AsMemory(0, BitfieldLength);
 
-    public FileStateBackupContext(int partsWritten,
+    public FileStateBackupContextLegacy(int partsWritten,
                                   ReadOnlySpan<byte> bitfield,
                                   Guid id)
     {

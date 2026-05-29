@@ -31,6 +31,88 @@ public class FileUploadApiController : ControllerBase
         _uploadProcessor = uploadProcessor;
     }
 
+
+    [HttpPost("part/{uuid}")]
+    [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
+    [DisableRequestSizeLimit]
+    [DisableFormValueModelBinding]
+    [IgnoreAntiforgeryToken]
+    [Consumes(MediaTypeNames.Application.OctetStream)]
+    public async Task<IActionResult> UploadLargeFile(Guid uuid,
+                                                     [FromHeader(Name = "X-Part")] int currentPart,
+                                                     CancellationToken ct)
+    {
+
+        Result<UploadPartSuccess> result = await _uploadProcessor.ProcessFilePartPipe(uuid,
+                                                                   currentPart,
+                                                                   HttpContext.Request.BodyReader, ct);
+        switch (result)
+        {
+            case Success<UploadPartSuccess> s:
+                return Ok(s.Value);
+
+            case Failure<UploadPartSuccess> f:
+                var statusCode = f.Error.Code ?? StatusCodes.Status400BadRequest;
+                return StatusCode(statusCode, f.Error.Message);
+
+            default: throw new Exception("Something went wrong while processing file_part");
+        }
+    }
+    ///
+    ///We pass DI args this way here to avoid as much allocations and unimportant
+    ///logic on hot path as possible
+    [HttpPost("handshake")]
+    [Authorize]
+    public async Task<IActionResult> Handshake([FromBody] FileHandshake requestModel,
+                                               [FromServices] IApplicationDbContext db,
+                                               [FromServices] IOptions<FileUploadOptionsClient> clientOptions,
+                                               [FromServices] IOptions<FileUploadOptions> fileUploadOptions,
+                                               [FromServices] IPhysicalFileWriterFactory fileWriterFactory)
+    {
+
+        if (!long.TryParse(User.FindFirst("Id")?.Value, out long user_id))
+        {
+            return BadRequest("Bad auth data");
+        }
+        var partSize = clientOptions.Value.PartSize;
+        var totalParts = (requestModel.FileSize + partSize - 1) / partSize;
+
+        var fileDto = new FileCreationDto(HttpUtility.HtmlEncode(requestModel.FileName),
+                                          requestModel.FileSize,
+                                          totalParts,
+                                          partSize,
+                                          user_id,
+                                          requestModel.FileFingerprint);
+
+        Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(
+                fileDto, db, fileWriterFactory, fileUploadOptions.Value);
+
+        switch (result)
+        {
+            case Success<FileHandshakeResponseDto> success:
+                _logger.LogInformation($"FileHandle opened(OK) Filename: {requestModel.FileName}, Filesize:{fileDto.FileSize}");
+
+                return CreatedAtAction(nameof(UploadLargeFile),
+                        success.Value.Uuid.ToString(),
+                        success.Value);
+
+            case Failure<FileHandshakeResponseDto> f:
+                _logger.LogError("Failed to add new file handle {Error}", f.Error);
+                return StatusCode(f.Error.Code ?? StatusCodes.Status400BadRequest);
+
+            default: return StatusCode(500);
+        }
+
+    }
+
+    [HttpPost("abort")]
+    [Authorize]
+    public IActionResult AbortStreaming(string uid)
+    {
+
+        throw new NotImplementedException();
+    }
+
     [HttpPost("part")]
     [Authorize]
     [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
@@ -120,86 +202,4 @@ public class FileUploadApiController : ControllerBase
         return NoContent();
 
     }
-
-    [HttpPost("part/{uuid}")]
-    [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
-    [DisableRequestSizeLimit]
-    [DisableFormValueModelBinding]
-    [IgnoreAntiforgeryToken]
-    [Consumes(MediaTypeNames.Application.OctetStream)]
-    public async Task<IActionResult> UploadLargeFile(Guid uuid,
-                                                     [FromHeader(Name = "X-Part")] int currentPart,
-                                                     CancellationToken ct)
-    {
-
-        Result<UploadPartSuccess> result = await _uploadProcessor.ProcessFilePartPipe(uuid,
-                                                                   currentPart,
-                                                                   HttpContext.Request.BodyReader, ct);
-        switch (result)
-        {
-            case Success<UploadPartSuccess> s:
-                return Ok(s.Value);
-
-            case Failure<UploadPartSuccess> f:
-                var statusCode = f.Error.Code ?? StatusCodes.Status400BadRequest;
-                return StatusCode(statusCode, f.Error.Message);
-
-            default: throw new Exception("Something went wrong while processing file_part");
-        }
-    }
-    ///
-    ///We pass DI args this way here to avoid as much allocations and unimportant
-    ///logic on hot path as possible
-    [HttpPost("handshake")]
-    [Authorize]
-    public async Task<IActionResult> Handshake([FromBody] FileHandshake requestModel,
-                                               [FromServices] IApplicationDbContext db,
-                                               [FromServices] IOptions<FileUploadOptionsClient> clientOptions,
-                                               [FromServices] IOptions<FileUploadOptions> fileUploadOptions,
-                                               [FromServices] IPhysicalFileWriterFactory fileWriterFactory)
-    {
-
-        if (!long.TryParse(User.FindFirst("Id")?.Value, out long user_id))
-        {
-            return BadRequest("Bad auth data");
-        }
-        var partSize = clientOptions.Value.PartSize;
-        var totalParts = (requestModel.FileSize + partSize - 1) / partSize;
-
-        var fileDto = new FileCreationDto(HttpUtility.HtmlEncode(requestModel.FileName),
-                                          requestModel.FileSize,
-                                          totalParts,
-                                          partSize,
-                                          user_id,
-                                          requestModel.FileFingerprint);
-
-        Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(
-                fileDto, db, fileWriterFactory, fileUploadOptions.Value);
-
-        switch (result)
-        {
-            case Success<FileHandshakeResponseDto> success:
-                _logger.LogInformation($"FileHandle opened(OK) Filename: {requestModel.FileName}, Filesize:{fileDto.FileSize}");
-
-                return CreatedAtAction(nameof(UploadLargeFile),
-                        success.Value.Uuid.ToString(),
-                        success.Value);
-
-            case Failure<FileHandshakeResponseDto> f:
-                _logger.LogError("Failed to add new file handle", f.Error);
-                return StatusCode(f.Error.Code ?? StatusCodes.Status400BadRequest);
-
-            default: return StatusCode(500);
-        }
-
-    }
-
-    [HttpPost("abort")]
-    [Authorize]
-    public IActionResult AbortStreaming(string uid)
-    {
-
-        throw new NotImplementedException();
-    }
-
 }

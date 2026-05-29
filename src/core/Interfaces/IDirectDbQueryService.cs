@@ -2,7 +2,10 @@ using core.Domain;
 
 namespace core.Interfaces;
 
-public interface IDirectDbQueryService
+public interface IDirectDbQuery
 {
-    ValueTask UpdateFileUploadState(ReadOnlySpan<FileStateBackupContext> batch);
+    ValueTask UpdateFileUploadStateLegacy(ReadOnlySpan<FileStateBackupContextLegacy> batch);
+
+    Task<int> UpdateFileUploadState(ReadOnlyMemory<FileUploadStateBackupContext> batch,
+                                            CancellationToken ct);
 }

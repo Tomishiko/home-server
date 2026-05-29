@@ -35,7 +35,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
 {
     public ITestOutputHelper Output { get; set; }
 
-    private const string DbConnectionString = "Host=localhost;Username=postgres;Port=5432;Database=testDB";
+    private const string DbConnectionString = "Host=127.0.0.1;Username=postgres;Port=5432;Database=testDB";
     private Respawner _respawner = default!;
     private NpgsqlConnection _dbConnection = default!;
 

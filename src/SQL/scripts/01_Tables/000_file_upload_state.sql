@@ -2,8 +2,8 @@ DROP TABLE IF EXISTS file_upload_state;
 
 CREATE TABLE file_upload_state (
     id UUID PRIMARY KEY,
-    fingerprint BYTEA NOT NULL,
-    parts_bitfield BYTEA,
+    fingerprint VARCHAR(32) NOT NULL,--md5 hex string
+    parts_bitfield INTEGER,
     parts_written INTEGER NOT NULL,
     metadata JSONB NOT NULL
 );

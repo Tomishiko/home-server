@@ -6,4 +6,4 @@ public record FileCreationDto(
         long TotalFileParts,
         int PartSize,
         long OwnerId,
-        byte[] Fingerprint);
+        string Fingerprint);

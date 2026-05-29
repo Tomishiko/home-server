@@ -1,3 +1,6 @@
+// @ts-ignore
+import md5 from 'blueimp-md5'
+
 export type UploaderConfig = {
     chunkSize?: number;        // bytes per chunk (default 512 KB)
     concurrency?: number;      // parallel chunk uploads (default 4)
@@ -13,6 +16,7 @@ type HandshakeResponse = {
     uid: string;
     uploadedParts?: number[]; // optional array of already-received part indexes
     isSuccess: boolean;
+    partSize?: number
     description?: string;
 };
 
@@ -323,6 +327,10 @@ export class Uploader {
     }
 
     private async handshake(file: File): Promise<HandshakeResponse> {
+        const meta =
+            `${file.name}-${file.lastModified}-${file.size}-${file.type}`;
+
+        const fingerptint = md5(meta);
         const resp = await fetch(this.config.handshakeUrl, {
             method: 'POST',
             headers: {
@@ -332,8 +340,7 @@ export class Uploader {
             body: JSON.stringify({
                 fileName: file.name,
                 fileSize: file.size,
-                expectedPartSize: this.config.chunkSize,
-                totalParts: Math.ceil(file.size / this.config.chunkSize)
+                fileFingerprint: fingerptint
             })
         });
 
@@ -347,7 +354,7 @@ export class Uploader {
         const contentType = resp.headers.get('content-type') ?? '';
         if (contentType.includes('application/json')) {
             const json = await resp.json();
-            return { uid: json.uid, uploadedParts: json.uploadedParts ?? [], isSuccess: true };
+            return { uid: json.uuid, uploadedParts: json.uploadedParts ?? [], isSuccess: true };
         } else {
             const text = await resp.text();
             return { uid: text, uploadedParts: [], isSuccess: true };

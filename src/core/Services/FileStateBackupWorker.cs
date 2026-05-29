@@ -9,11 +9,12 @@ namespace core.Services;
 
 public class FileStateBackupWorker : BackgroundService
 {
-    private const int _batchSize = 8;
+    private const int _batchSize = 16;
     private readonly ILogger<FileStateBackupWorker> _logger;
     private readonly ConcurrentDictionary<Guid, IUploadingFileState> _activeSessions;
+    private readonly FileUploadStateBackupContext[] _batch;
     private readonly IServiceScopeFactory _factory;
-    private readonly FileStateBackupContext[] _sharedBuffer;
+
 
     public FileStateBackupWorker(ILogger<FileStateBackupWorker> logger,
                                  UploadSessionMonitor sessionMonitor,
@@ -22,7 +23,13 @@ public class FileStateBackupWorker : BackgroundService
         _logger = logger;
         _activeSessions = sessionMonitor.ActiveSessions;
         _factory = factory;
-        _sharedBuffer = new FileStateBackupContext[_batchSize];
+
+        _batch = new FileUploadStateBackupContext[_batchSize];
+
+        for (int i = 0; i < _batch.Length; i++)
+        {
+            _batch[i] = new FileUploadStateBackupContext();
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,34 +38,40 @@ public class FileStateBackupWorker : BackgroundService
         _logger.LogInformation("Starting background service");
         while (!stoppingToken.IsCancellationRequested)
         {
+
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            if (_activeSessions.IsEmpty) continue;
+
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-
-                if (_activeSessions.IsEmpty) continue;
-
                 using var scope = _factory.CreateAsyncScope();
-                var writeServcice = scope.ServiceProvider.GetRequiredService<IDirectDbQueryService>();
-
-                int bufferPointer = 0;
+                var writeServcice = scope.ServiceProvider.GetRequiredService<IDirectDbQuery>();
+                int count = 0;
 
                 foreach (var session in _activeSessions)
                 {
                     var fileWriter = session.Value;
-                    if (!fileWriter.IsDirty) continue;
 
-                    _sharedBuffer[bufferPointer++] = fileWriter.GetSnapshot();
-
-                    if (bufferPointer == _batchSize)
+                    if (!fileWriter.TryGetSnapshotBackup(out var snapshot))
                     {
-                        await FlushBuffer(writeServcice, bufferPointer);
-                        bufferPointer = 0;
+                        continue;
+                    }
+
+                    _batch[count].Id = snapshot.Id;
+                    _batch[count].Bitfield = snapshot.Bitfield;
+                    _batch[count].PartsWritten = snapshot.PartsWritten;
+                    count++;
+
+                    if (count == _batch.Length)
+                    {
+                        await FlushBuffer(writeServcice, count, stoppingToken);
+                        count = 0;
                     }
                 }
 
-                if (bufferPointer > 0)
+                if (count > 0)
                 {
-                    await FlushBuffer(writeServcice, bufferPointer);
+                    await FlushBuffer(writeServcice, count, stoppingToken);
                 }
             }
             catch (OperationCanceledException)
@@ -71,28 +84,22 @@ public class FileStateBackupWorker : BackgroundService
             }
         }
     }
-    private async Task FlushBuffer(IDirectDbQueryService db, int count)
+
+    private async Task FlushBuffer(IDirectDbQuery db, int count, CancellationToken ct)
     {
-        var bufferSlice = _sharedBuffer.AsSpan(0, count);
+        var bufferSlice = _batch.AsMemory(0, count);
 
         try
         {
-            await db.UpdateFileUploadState(bufferSlice);
+            int updated = await db.UpdateFileUploadState(bufferSlice, ct);
+            _logger.LogInformation($"Updated file upload state  records:{updated}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating DB state for batch");
         }
-        finally
-        {
-
-            for (int i = 0; i < count; i++)
-            {
-                _sharedBuffer[i]?.Dispose();
-                _sharedBuffer[i] = null!;
-            }
-        }
 
     }
 
 }
+

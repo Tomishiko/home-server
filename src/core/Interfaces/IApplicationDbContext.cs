@@ -1,3 +1,4 @@
+using System.Data.Common;
 using core.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<FileEntity> Files { get; set; }
     DbSet<InviteEntity> Invites { get; set; }
     DbSet<FileUploadStateEntity> FileUploadState { get; set; }
+    DbConnection GetDbConnection();
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     int SaveChanges();
     Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id, string issuer);

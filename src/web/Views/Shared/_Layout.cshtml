@@ -10,7 +10,8 @@
         style-src 'self' 'unsafe-inline';
         connect-src 'self';
         upgrade-insecure-requests;" />
-@{string? path = Context.Request.Path.Value?.ToLower();}
+@{string path = Context.Request.Path.Value?.ToLower() ?? "/";}
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -81,7 +82,7 @@
     </div>
     <footer class="border-top footer mt-auto  text-muted">
         <div class="container-fluid">
-            &copy; 2025 - <a href="https://tomishiko.iusevimbtw.com">Tomishiko</a>
+            &copy; 2026 - <a href="https://tomishiko.iusevimbtw.com">Tomishiko</a>
         </div>
     </footer>
     @await RenderSectionAsync("Scripts", required: false)

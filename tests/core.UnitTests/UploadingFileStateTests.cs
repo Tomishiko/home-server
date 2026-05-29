@@ -50,7 +50,7 @@ public class UploadingFileStateTests
     }
 
     [Fact]
-    public async Task WritePartFromPipeAsync_DuplicatePartDoesNotIncrementPartsWritten()
+    public async Task WritePartFromPipeAsync_DuplicatePartDoNotIncrementPartsWritten()
     {
         var payload = new byte[] { 1, 2, 3, 4 };
         var writer = new TestPhysicalFileWriter();
@@ -62,17 +62,17 @@ public class UploadingFileStateTests
                                           factory);
 
         var firstReader = PipeReader.Create(CreateSequence(payload));
-        var firstResult = await state.WritePartFromPipeAsync(0, firstReader, CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+        var firstResult = await state.WritePartFromPipeAsync(1, firstReader, CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+
         Assert.IsType<Success<UploadPartSuccess>>(firstResult);
         Assert.Equal(1, state.PartsWritten);
 
         var secondReader = PipeReader.Create(CreateSequence(payload));
-        var secondResult = await state.WritePartFromPipeAsync(0, secondReader, CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+        var secondResult = await state.WritePartFromPipeAsync(1, secondReader, CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+
         Assert.IsType<Success<UploadPartSuccess>>(secondResult);
         Assert.Equal(1, state.PartsWritten);
-
-        var bitfield = state.PartsBitfield.ToArray();
-        Assert.Equal(1, bitfield[0]);
+        Assert.Equal(2u, state.PartsBitfield);
     }
 
     [Fact]
@@ -158,12 +158,57 @@ public class UploadingFileStateTests
         {
             Assert.True(res is Success<UploadPartSuccess>, $"Task index: {index} Error: {(res as Failure<UploadPartSuccess>)?.Error}");
         }
+        var part1 = 1u << 1;
+        var part5 = 1u << 5;
+        var part8 = 1u << 8;
 
-        Assert.True((state.PartsBitfield[0] & 0b0000_0010) != 0, "Bit [1] should be set");
-        Assert.True((state.PartsBitfield[0] & 0b0010_0000) != 0, "Bit [5] should be set");
-        Assert.True((state.PartsBitfield[1] & 0b0000_0001) != 0, "Bit [8] should be set");
+        Assert.True((state.PartsBitfield & part1) != 0, "Bit [1] should be set");
+        Assert.True((state.PartsBitfield & part5) != 0, "Bit [5] should be set");
+        Assert.True((state.PartsBitfield & part8) != 0, "Bit [8] should be set");
     }
 
+    [Fact]
+    public async Task WritePartFromPipeAsync_RecievedPartWindowIsShiftedForSiquentialParts()
+    {
+
+        var segments = new[]
+        {
+            new byte[] { 1, 2, 3 },
+            new byte[] { 4, 5, 6, 7, 8 }
+        };
+
+        var writer = new TestPhysicalFileWriter();
+        var factory = new TestPhysicalFileWriterFactory(writer);
+
+        var state = new UploadingFileState(CreateFileDto(totalFileParts: 125, partSize: 1024, fileSize: 125 * 1024),
+                                          "unused",
+                                          Guid.NewGuid(),
+                                          factory);
+
+        var sequence = CreateSequence(segments);
+
+        var tasks = new Task<Result<UploadPartSuccess>>[3];
+        long initialStart = state.WindowStart;
+
+        tasks[2] = state.WritePartFromPipeAsync(8, PipeReader.Create(sequence), CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+
+        tasks[0] = state.WritePartFromPipeAsync(0, PipeReader.Create(sequence), CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+        tasks[1] = state.WritePartFromPipeAsync(1, PipeReader.Create(sequence), CancellationToken.None, NullLogger<UploadingFileState>.Instance);
+
+
+        var finished = await Task.WhenAll(tasks);
+
+        foreach (var (index, res) in finished.Index())
+        {
+            Assert.True(res is Success<UploadPartSuccess>, $"Task index: {index} Error: {(res as Failure<UploadPartSuccess>)?.Error}");
+        }
+
+        var mask = 1u << 6;
+
+        Assert.Equal(initialStart + 2, state.WindowStart);
+        Assert.Equal(mask, state.PartsBitfield & mask);
+
+    }
     private static FileCreationDto CreateFileDto(long totalFileParts, int partSize, long fileSize)
     {
         return new FileCreationDto("test.txt", fileSize, totalFileParts, partSize, 1, new byte[32]);

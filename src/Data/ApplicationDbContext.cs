@@ -3,6 +3,7 @@ using core.Domain;
 using core.Interfaces;
 using Npgsql;
 using NpgsqlTypes;
+using System.Data.Common;
 
 namespace Data.Core;
 
@@ -20,6 +21,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<InviteEntity> Invites { get; set; }
     public DbSet<FileUploadStateEntity> FileUploadState { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -31,7 +33,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     }
 
-    public async Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id, string issuer)
+    public DbConnection GetDbConnection() => base.Database.GetDbConnection();
+
+    public async Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id,
+                                                                 string issuer)
     {
         // FK link is removed by pstgres function
         var userIdParam = new NpgsqlParameter
@@ -51,6 +56,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             .FromSqlRaw("SELECT * FROM remove_user_by_id(@p_user_id,@p_issuer_name)",
                         userIdParam,
                         issuerNameParam)
+            .AsNoTracking()
             .SingleOrDefaultAsync();
 
         return deleted;
