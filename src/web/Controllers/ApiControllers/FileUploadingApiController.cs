@@ -82,7 +82,7 @@ public class FileUploadApiController : ControllerBase
                                           totalParts,
                                           partSize,
                                           user_id,
-                                          requestModel.FileFingerprint);
+                                          requestModel.FileFingerprint.ToLower());
 
         Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(
                 fileDto, db, fileWriterFactory, fileUploadOptions.Value);

@@ -50,7 +50,6 @@ public class UserService : BaseDataService, IUserService
         ArgumentException.ThrowIfNullOrEmpty(dto.Username);
         ArgumentException.ThrowIfNullOrEmpty(dto.Password);
         ArgumentException.ThrowIfNullOrEmpty(dto.CreatedBy);
-        ArgumentNullException.ThrowIfNull(dto.RoleId);
 
 
         _logger.LogInformation($"Request to create new user from {dto.CreatedBy}");

@@ -21,7 +21,7 @@ public class LoginController : Controller
             HttpContext.Response.Headers["HX-Redirect"] = "/";
             return NoContent();
         }
-        
+
         return isHtmx ? PartialView() : View();
     }
 

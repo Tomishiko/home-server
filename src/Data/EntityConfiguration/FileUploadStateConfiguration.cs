@@ -16,7 +16,7 @@ public class FileUploadStateConfiguration : IEntityTypeConfiguration<FileUploadS
         builder.Property(x => x.Fingerprint)
             .IsRequired()
             .HasColumnName("fingerprint")
-            .HasColumnType("bytea");
+            .HasColumnType("varchar(32)");
 
         // Unique Index for the fingerprint
         builder.HasIndex(x => x.Fingerprint)

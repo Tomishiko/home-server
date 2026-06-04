@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace core.Services;
 
-public class Mpv:IMpvService
+public class Mpv : IMpvService
 {
     private static string _mpv_options = "--input-ipc-server=/tmp/mpvsocket --fs";
 
@@ -11,7 +11,7 @@ public class Mpv:IMpvService
         ArgumentNullException.ThrowIfNullOrEmpty(url, nameof(url));
         var uri = new Uri(url);
 
-        if(uri.Host == "rezka.ag")
+        if (uri.Host == "rezka.ag")
             url = await GetLinksRezka(url);
         using Process mpv = new Process();
         //mpv.StartInfo.UseShellExecute = true;

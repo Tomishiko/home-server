@@ -11,7 +11,7 @@ public class FileService : BaseDataService, IFileService
 {
     public FileService(IApplicationDbContext context) : base(context) { }
 
-    public void  StageNewFileRecord(string UUID, string ext, string fileName,
+    public void StageNewFileRecord(string UUID, string ext, string fileName,
             long fileSize, long owner_id, bool shared) // TODO: make a dto for this crap ffs
     {
         var fileEnt = new FileEntity

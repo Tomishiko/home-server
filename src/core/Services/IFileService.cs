@@ -12,7 +12,7 @@ public interface IFileService
                                    long owner_id,
                                    bool shared);
     public IAsyncEnumerable<FileMeta> GetSharedFilesAsync(CancellationToken ct);
-    public IAsyncEnumerable<FileMeta> GetPrivateFilesAsync(long onwer_id,CancellationToken ct);
+    public IAsyncEnumerable<FileMeta> GetPrivateFilesAsync(long onwer_id, CancellationToken ct);
     public Task<FileMeta?> RequestFileAsync(long? userid, long fileid);
     public Task<int> SaveChangesAsync();
     public Task<int> MarkAsDeletedAsync(long userId, long fileId);

@@ -20,7 +20,7 @@ public static class IQueryableExtensions
 
             builder.Add(element);
         }
-        if(builder.Capacity == builder.Count)
+        if (builder.Capacity == builder.Count)
         {
             return builder.MoveToImmutable();
         }

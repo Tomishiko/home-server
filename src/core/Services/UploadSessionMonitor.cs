@@ -38,7 +38,7 @@ public class UploadSessionMonitor
             await logService.AddNewLog(log);
             return;
         }
-
+        UuidByFingerprint.Remove(finishedFile.FileFingerprint, out _);
         // Get "extension" and file's name if possible
         int extIndex = finishedFile.FileName.LastIndexOf('.');
         string ext, fname;

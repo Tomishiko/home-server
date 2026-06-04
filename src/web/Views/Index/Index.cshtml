@@ -21,7 +21,7 @@
         </div>
     </div>
     <div class="container-list-group-horizontal table-responsive" id="table-container"
-         hx-get='@Url.Action(nameof(IndexController.PartialTableLoad), "Index")' hx-trigger="upload-complete from:body">
+         hx-get='@Url.Action(nameof(IndexController.PartialTableLoad), "Index")' hx-trigger="upload-complete">
         @await Html.PartialAsync("_IndexTable", Model)
     </div>
     <ul id="contextMenu" class="dropdown-menu" role="menu" hx-trigger="menu-open from:body">

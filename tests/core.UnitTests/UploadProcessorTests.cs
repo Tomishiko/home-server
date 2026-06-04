@@ -18,6 +18,7 @@ using Moq;
 using MockQueryable.Moq;
 using Xunit;
 using Microsoft.AspNetCore.WebUtilities;
+using Shared.Helpers;
 
 namespace core.UnitTests;
 
@@ -40,7 +41,8 @@ public class UploadProcessorTests
         var monitor = new UploadSessionMonitor(NullLogger<UploadSessionMonitor>.Instance, new Mock<IServiceScopeFactory>().Object);
         var processor = new UploadProcessor(monitor, NullLogger<UploadProcessor>.Instance);
 
-        var fileDto = new FileCreationDto("test.txt", 1024, 4, 256, 1, new byte[32]);
+        var randomStr = Generators.RandomString32();
+        var fileDto = new FileCreationDto("test.txt", 1024, 4, 256, 1, randomStr);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
 
         var result = await processor.AddNewFileHandleAsync(fileDto, mockContext.Object, mockFactory.Object, options);
@@ -49,7 +51,8 @@ public class UploadProcessorTests
         if (result is Success<FileHandshakeResponseDto> success)
         {
             Assert.Equal(256, success.Value.PartSize);
-            Assert.Equal(0, success.Value.PartsWritten);
+            Assert.Equal(0, success.Value.WindowStart);
+            Assert.Equal(0U, success.Value.Bitfield);
             Assert.NotEmpty(success.Value.Uuid);
         }
 
@@ -80,7 +83,7 @@ public class UploadProcessorTests
         var monitor = new UploadSessionMonitor(NullLogger<UploadSessionMonitor>.Instance, new Mock<IServiceScopeFactory>().Object);
         var processor = new UploadProcessor(monitor, NullLogger<UploadProcessor>.Instance);
 
-        var fingerprint = new byte[] { 1, 2, 3, 4, 5 };
+        var fingerprint = Generators.RandomString32();
         var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
 
@@ -134,10 +137,15 @@ public class UploadProcessorTests
 
         var mockDb = new Mock<IApplicationDbContext>();
 
-        var fingerprint = new byte[] { 1, 2, 3, 4, 5 };
+        var fingerprint = Generators.RandomString32();
         var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
         var fileGuid = Guid.NewGuid();
+
+        var mockWriter = new Mock<IPhysicalFileWriter>();
+        var mockFactory = new Mock<IPhysicalFileWriterFactory>();
+        mockFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>())).Returns(mockWriter.Object);
+
         var stubEntity = new FileUploadStateEntity
         {
             PartsWritten = 0,
@@ -146,25 +154,26 @@ public class UploadProcessorTests
             Metadata = new FileWriterMeta(0, 0, "", 0, 0),
             PartsBitfield = 0
         };
-        var stub = new List<FileUploadStateEntity> { stubEntity };
-        var mockDbSet = stub.BuildMockDbSet();
+        var fileState = new UploadingFileState(fileDto, "/", fileGuid, mockFactory.Object);
 
-        mockDb.Setup(d => d.FileUploadState).Returns(mockDbSet.Object);
 
-        var mockWriter = new Mock<IPhysicalFileWriter>();
-        var mockFactory = new Mock<IPhysicalFileWriterFactory>();
-        mockFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>())).Returns(mockWriter.Object);
+
+        //var stub = new List<FileUploadStateEntity> { stubEntity };
+        //var mockDbSet = stub.BuildMockDbSet();
+
+        //mockDb.Setup(d => d.FileUploadState).Returns(mockDbSet.Object);
+
 
         var monitor = new UploadSessionMonitor(NullLogger<UploadSessionMonitor>.Instance, new Mock<IServiceScopeFactory>().Object);
         var processor = new UploadProcessor(monitor, NullLogger<UploadProcessor>.Instance);
-
+        monitor.ActiveSessions.TryAdd(fileGuid, fileState);
+        monitor.UuidByFingerprint.TryAdd(fileDto.Fingerprint, fileGuid);
 
         // Act
         var result = await processor.AddNewFileHandleAsync(fileDto, mockDb.Object, mockFactory.Object, options);
         Assert.IsType<Success<FileHandshakeResponseDto>>(result);
         var responseDto = (result as Success<FileHandshakeResponseDto>).Value;
 
-        Assert.Equal(stubEntity.PartsWritten, responseDto.PartsWritten);
         Assert.Equal(stubEntity.Id.ToString(), responseDto.Uuid);
     }
 

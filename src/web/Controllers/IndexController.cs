@@ -62,7 +62,7 @@ public class IndexController : Controller
     }
 
     [HttpGet]
-    public IActionResult PartialTableLoad([FromQuery] NavigationAction action = NavigationAction.Public, CancellationToken ct=default)
+    public IActionResult PartialTableLoad([FromQuery] NavigationAction action = NavigationAction.Public, CancellationToken ct = default)
     {
         var uid = User.FindFirstValue("Id");
         if (action == NavigationAction.Private && uid == null)

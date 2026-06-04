@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using core.Domain;
 using core.Interfaces;
 using core.Models;
-using core.Models.Generic;
 using core.Services;
+using Shared.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -39,8 +39,10 @@ public class UploadSessionMonitorTests
         var mockWriter = new Mock<IPhysicalFileWriter>();
         mockWriter.Setup(w => w.IsClosed).Returns(false);
 
+        var randomStr = Generators.RandomString32();
+
         var fileState = new UploadingFileState(
-            new FileCreationDto("document.pdf", 1024, 1, 1024, 5, new byte[32]),
+            new FileCreationDto("document.pdf", 1024, 1, 1024, 5, randomStr),
             "/tmp",
             Guid.NewGuid(),
             new TestPhysicalFileWriterFactory(mockWriter.Object));
@@ -51,7 +53,6 @@ public class UploadSessionMonitorTests
         var eventArgs = new CloseFileEventArgs(fileId, "document.pdf", 1024, DateTime.UtcNow);
         monitor.OnCloseEventAsync(null, eventArgs);
 
-        // Give async operation time to complete
         await Task.Delay(100);
 
         Assert.False(monitor.ActiveSessions.ContainsKey(fileId));
@@ -63,6 +64,7 @@ public class UploadSessionMonitorTests
             5,
             true), Times.Once);
     }
+
 
     [Fact]
     public async Task OnCloseEventAsync_WithoutExtension_StagesFileWithEmptyExtension()
@@ -88,8 +90,9 @@ public class UploadSessionMonitorTests
         var mockWriter = new Mock<IPhysicalFileWriter>();
         mockWriter.Setup(w => w.IsClosed).Returns(false);
 
+        var randomStr = Generators.RandomString32();
         var fileState = new UploadingFileState(
-            new FileCreationDto("noextension", 512, 1, 512, 3, new byte[32]),
+            new FileCreationDto("noextension", 512, 1, 512, 3, randomStr),
             "/tmp",
             Guid.NewGuid(),
             new TestPhysicalFileWriterFactory(mockWriter.Object));

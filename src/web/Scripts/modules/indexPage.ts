@@ -36,7 +36,6 @@ export function init(component: HTMLElement, optionalData: any) {
             });
         }
         await uploader.uploadFiles(files);
-        (window as any).htmx.trigger("body", "upload-complete");
     })
     uploader.events.on('file-progress', (payload: ProgressEventPayload) => {
         barCtrl.updateProgressBar(payload.file.name, payload.percent);
@@ -44,6 +43,7 @@ export function init(component: HTMLElement, optionalData: any) {
 
     uploader.events.on('file-complete', (payload: FileCompletePayload) => {
         barCtrl.hideUploadProgressBars(payload.file.name);
+        (window as any).htmx.trigger("#table-container", "upload-complete");
     });
 
 

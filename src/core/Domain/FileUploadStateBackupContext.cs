@@ -7,8 +7,8 @@ namespace core.Domain;
 
 public class FileUploadStateBackupContext
 {
-    public uint Bitfield { get; set;}
-    public Guid Id { get; set;}
-    public int PartsWritten { get; set;}
+    public uint Bitfield { get; set; }
+    public Guid Id { get; set; }
+    public int PartsWritten { get; set; }
 
 }

@@ -3,7 +3,7 @@ using core.Interfaces;
 
 namespace Data.Infra;
 
-public sealed class PhysicalFileWriterFactory():IPhysicalFileWriterFactory
+public sealed class PhysicalFileWriterFactory() : IPhysicalFileWriterFactory
 {
 
     public IPhysicalFileWriter Create(string filePath, long preallocationSize)

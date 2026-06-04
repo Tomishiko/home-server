@@ -1,8 +1,5 @@
-using System;
 using System.IO.Pipelines;
 using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using core.Interfaces;
 using core.Models;
 using core.Models.Generic;
@@ -10,11 +7,10 @@ using core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Shared.Helpers;
 using web.Controllers;
 using web.Models;
-using Xunit;
 
 namespace web.UnitTests;
 
@@ -88,7 +84,7 @@ public class FileUploadApiControllerTests
         var mockDb = new Mock<IApplicationDbContext>();
         var mockFactory = new Mock<IPhysicalFileWriterFactory>();
 
-        var handshake = new FileHandshakeResponseDto(Guid.NewGuid().ToString(), 256,0);
+        var handshake = new FileHandshakeResponseDto(Guid.NewGuid().ToString(), 256, 0, 0U);
 
         mockProcessor.Setup(p => p.AddNewFileHandleAsync(
             It.IsAny<FileCreationDto>(),
@@ -111,8 +107,7 @@ public class FileUploadApiControllerTests
 
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
 
-        var fingerprintStub = new byte[32];
-        Random.Shared.NextBytes(fingerprintStub);
+        var fingerprintStub = Generators.RandomString32();
 
         var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
         var options = Microsoft.Extensions.Options.Options.Create(
@@ -138,7 +133,7 @@ public class FileUploadApiControllerTests
                                                        It.IsAny<IApplicationDbContext>(),
                                                        It.IsAny<IPhysicalFileWriterFactory>(),
                                                        It.IsAny<FileUploadOptions>()))
-                     .ReturnsAsync(new FileHandshakeResponseDto(stabUUid.ToString(), 1024,0));
+                     .ReturnsAsync(new FileHandshakeResponseDto(stabUUid.ToString(), 1024, 0, 0));
 
         var mockDb = new Mock<IApplicationDbContext>();
         var mockFactory = new Mock<IPhysicalFileWriterFactory>();
@@ -156,8 +151,7 @@ public class FileUploadApiControllerTests
 
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
 
-        byte[] fingerprintStub = new byte[32];
-        Random.Shared.NextBytes(fingerprintStub);
+        string fingerprintStub = Generators.RandomString32();
         var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
@@ -189,8 +183,7 @@ public class FileUploadApiControllerTests
 
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
 
-        var fingerprintStub = new byte[32];
-        Random.Shared.NextBytes(fingerprintStub);
+        var fingerprintStub = Generators.RandomString32();
         var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
@@ -230,8 +223,7 @@ public class FileUploadApiControllerTests
         mockContext.Setup(c => c.User).Returns(user);
 
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
-        var fingerprintStub = new byte[32];
-        Random.Shared.NextBytes(fingerprintStub);
+        var fingerprintStub = Generators.RandomString32();
 
         var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
         var options = Microsoft.Extensions.Options.Options.Create(

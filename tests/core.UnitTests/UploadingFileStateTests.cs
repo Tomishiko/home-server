@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection.Metadata;
+using Shared.Helpers;
 
 namespace core.UnitTests;
 
@@ -211,7 +212,8 @@ public class UploadingFileStateTests
     }
     private static FileCreationDto CreateFileDto(long totalFileParts, int partSize, long fileSize)
     {
-        return new FileCreationDto("test.txt", fileSize, totalFileParts, partSize, 1, new byte[32]);
+        var randomStr = Generators.RandomString32();
+        return new FileCreationDto("test.txt", fileSize, totalFileParts, partSize, 1, randomStr);
     }
 
     private static ReadOnlySequence<byte> CreateSequence(params byte[][] segments)

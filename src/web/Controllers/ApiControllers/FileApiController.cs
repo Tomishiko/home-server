@@ -12,17 +12,14 @@ namespace web.Controllers;
 [Route("api")]
 public class FileApiController : ControllerBase
 {
-    private readonly ICoreFS _coreFs;
     private readonly ILogger<FileApiController> _logger;
     private readonly IFileService _fileService;
     private readonly FileUploadHelperService _upload;
 
-    public FileApiController(ICoreFS coreFS,
-                          ILogger<FileApiController> logger,
+    public FileApiController(ILogger<FileApiController> logger,
                           IFileService fileService,
                           FileUploadHelperService upload)
     {
-        _coreFs = coreFS;
         _logger = logger;
         _fileService = fileService;
         _upload = upload;
@@ -50,25 +47,13 @@ public class FileApiController : ControllerBase
         long? userId = Utility.TryGetUserId(User);
 
         var enumerable = _fileService.GetSharedFilesAsync(CancellationToken.None);
-        await foreach(var item in enumerable){
+        await foreach (var item in enumerable)
+        {
             yield return item;
         }
 
     }
-    [HttpGet("pfile/{id}")]
-    [Authorize]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PrintFile(int id, [FromQuery] string printParams)
-    {
-        var files = _coreFs.GetIndexFiles;
-        var file = files.ToArray()[id];
-        using Process cmd = new Process();
-        cmd.StartInfo.FileName = "lp";
-        cmd.StartInfo.Arguments = $"{file.FullName}";
-        cmd.Start();
-        await cmd.WaitForExitAsync();
-        return Ok();
-    }
+
     [HttpDelete("file/{id}")]
     [Authorize]
     [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
+using Shared.Helpers;
 using System.Net.Mime;
 using Xunit.Abstractions;
 using Tests.Integration.Infra;
@@ -29,8 +30,7 @@ public sealed class FileUploadTest : IClassFixture<WebAppFactory>, IAsyncLifetim
 
     private FileHandshake TestHandshakeBody(int fsize = 1024)
     {
-        var fingerprintStub = new byte[32];
-        Random.Shared.NextBytes(fingerprintStub);
+        var fingerprintStub = Generators.RandomString32();
 
         return new FileHandshake
         {

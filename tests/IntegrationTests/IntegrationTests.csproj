@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\web\web.csproj" />
     <ProjectReference Include="..\..\src\SQL\SQL.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
 </Project>

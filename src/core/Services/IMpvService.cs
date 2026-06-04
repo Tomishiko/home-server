@@ -1,5 +1,6 @@
 namespace core.Services;
 
-public interface IMpvService{
+public interface IMpvService
+{
     public Task<string> StartMpv(string url);
 }
