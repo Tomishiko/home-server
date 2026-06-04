@@ -12,7 +12,7 @@ namespace core.Services;
 
 
 ///<inheritdoc />
-public class InvitesService : BaseDataService, IInviteService
+public class InvitesService : BaseDataService, IInvitesService
 {
     private readonly ILogger<InvitesService> _logger;
     public InvitesService(IApplicationDbContext context,
@@ -26,7 +26,7 @@ public class InvitesService : BaseDataService, IInviteService
     {
         byte[] hashedToken = SHA256.HashData(WebEncoders
                                             .Base64UrlDecode(token));
-        UserEntity? issuer = await _context.ValidateInviteTokenStoredProc(hashedToken);
+        UserEntity? issuer = await _context.ValidateInviteTokenStoredProcAsync(hashedToken);
         if (issuer is null)
         {
             _logger.LogInformation($"Request with invalid invite token");
@@ -63,7 +63,7 @@ public class InvitesService : BaseDataService, IInviteService
     }
     private async Task<long> GetUserIdByName(string issuerName) =>
         await _context.Users.AsNoTracking()
-                            .Where(u => u.Uname == issuerName && u.Role!.Name == "manager")
+                            .Where(u => u.Uname == issuerName && u.RoleId == (long)RoleIds.Manager)
                             .Select(u => u.Id)
                             .SingleAsync();
 

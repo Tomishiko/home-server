@@ -9,6 +9,7 @@ namespace core.Services;
 /// <summary>
 /// Represents the core file system service that manages hosted files.
 /// </summary>
+[Obsolete]
 public class CoreFS : ICoreFS
 {
     private readonly string _filesPath;

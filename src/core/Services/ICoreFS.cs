@@ -5,6 +5,7 @@ using System.Text;
 /// <summary>
 /// Provides methods to get info of hosted files in specified directories.
 /// </summary>
+[Obsolete]
 public interface ICoreFS
 {
     public IEnumerable<FileInfo> GetIndexFiles { get; }

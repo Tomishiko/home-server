@@ -71,7 +71,7 @@ public class InviteLinkController : Controller
         Debug.Assert(issuer.Username is not null);
 
         var userCreation = new UserCreationDto(request.Username,
-                request.Password, issuer.Username, (byte)Roles.User, request.Email);
+                request.Password, issuer.Username, (byte)RoleIds.User, request.Email);
         Result<UserDto> result = await _userService.AddUserAsync(userCreation);
         Response.Cookies.Delete("regID");
         return result switch

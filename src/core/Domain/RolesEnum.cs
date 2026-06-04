@@ -1,6 +1,6 @@
 namespace core.Models;
 
-public enum Roles : byte
+public enum RoleIds : byte
 {
     User = 1,
     Manager = 2,

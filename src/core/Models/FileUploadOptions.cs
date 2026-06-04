@@ -2,6 +2,8 @@ namespace core.Models;
 
 public record FileUploadOptions
 {
+    public const string SectionName = "FileServingMode";
+
     public bool UseAccelRedirect { get; init; } = false;
     public string AccelPrefix { get; init; } = "/protected/files/";
     public string StoragePath { get; set; } = "/data/files";

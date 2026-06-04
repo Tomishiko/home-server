@@ -14,7 +14,7 @@ export function init(component: HTMLElement, optionalData: any) {
     const uploader = new Uploader({
         uploadUrl: '/api/upload/part',
         handshakeUrl: '/api/upload/handshake',
-        chunkSize: 4096 * 1024, // 4 Mb
+        chunkSize: 8 * 1024 * 1024,//4096 * 1024, // 4 Mb
         concurrency: 4,
         maxRetries: 3,
         backoffBaseMs: 500,
@@ -36,7 +36,6 @@ export function init(component: HTMLElement, optionalData: any) {
             });
         }
         await uploader.uploadFiles(files);
-        (window as any).htmx.trigger("body", "upload-complete");
     })
     uploader.events.on('file-progress', (payload: ProgressEventPayload) => {
         barCtrl.updateProgressBar(payload.file.name, payload.percent);
@@ -44,6 +43,7 @@ export function init(component: HTMLElement, optionalData: any) {
 
     uploader.events.on('file-complete', (payload: FileCompletePayload) => {
         barCtrl.hideUploadProgressBars(payload.file.name);
+        (window as any).htmx.trigger("#table-container", "upload-complete");
     });
 
 

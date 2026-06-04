@@ -24,7 +24,6 @@ public class JWTGen
     {
         ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Username);
         ArgumentNullException.ThrowIfNullOrWhiteSpace(user.Role);
-        ArgumentNullException.ThrowIfNull(user.Id);
 
 
         var jwt = _jwtOptions.Value;

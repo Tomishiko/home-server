@@ -20,6 +20,6 @@ public class RegisterManagerRequest
     public required string Password { get; set; }
 
     [Required(ErrorMessage = "Role is required")]
-    [RegularExpression("^(Admin|User|Moderator)$", ErrorMessage = "Invalid Role. Choose Admin, User, or Moderator.")]
+    //[RegularExpression("^(Admin|User|Moderator)$", ErrorMessage = "Invalid Role. Choose Admin, User, or Moderator.")]
     public required byte Role { get; set; }
 }

@@ -1,5 +1,8 @@
+// @ts-ignore
+import md5 from 'blueimp-md5'
+
 export type UploaderConfig = {
-    chunkSize?: number;        // bytes per chunk (default 512 KB)
+    chunkSize?: number;        // bytes per chunk (default fallback 512 KB)
     concurrency?: number;      // parallel chunk uploads (default 4)
     maxRetries?: number;       // per-chunk retries (default 3)
     backoffBaseMs?: number;    // base for exponential backoff (default 500ms)
@@ -11,13 +14,14 @@ export type UploaderConfig = {
 
 type HandshakeResponse = {
     uid: string;
-    uploadedParts?: number[]; // optional array of already-received part indexes
+    partSize: number;
+    windowStart: number;
+    bitfield: number;
     isSuccess: boolean;
     description?: string;
 };
 
-class AuthoriztionError extends Error {
-
+class AuthorizationError extends Error {
     constructor(msg: string) {
         super(msg);
     }
@@ -67,33 +71,56 @@ export class FileUploadTask {
     private config: UploaderConfig;
     private aborted = false;
     private uploadedBytes = 0;
-    private uploadedPartsSet = new Set<number>(); // parts already uploaded (includes resumed)
+    private uploadedPartsSet = new Set<number>();
 
-    // small emitter for per-file events
     readonly events = new SimpleEmitter<'progress' | 'error' | 'complete'>();
 
-    constructor(file: File, uid: string, uploadedParts: number[] | undefined, config: UploaderConfig) {
+    constructor(
+        file: File,
+        uid: string,
+        partSize: number,
+        windowStart: number,
+        bitfield: number,
+        config: UploaderConfig
+    ) {
         this.file = file;
         this.uid = uid;
         this.config = config;
-        this.chunkSize = config.chunkSize ?? 4096 * 256;
-        // totalChunks = ceil(file.size / chunkSize)
+
+        // Prioritize backend's PartSize to ensure byte boundaries match perfectly
+        this.chunkSize = partSize > 0 ? partSize : (config.chunkSize ?? 1024 * 512);
         this.totalChunks = Math.ceil(file.size / this.chunkSize);
-        if (uploadedParts && uploadedParts.length > 0) {
-            uploadedParts.forEach(i => {
-                this.uploadedPartsSet.add(i);
-                // increase uploadedBytes baseline
-                const start = i * this.chunkSize;
-                const end = Math.min(start + this.chunkSize, file.size);
-                this.uploadedBytes += (end - start);
-            });
+
+        // All chunks prior to WindowStart are fully processed by the backend
+        const startLimit = Math.min(windowStart, this.totalChunks);
+        for (let i = 0; i < startLimit; i++) {
+            this.addUploadedPart(i);
+        }
+
+        // Evaluate the 32-bit bitfield for chunks within the sliding window
+        for (let i = 0; i < 32; i++) {
+            if (((bitfield >>> i) & 1) === 1) {
+                const chunkIndex = windowStart + i;
+                if (chunkIndex < this.totalChunks) {
+                    this.addUploadedPart(chunkIndex);
+                }
+            }
+        }
+    }
+
+    private addUploadedPart(index: number) {
+        if (!this.uploadedPartsSet.has(index)) {
+            this.uploadedPartsSet.add(index);
+            const start = index * this.chunkSize;
+            const end = Math.min(start + this.chunkSize, this.file.size);
+            this.uploadedBytes += (end - start);
         }
     }
 
     get uploaded() { return this.uploadedBytes; }
     get total() { return this.file.size; }
     get percent() {
-        return Math.round((this.uploadedBytes / this.file.size) * 100);
+        return this.file.size > 0 ? Math.round((this.uploadedBytes / this.file.size) * 100) : 0;
     }
 
     abort() {
@@ -118,88 +145,57 @@ export class FileUploadTask {
         } as ProgressEventPayload);
     }
 
-    // upload a single chunk using XMLHttpRequest so we can get upload progress events
-    uploadChunk(index: number, signal?: AbortSignal): Promise<void> {
-        if (this.aborted) return Promise.reject(new Error('Task aborted'));
-
-        // if that part is already uploaded (resume), skip
-        if (this.isPartUploaded(index)) return Promise.resolve();
+    async uploadChunk(index: number, signal?: AbortSignal): Promise<void> {
+        if (this.aborted) throw new Error('Task aborted');
+        if (this.isPartUploaded(index)) return;
 
         const start = index * this.chunkSize;
         const end = Math.min(start + this.chunkSize, this.file.size);
         const chunk = this.file.slice(start, end);
-        const form = new FormData();
-        form.append('meta', JSON.stringify({
-            uid: this.uid,
-            currentPart: index,
-            bytesRead: chunk.size
-        }));
-        form.append('file', chunk);
 
-        return new Promise<void>((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            let timedOut = false;
-            let timerId: number | undefined;
+        const controller = new AbortController();
+        const onExternalAbort = () => controller.abort('aborted');
 
-            if (signal) {
-                if (signal.aborted) {
-                    reject(new Error('aborted'));
-                    return;
-                }
-                // if external abort is signalled, abort xhr
-                const onAbort = () => {
-                    xhr.abort();
-                    reject(new Error('aborted'));
-                };
-                signal.addEventListener('abort', onAbort, { once: true });
+        if (signal) {
+            if (signal.aborted) throw new Error('aborted');
+            signal.addEventListener('abort', onExternalAbort, { once: true });
+        }
+
+        let timerId: number | undefined;
+        if (this.config.timeoutMs) {
+            timerId = window.setTimeout(() => {
+                controller.abort('timeout');
+            }, this.config.timeoutMs);
+        }
+
+        try {
+            const response = await fetch(`${this.config.uploadUrl}/${this.uid}`, {
+                method: 'POST',
+                body: chunk,
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'X-Part': index.toString(),
+                },
+                credentials: 'omit',
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
 
-            xhr.open('POST', this.config.uploadUrl, true);
+            this.markPartUploaded(index, chunk.size);
 
-            if (this.config.timeoutMs) {
-                timerId = window.setTimeout(() => {
-                    timedOut = true;
-                    xhr.abort();
-                }, this.config.timeoutMs);
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                const reason = controller.signal.reason;
+                throw new Error(reason === 'timeout' ? 'timeout' : 'aborted');
             }
-
-            xhr.upload.onprogress = (ev) => {
-                // report in-chunk progress if desired; we keep aggregate progress reporting centralized
-                // Could emit partial progress here if UI wants smoother updates.
-            };
-
-            xhr.onload = () => {
-                if (timerId !== undefined) clearTimeout(timerId);
-                if (timedOut) {
-                    reject(new Error('timeout'));
-                    return;
-                }
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    // success — mark bytes as uploaded
-                    this.markPartUploaded(index, chunk.size);
-                    resolve();
-                } else {
-                    reject(new Error(`HTTP ${xhr.status}`));
-                }
-            };
-
-            xhr.onerror = () => {
-                if (timerId !== undefined) clearTimeout(timerId);
-                reject(new Error('network error'));
-            };
-
-            xhr.onabort = () => {
-                if (timerId !== undefined) clearTimeout(timerId);
-                reject(new Error('aborted'));
-            };
-
-            try {
-                xhr.send(form);
-            } catch (err) {
-                if (timerId !== undefined) clearTimeout(timerId);
-                reject(err);
-            }
-        });
+            throw new Error('network error');
+        } finally {
+            if (timerId) clearTimeout(timerId);
+            if (signal) signal.removeEventListener('abort', onExternalAbort);
+        }
     }
 }
 
@@ -210,7 +206,6 @@ export class Uploader {
     private abortControllers = new Map<File, AbortController>();
 
     constructor(config: UploaderConfig, xsrf: string) {
-        // set defaults
         this.config = {
             chunkSize: 1024 * 512,
             concurrency: 4,
@@ -227,12 +222,11 @@ export class Uploader {
     }
 
     async uploadFiles(files: File[]) {
-        // We'll upload files sequentially to avoid saturating too many parallel streams.
         for (const f of files) {
             try {
                 await this.uploadFile(f);
             } catch (err) {
-                if (err instanceof AuthoriztionError) {
+                if (err instanceof AuthorizationError) {
                     this.events.emit('error', err);
                     return;
                 }
@@ -242,14 +236,21 @@ export class Uploader {
     }
 
     async uploadFile(file: File) {
-        // handshake: ask server for uid and optionally existing parts (resume)
         const handshakeResp = await this.handshake(file);
         if (!handshakeResp.isSuccess) {
             this.events.emit('error', handshakeResp.description, file);
             return;
         }
-        const task = new FileUploadTask(file, handshakeResp.uid, handshakeResp.uploadedParts, this.config);
-        // propagate per-file events to global events
+
+        const task = new FileUploadTask(
+            file,
+            handshakeResp.uid,
+            handshakeResp.partSize,
+            handshakeResp.windowStart,
+            handshakeResp.bitfield,
+            this.config
+        );
+
         task.events.on('progress', (payload: ProgressEventPayload) => {
             this.events.emit('file-progress', payload);
         });
@@ -261,6 +262,7 @@ export class Uploader {
             await this.uploadTaskWithConcurrency(task, perFileAbort.signal);
             this.events.emit('file-complete', { file: file, uid: task.uid } as FileCompletePayload);
         } catch (err) {
+            perFileAbort.abort();
             this.events.emit('file-error', file, err);
             throw err;
         } finally {
@@ -274,6 +276,8 @@ export class Uploader {
     }
 
     private async handshake(file: File): Promise<HandshakeResponse> {
+        const meta = `${file.name}-${file.lastModified}-${file.size}-${file.type}`;
+        const fingerprint = md5(meta);
         const resp = await fetch(this.config.handshakeUrl, {
             method: 'POST',
             headers: {
@@ -283,25 +287,32 @@ export class Uploader {
             body: JSON.stringify({
                 fileName: file.name,
                 fileSize: file.size,
-                expectedPartSize: this.config.chunkSize,
-                totalParts: Math.ceil(file.size / this.config.chunkSize)
+                fileFingerprint: fingerprint
             })
         });
 
         if (!resp.ok) {
             if (resp.status == 401)
-                throw new AuthoriztionError(`Unathorized ${resp.status}`);
+                throw new AuthorizationError(`Unauthorized ${resp.status}`);
 
-            return { uid: '', isSuccess: false, description: resp.statusText };
+            return { uid: '', partSize: 0, windowStart: 0, bitfield: 0, isSuccess: false, description: resp.statusText };
         }
-        // expect JSON { uid: string, uploadedParts?: number[] } — fallback to text uid
+
         const contentType = resp.headers.get('content-type') ?? '';
         if (contentType.includes('application/json')) {
             const json = await resp.json();
-            return { uid: json.uid, uploadedParts: json.uploadedParts ?? [], isSuccess: true };
+
+            // Handles both camelCase and PascalCase serializations safely
+            return {
+                uid: json.uuid ?? json.Uuid ?? '',
+                partSize: json.partSize ?? json.PartSize ?? 0,
+                windowStart: json.windowStart ?? json.WindowStart ?? 0,
+                bitfield: json.bitfield ?? json.Bitfield ?? 0,
+                isSuccess: true
+            };
         } else {
             const text = await resp.text();
-            return { uid: text, uploadedParts: [], isSuccess: true };
+            return { uid: text, partSize: 0, windowStart: 0, bitfield: 0, isSuccess: true };
         }
     }
 
@@ -310,13 +321,11 @@ export class Uploader {
         const concurrency = Math.max(1, this.config.concurrency ?? 1);
         let nextIndex = 0;
 
-        // worker function that pulls next chunk index until done
         const worker = async () => {
             while (true) {
                 if (signal.aborted) throw new Error('aborted by user');
-                // find next index not already uploaded
+
                 let i: number | null = null;
-                // fast-forward nextIndex to a part that isn't uploaded
                 while (nextIndex < total) {
                     const candidate = nextIndex++;
                     if (!task.isPartUploaded(candidate)) {
@@ -324,14 +333,12 @@ export class Uploader {
                         break;
                     }
                 }
-                if (i === null) return; // no more parts to upload
+                if (i === null) return;
 
-                // attempt upload with retries and exponential backoff
                 await this.tryUploadWithRetries(task, i, signal);
             }
         };
 
-        // start N workers
         const workers = Array.from({ length: concurrency }, () => worker());
         await Promise.all(workers);
     }
@@ -344,7 +351,6 @@ export class Uploader {
             if (signal.aborted) throw new Error('aborted by user');
 
             try {
-                // Per-chunk upload uses task.uploadChunk (XHR) so it supports cancellation via signal
                 await task.uploadChunk(index, signal);
                 return;
             } catch (err) {
@@ -362,15 +368,14 @@ export class Uploader {
     private isRetriableError(err: any) {
         if (!err) return false;
         const message = String(err).toLowerCase();
+        if (message === 'error: aborted') return false;
         if (message.includes('aborted') || message.includes('timeout')) return true;
-        // treat network errors and 5xx as retriable at chunk level — xhr above returns generic strings
         if (message.includes('network') || message.includes('http 5')) return true;
-        return true; // be permissive — we'll ultimately respect maxRetries
+        return false;
     }
 
     private exponentialBackoffMs(attempt: number) {
         const base = this.config.backoffBaseMs ?? 500;
-        // jittered exponential: base * 2^(attempt-1) * (0.8..1.2)
         const pow = Math.pow(2, Math.max(0, attempt - 1));
         const jitter = 0.8 + Math.random() * 0.4;
         return Math.floor(base * pow * jitter);
@@ -378,6 +383,7 @@ export class Uploader {
 
     private delay(ms: number, signal?: AbortSignal) {
         return new Promise<void>((resolve, reject) => {
+            if (signal?.aborted) return reject(new Error('aborted'));
             const id = window.setTimeout(() => {
                 if (signal) signal.removeEventListener('abort', onAbort);
                 resolve();
@@ -391,4 +397,3 @@ export class Uploader {
         });
     }
 }
-

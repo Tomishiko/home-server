@@ -15,7 +15,6 @@ public sealed class BackgroundFileService : BackgroundService
     private readonly IServiceProvider _services;
     private readonly FileUploadOptions _fileUploadOptions;
 
-    Timer? _timer;
 
     public BackgroundFileService(ILogger<BackgroundService> logger,
                                  IServiceProvider services,
@@ -34,6 +33,7 @@ public sealed class BackgroundFileService : BackgroundService
             await PerformCheckForDatedFiles(stoppingToken);
 
             using PeriodicTimer timer = new(TimeSpan.FromHours(1));
+
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
                 await PerformCheckForDatedFiles(stoppingToken);
@@ -63,7 +63,7 @@ public sealed class BackgroundFileService : BackgroundService
         var deletedIds = new ConcurrentBag<long>();
         var parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = 10,
+            MaxDegreeOfParallelism = 8,
             CancellationToken = ct
         };
 
@@ -84,10 +84,6 @@ public sealed class BackgroundFileService : BackgroundService
             {
                 _logger.LogError(ex, "IO error while deleting file {FileUUID}", file.UUID);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while processing file {FileUUID}", file.UUID);
-            }
             return ValueTask.CompletedTask;
         });
 
@@ -97,9 +93,5 @@ public sealed class BackgroundFileService : BackgroundService
             .Where(f => deletedIds.Contains(f.Id))
             .ExecuteDeleteAsync(ct);
         }
-    }
-    public override void Dispose()
-    {
-        _timer?.Dispose();
     }
 }

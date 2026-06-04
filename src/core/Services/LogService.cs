@@ -85,7 +85,7 @@ public class LogService : BaseDataService, ILogService
                           .ToImmutableArrayAsync(10);
 
     }
-    private void StageNewLog(LogDto log)
+    public void StageNewLog(LogDto log)
     {
 
         var time = log.Time.ToUniversalTime();

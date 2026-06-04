@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using web.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
+using System.Runtime.CompilerServices;
 
 namespace web.Controllers;
 
@@ -20,12 +21,12 @@ public class ManagerApiController : ControllerBase
 {
     private readonly ILogger<ManagerApiController> _logger;
     private readonly IUserService _userService;
-    private readonly InvitesService _invitesService;
+    private readonly IInvitesService _invitesService;
 
 
     public ManagerApiController(ILogger<ManagerApiController> logger,
                                 IUserService userService,
-                                InvitesService invites)
+                                IInvitesService invites)
     {
         _logger = logger;
         _userService = userService;
@@ -107,6 +108,24 @@ public class ManagerApiController : ControllerBase
         return userData;
     }
 
+    [HttpGet("users")]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(200)]
+    public async IAsyncEnumerable<UserDto> GetUsers([EnumeratorCancellation] CancellationToken ct)
+    {
+        IAsyncEnumerable<UserDto> userData = _userService.GetAllUsersJoinedAsync(ct);
+
+        if (userData is null)
+        {
+            yield break;
+        }
+
+        await foreach (var user in userData)
+        {
+            yield return user;
+        }
+
+    }
     [HttpGet("geninvite")]
     public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
     {
@@ -114,7 +133,7 @@ public class ManagerApiController : ControllerBase
         InviteTokenModel token = await _invitesService.GenNewInviteAsync(User.Identity.Name);
         string encoded = WebEncoders.Base64UrlEncode(token.Value);
 
-        return Ok(new { token = encoded, expires_at = token.Expiration });
+        return Ok(new NewInviteTokenResponse(encoded, token.Expiration));
     }
     [HttpGet("init-xsrf")]
     [AllowAnonymous]
@@ -132,3 +151,4 @@ public class ManagerApiController : ControllerBase
         return logs.GetAll(timezone, ct);
     }
 }
+

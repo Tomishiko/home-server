@@ -1,22 +1,30 @@
+using System.Diagnostics.CodeAnalysis;
+using System.IO.Pipelines;
+using core.Domain;
 using core.Models;
-using Microsoft.Win32.SafeHandles;
+using core.Models.Generic;
+using Microsoft.Extensions.Logging;
 
 
 namespace core.Interfaces;
 
-public interface IPhysicalFileWriter : IDisposable
+public interface IUploadingFileState : IDisposable
 {
-    Guid Id { get; }
+    Guid Uuid { get; }
     long FileSize { get; }
     //uint TotalFileParts { get; }
     string FileName { get; }
     long OwnerId { get; }
-    uint PartSize { get; }
+    int PartSize { get; }
     //SafeFileHandle GetFileHandle { get; }
-    DateTime Created { get; }
     event EventHandler<CloseFileEventArgs>? CloseEvent;
     //uint PartsWritten { get; }
-    void IncrementPartsWrittenLocked();
-    Task WritePartAsync(Stream incomingData, int size, int currentPart);
+    bool IsDirty { get; }
+    string FileFingerprint { get; }
+    long WindowStart { get; }
+    uint PartsBitfield { get; }
+
+    bool TryGetSnapshotBackup([NotNullWhen(true)] out FileUploadStateBackupContext? value);
+    Task<Result<UploadPartSuccess>> WritePartFromPipeAsync(int currentPart, PipeReader reader, CancellationToken ct, ILogger logger);
 
 }

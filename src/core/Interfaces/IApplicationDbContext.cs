@@ -1,3 +1,4 @@
+using System.Data.Common;
 using core.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,10 @@ public interface IApplicationDbContext
     DbSet<RolesEntity> Roles { get; set; }
     DbSet<FileEntity> Files { get; set; }
     DbSet<InviteEntity> Invites { get; set; }
+    DbSet<FileUploadStateEntity> FileUploadState { get; set; }
+    DbConnection GetDbConnection();
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    Task<UserEntity?> RemoveUserByIdStoredProc(long id, string issuer);
-    Task<UserEntity?> ValidateInviteTokenStoredProc(byte[] hashedToken, CancellationToken ct = default);
+    int SaveChanges();
+    Task<UserEntity?> RemoveUserByIdStoredProcAsync(long id, string issuer);
+    Task<UserEntity?> ValidateInviteTokenStoredProcAsync(byte[] hashedToken, CancellationToken ct = default);
 }

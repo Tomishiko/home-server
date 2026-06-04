@@ -16,17 +16,13 @@ using web.Helpers;
 public class AuthenticationApiController : ControllerBase
 {
     ILogger<AuthenticationApiController> _logger;
-    JWTGen _tokenGen;
     IAuthService _authService;
-    IOptions<JWT> _options;
 
     public AuthenticationApiController(ILogger<AuthenticationApiController> logger,
-         JWTGen tokenGen, IAuthService authService, IOptions<JWT> options)
+            IAuthService authService)
     {
         _logger = logger;
-        _tokenGen = tokenGen;
         _authService = authService;
-        _options = options;
     }
 
     [HttpPost("auth")]

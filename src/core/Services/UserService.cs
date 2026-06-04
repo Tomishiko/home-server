@@ -50,7 +50,6 @@ public class UserService : BaseDataService, IUserService
         ArgumentException.ThrowIfNullOrEmpty(dto.Username);
         ArgumentException.ThrowIfNullOrEmpty(dto.Password);
         ArgumentException.ThrowIfNullOrEmpty(dto.CreatedBy);
-        ArgumentNullException.ThrowIfNull(dto.RoleId);
 
 
         _logger.LogInformation($"Request to create new user from {dto.CreatedBy}");
@@ -87,7 +86,7 @@ public class UserService : BaseDataService, IUserService
     public async Task<Result<UserDto>> RemoveUserById(long id, string issuer)
     {
 
-        var result = await _context.RemoveUserByIdStoredProc(id, issuer);
+        var result = await _context.RemoveUserByIdStoredProcAsync(id, issuer);
         if (result is null)
         {
             return new Error("No such user");

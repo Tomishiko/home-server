@@ -1,7 +1,7 @@
-import Modal from 'bootstrap/js/dist/modal.js'
-import { deleteUserConfirmation } from '../manage/DeleteUser.js';
-import { event } from 'jquery';
-import { Action, ajaxPartial } from '../shared/ajax.js';
+//import Modal from 'bootstrap/js/dist/modal.js'
+//import { deleteUserConfirmation } from '../manage/DeleteUser.js';
+//import { event } from 'jquery';
+//import { Action, ajaxPartial } from '../shared/ajax.js';
 
 export function init(component: HTMLElement, optionalData: any) {
 
