@@ -1,4 +1,5 @@
 import { GetPartialTable, DeleteFile } from "./api.js"
+import { TableViews } from "./types.js";
 
 export function setContext() {
     const table = document.getElementById('partial_table');
@@ -22,7 +23,13 @@ export function setContext() {
             return;
         }
 
-        deleteBtn.setAttribute("hx-vals", JSON.stringify({ id: ref }));
+        const table = document.getElementById('partial_table');
+        let navigation = TableViews.Public;
+
+        if (table) {
+            navigation = table.dataset.visibility as TableViews;
+        }
+        deleteBtn.setAttribute("hx-vals", JSON.stringify({ id: ref, navigation: navigation }));
     });
 
 

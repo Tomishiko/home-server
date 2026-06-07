@@ -109,7 +109,7 @@ public class FileUploadApiControllerTests
 
         var fingerprintStub = Generators.RandomString32();
 
-        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
+        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub, IsShared = true };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
         var clientOptions = Microsoft.Extensions.Options.Options.Create(
@@ -152,7 +152,7 @@ public class FileUploadApiControllerTests
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
 
         string fingerprintStub = Generators.RandomString32();
-        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
+        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub, IsShared = true };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
         var clientOptions = Microsoft.Extensions.Options.Options.Create(
@@ -184,7 +184,7 @@ public class FileUploadApiControllerTests
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
 
         var fingerprintStub = Generators.RandomString32();
-        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
+        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub, IsShared = true };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
         var clientOptions = Microsoft.Extensions.Options.Options.Create(
@@ -225,7 +225,7 @@ public class FileUploadApiControllerTests
         controller.ControllerContext = new ControllerContext { HttpContext = mockContext.Object };
         var fingerprintStub = Generators.RandomString32();
 
-        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub };
+        var request = new FileHandshake { FileName = "test.txt", FileSize = 1024, FileFingerprint = fingerprintStub, IsShared = true };
         var options = Microsoft.Extensions.Options.Options.Create(
             new FileUploadOptions { StoragePath = "/tmp" });
         var clientOptions = Microsoft.Extensions.Options.Options.Create(

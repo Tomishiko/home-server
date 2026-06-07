@@ -25,6 +25,7 @@ public sealed class UploadingFileState : IUploadingFileState
     private bool _isDisposed = false;
     private int _partsWritten = 0;
 
+    public bool IsShared { get; }
     public uint PartsBitfield { get => _partsBitfield; }
     public long WindowStart { get => _windowStart; }
     public string FileFingerprint { get; } //32 bytes
@@ -55,6 +56,7 @@ public sealed class UploadingFileState : IUploadingFileState
             .Create(Path.Combine(storagePath, UUID.ToString()), fileDto.FileSize);
 
         FileFingerprint = fileDto.Fingerprint;
+        IsShared = fileDto.IsShared;
     }
 
 

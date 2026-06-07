@@ -42,7 +42,7 @@ public class UploadSessionMonitorTests
         var randomStr = Generators.RandomString32();
 
         var fileState = new UploadingFileState(
-            new FileCreationDto("document.pdf", 1024, 1, 1024, 5, randomStr),
+            new FileCreationDto("document.pdf", 1024, 1, 1024, 5, randomStr, true),
             "/tmp",
             Guid.NewGuid(),
             new TestPhysicalFileWriterFactory(mockWriter.Object));
@@ -92,7 +92,7 @@ public class UploadSessionMonitorTests
 
         var randomStr = Generators.RandomString32();
         var fileState = new UploadingFileState(
-            new FileCreationDto("noextension", 512, 1, 512, 3, randomStr),
+            new FileCreationDto("noextension", 512, 1, 512, 3, randomStr, true),
             "/tmp",
             Guid.NewGuid(),
             new TestPhysicalFileWriterFactory(mockWriter.Object));

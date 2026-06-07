@@ -20,6 +20,9 @@ public sealed class FileHandshake
     [Length(32, 32)]
     public required string FileFingerprint { get; set; }
 
+    [Required]
+    public required bool IsShared { get; set; }
+
     //[Required]
     //public required int TotalParts { get; set; }
 

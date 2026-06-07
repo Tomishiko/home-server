@@ -6,4 +6,6 @@ public record FileCreationDto(
         long TotalFileParts,
         int PartSize,
         long OwnerId,
-        string Fingerprint);
+        string Fingerprint,
+        bool IsShared);
+

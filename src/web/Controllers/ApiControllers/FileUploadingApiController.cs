@@ -82,7 +82,8 @@ public class FileUploadApiController : ControllerBase
                                           totalParts,
                                           partSize,
                                           user_id,
-                                          requestModel.FileFingerprint.ToLower());
+                                          requestModel.FileFingerprint.ToLower(),
+                                          requestModel.IsShared);
 
         Result<FileHandshakeResponseDto> result = await _uploadProcessor.AddNewFileHandleAsync(
                 fileDto, db, fileWriterFactory, fileUploadOptions.Value);

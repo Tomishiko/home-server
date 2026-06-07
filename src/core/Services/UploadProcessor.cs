@@ -17,7 +17,6 @@ public class UploadProcessor : IUploadProcessor
 
     private readonly UploadSessionMonitor _fileCompositor;
     private readonly ILogger<IUploadProcessor> _logger;
-    private readonly FileUploadOptions _fileOptions;
 
 
     public UploadProcessor(UploadSessionMonitor fileCompositor, ILogger<IUploadProcessor> logger)
@@ -77,11 +76,7 @@ public class UploadProcessor : IUploadProcessor
         {
             Id = streamedFile.Uuid,
             Fingerprint = streamedFile.FileFingerprint,
-            Metadata = new FileWriterMeta(streamedFile.FileSize,
-                                          streamedFile.PartSize,
-                                          streamedFile.FileName,
-                                          streamedFile.OwnerId,
-                                          streamedFile.TotalFileParts),
+            Metadata = new FileWriterMeta(streamedFile),
             PartsBitfield = 0,
             PartsWritten = 0
         });
