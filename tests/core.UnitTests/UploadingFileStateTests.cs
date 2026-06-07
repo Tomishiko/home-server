@@ -213,7 +213,7 @@ public class UploadingFileStateTests
     private static FileCreationDto CreateFileDto(long totalFileParts, int partSize, long fileSize)
     {
         var randomStr = Generators.RandomString32();
-        return new FileCreationDto("test.txt", fileSize, totalFileParts, partSize, 1, randomStr);
+        return new FileCreationDto("test.txt", fileSize, totalFileParts, partSize, 1, randomStr, true);
     }
 
     private static ReadOnlySequence<byte> CreateSequence(params byte[][] segments)

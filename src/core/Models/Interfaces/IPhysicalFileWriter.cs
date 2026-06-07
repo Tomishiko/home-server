@@ -13,6 +13,7 @@ public interface IUploadingFileState : IDisposable
     Guid Uuid { get; }
     long FileSize { get; }
     //uint TotalFileParts { get; }
+    bool IsShared { get; }
     string FileName { get; }
     long OwnerId { get; }
     int PartSize { get; }

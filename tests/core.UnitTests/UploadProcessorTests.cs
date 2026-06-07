@@ -42,7 +42,7 @@ public class UploadProcessorTests
         var processor = new UploadProcessor(monitor, NullLogger<UploadProcessor>.Instance);
 
         var randomStr = Generators.RandomString32();
-        var fileDto = new FileCreationDto("test.txt", 1024, 4, 256, 1, randomStr);
+        var fileDto = new FileCreationDto("test.txt", 1024, 4, 256, 1, randomStr, true);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
 
         var result = await processor.AddNewFileHandleAsync(fileDto, mockContext.Object, mockFactory.Object, options);
@@ -84,7 +84,7 @@ public class UploadProcessorTests
         var processor = new UploadProcessor(monitor, NullLogger<UploadProcessor>.Instance);
 
         var fingerprint = Generators.RandomString32();
-        var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint);
+        var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint, true);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
 
         // Act
@@ -138,7 +138,7 @@ public class UploadProcessorTests
         var mockDb = new Mock<IApplicationDbContext>();
 
         var fingerprint = Generators.RandomString32();
-        var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint);
+        var fileDto = new FileCreationDto("myfile.bin", 2048, 8, 256, 99, fingerprint, true);
         var options = new FileUploadOptions { StoragePath = "/tmp" };
         var fileGuid = Guid.NewGuid();
 

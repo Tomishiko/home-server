@@ -55,7 +55,7 @@ public class UploadSessionMonitor
         }
 
         fileService.StageNewFileRecord(finishedFile.Uuid.ToString(), ext, fname,
-                    finishedFile.FileSize, finishedFile.OwnerId, true);
+                    finishedFile.FileSize, finishedFile.OwnerId, finishedFile.IsShared);
 
         //TODO: we might be able to optimize this double trip
         await db.FileUploadState.Where(f => f.Id == finishedFile.Uuid).ExecuteDeleteAsync();
@@ -63,6 +63,7 @@ public class UploadSessionMonitor
         int changes = await db.SaveChangesAsync();
         finishedFile.CloseEvent -= OnCloseEventAsync;
         finishedFile.Dispose();
+
         _logger.LogInformation($"File {e.FileName}  handle was closed.  {e.FileSize} bytes was written");
     }
 

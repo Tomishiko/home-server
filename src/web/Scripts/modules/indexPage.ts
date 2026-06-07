@@ -1,6 +1,7 @@
-import { FetchTable, setContext } from '../index/partialTable'
-import { Uploader, FileUploadTask, UploaderConfig, FileCompletePayload, ProgressEventPayload } from "../index/newFileUpload"
+import { Uploader, FileCompletePayload, ProgressEventPayload } from "../index/newFileUpload"
 import { ProgressBarCtrl } from '../index/ProgressBars'
+import { TableViews } from '../index/types'
+
 
 export function init(component: HTMLElement, optionalData: any) {
     // document.getElementById('submitBtn').addEventListener('click', function() {
@@ -14,7 +15,7 @@ export function init(component: HTMLElement, optionalData: any) {
     const uploader = new Uploader({
         uploadUrl: '/api/upload/part',
         handshakeUrl: '/api/upload/handshake',
-        chunkSize: 8 * 1024 * 1024,//4096 * 1024, // 4 Mb
+        chunkSize: 8 * 1024 * 1024,
         concurrency: 4,
         maxRetries: 3,
         backoffBaseMs: 500,
@@ -22,11 +23,17 @@ export function init(component: HTMLElement, optionalData: any) {
         resume: true
     }, token);
     const barCtrl = new ProgressBarCtrl();
+    let currentView = TableViews.Public;
 
-    document.getElementById('submitBtn')?.addEventListener("click",async function() {
+    document.getElementById('submitBtn')?.addEventListener("click", async function() {
 
         const filePicker = document.getElementById('file') as HTMLInputElement;
+        currentView = document
+            .getElementById('partial_table')?.dataset.visibility as TableViews.Public;
+        const isShared = currentView === TableViews.Public;
+
         if (!filePicker.files) return;
+
         const files = Array.from(filePicker.files)
         const progressBarArea = document.getElementById('fileBlock');
         if (progressBarArea) {
@@ -35,8 +42,16 @@ export function init(component: HTMLElement, optionalData: any) {
                 progressBarArea.appendChild(bar.container);
             });
         }
-        await uploader.uploadFiles(files);
+        await uploader.uploadFiles(files, isShared);
     })
+    document.getElementById('table-container')?.addEventListener(
+        "htmx:configRequest", (e) => {
+            if ((e.target as HTMLElement).id == "table-container") {
+                const detail = (e as CustomEvent).detail;
+                detail.parameters['action'] = currentView;
+            }
+        });
+
     uploader.events.on('file-progress', (payload: ProgressEventPayload) => {
         barCtrl.updateProgressBar(payload.file.name, payload.percent);
     });

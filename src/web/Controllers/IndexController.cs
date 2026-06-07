@@ -43,8 +43,9 @@ public class IndexController : Controller
     [HttpDelete]
     [Authorize]
     public async Task<IActionResult> DeleteFile([FromQuery] long id,
-                                    [FromServices] IFileService fileService,
-                                    CancellationToken ct)
+                                                [FromQuery] NavigationAction navigation,
+                                                [FromServices] IFileService fileService,
+                                                CancellationToken ct)
     {
 
         long? userId = Utility.TryGetUserId(User);
@@ -58,7 +59,7 @@ public class IndexController : Controller
         if (deleteCount == 0)
             return NotFound("File does not exist or insufficient rights");
 
-        return PartialTableLoad(NavigationAction.Public, ct);
+        return PartialTableLoad(navigation, ct);
     }
 
     [HttpGet]

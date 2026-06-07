@@ -1,6 +1,6 @@
 namespace web.Models;
 
-public enum NavigationAction
+public enum NavigationAction : byte
 {
     Back,
     Public,

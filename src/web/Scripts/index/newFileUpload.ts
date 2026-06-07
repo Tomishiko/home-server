@@ -204,6 +204,7 @@ export class Uploader {
     private xsrf: string;
     readonly events = new SimpleEmitter<'file-progress' | 'file-complete' | 'file-error' | 'error'>();
     private abortControllers = new Map<File, AbortController>();
+    private isShared: boolean;
 
     constructor(config: UploaderConfig, xsrf: string) {
         this.config = {
@@ -221,7 +222,8 @@ export class Uploader {
         }
     }
 
-    async uploadFiles(files: File[]) {
+    async uploadFiles(files: File[], isShared: boolean) {
+        this.isShared = isShared;
         for (const f of files) {
             try {
                 await this.uploadFile(f);
@@ -287,7 +289,8 @@ export class Uploader {
             body: JSON.stringify({
                 fileName: file.name,
                 fileSize: file.size,
-                fileFingerprint: fingerprint
+                fileFingerprint: fingerprint,
+                isShared: this.isShared
             })
         });
 

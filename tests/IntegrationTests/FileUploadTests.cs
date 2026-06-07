@@ -36,7 +36,8 @@ public sealed class FileUploadTest : IClassFixture<WebAppFactory>, IAsyncLifetim
         {
             FileName = "test.txt",
             FileSize = fsize,
-            FileFingerprint = fingerprintStub
+            FileFingerprint = fingerprintStub,
+            IsShared = true
         };
 
     }
