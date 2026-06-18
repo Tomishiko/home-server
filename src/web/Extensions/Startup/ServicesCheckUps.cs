@@ -9,7 +9,7 @@ public static class ServicesCheckUps
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
-            var dbContext = services.GetRequiredService<ApplicationDbContext>();
+            var dbContext = services.GetRequiredService<PostgresDbContext>();
             if (!await dbContext.Database.CanConnectAsync())
             {
                 throw new Exception("Database is unreachable!");

@@ -1,5 +1,8 @@
+using core.Domain;
 using core.Interfaces;
+using core.Models;
 using Data.Core;
+using Data.Infra;
 using Microsoft.EntityFrameworkCore;
 
 namespace web.Extensions;
@@ -18,10 +21,13 @@ public static class DbStartupExtensions
         switch (provider)
         {
             case "postgres":
-                services.AddNpgsqlDataSource(connectionString);
-                services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
+                services.AddNpgsqlDataSource(connectionString, builder =>
                 {
-                    options.UseNpgsql(connectionString);
+                    builder.MapComposite<UserCreationDto>("users");
+                });
+                services.AddDbContext<IApplicationDbContext, PostgresDbContext>(options =>
+                {
+                    options.UseNpgsql();
                     //.LogTo(Console.WriteLine,
                     //       LogLevel.Information).EnableSensitiveDataLogging();
                 });

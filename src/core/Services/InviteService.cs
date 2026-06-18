@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using core.Interfaces;
 using core.Domain;
+using core.Models.Generic;
+using core.DomainExceptions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace core.Services;
 
@@ -15,37 +18,79 @@ namespace core.Services;
 public class InvitesService : BaseDataService, IInvitesService
 {
     private readonly ILogger<InvitesService> _logger;
+    private readonly IUserService _userService;
+
     public InvitesService(IApplicationDbContext context,
-            ILogger<InvitesService> logger) : base(context)
+            ILogger<InvitesService> logger,
+            IUserService userService) : base(context)
     {
         _logger = logger;
+        _userService = userService;
     }
 
-    public async Task<UserDto?> ValidateToken(string token,
-                                           CancellationToken ct = default)
+    public async Task<Result<ValidTokenDetail>>
+        ValidateToken(string token, CancellationToken ct = default)
     {
         byte[] hashedToken = SHA256.HashData(WebEncoders
                                             .Base64UrlDecode(token));
-        UserEntity? issuer = await _context.ValidateInviteTokenStoredProcAsync(hashedToken);
-        if (issuer is null)
+        ValidTokenDetail? validToken = await _context.ValidTokenDetails
+            .FirstOrDefaultAsync(t => t.TokenHash == hashedToken, ct);
+
+        if (validToken is null)
         {
-            _logger.LogInformation($"Request with invalid invite token");
-            return null;
+            return new Error("Invite token is invalid or expired");
         }
 
-        _logger.LogInformation($"Request to validate token created by {issuer?.Uname} : success");
-        return issuer!.ToDto();
+        return validToken;
     }
 
-    public async Task<InviteTokenModel> GenNewInviteAsync(string issuerName)
+    public async Task<InviteTokenModel> GenNewInviteAsync(long issuerId)
     {
         byte[] bytes = RandomNumberGenerator.GetBytes(32);
-        long issuerId = await GetUserIdByName(issuerName);
-        var entity = AddNewInvite(bytes, issuerId);
-        _logger.LogInformation($"New invite was added by {issuerName}");
+        var entry = AddNewInvite(bytes, issuerId);
         await SaveChangesAsync();
-        return new InviteTokenModel(bytes, entity.Entity.ExpiresAt);
+
+        _logger.LogInformation("New invite {InviteId} was added by user {UserId}", issuerId, entry.Entity.Id);
+        return new InviteTokenModel(bytes, entry.Entity.ExpiresAt);
     }
+
+    public async Task<Result<int>> ConsumeToken(string token,
+                                                UserCreationDto newUserDto)
+    {
+
+        byte[] hashedToken = SHA256.HashData(WebEncoders
+                                            .Base64UrlDecode(token));
+
+        var invite = await _context.Invites.Where(i => i.TokenHash == hashedToken)
+                                           .Include(i => i.CreatedBy)
+                                           .SingleOrDefaultAsync();
+        if (invite is null)
+        {
+            return new Error("Invalid invite token");
+        }
+
+        newUserDto = newUserDto with { CreatedBy = invite.CreatedBy!.Uname };
+
+        var stageResult = await _userService.StageNewUser(newUserDto);
+
+        if (stageResult.IsFailure)
+        {
+            return stageResult.Error;
+        }
+
+        invite.UsedBy = stageResult.Value.Entity;
+        invite.UsedAt = DateTime.UtcNow;
+
+        try
+        {
+            return await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return new Error("A registration conflict occurred. Please try again.");
+        }
+    }
+
 
     private EntityEntry<InviteEntity> AddNewInvite(byte[] token, long issuerId)
     {
@@ -56,11 +101,12 @@ public class InvitesService : BaseDataService, IInvitesService
         {
             TokenHash = hashedToken,
             ExpiresAt = now.AddMinutes(10),
-            CreatedBy = issuerId,
+            CreatedById = issuerId,
 
         };
         return _context.Invites.Add(entity);
     }
+
     private async Task<long> GetUserIdByName(string issuerName) =>
         await _context.Users.AsNoTracking()
                             .Where(u => u.Uname == issuerName && u.RoleId == (long)RoleIds.Manager)

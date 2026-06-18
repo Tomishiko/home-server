@@ -1,6 +1,7 @@
 using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using core.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,8 +27,8 @@ public class MockAuthenticationHandler : AuthenticationHandler<AuthenticationSch
         var claims = new[]
         {
             new Claim(AppClaimTypes.Name, mockedUsername),
-            new Claim(AppClaimTypes.Role, "manager"),
-            new Claim(AppClaimTypes.Identity, "1")
+            new Claim(AppClaimTypes.Role, nameof(RoleIds.Manager)),
+            new Claim(AppClaimTypes.Identity, "1",ClaimValueTypes.Integer64)
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name, AppClaimTypes.Name, AppClaimTypes.Role);

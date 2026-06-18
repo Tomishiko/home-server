@@ -1,4 +1,5 @@
-﻿@using web.Controllers
+﻿@using core.Models
+@using web.Controllers
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
     <meta http-equiv="Content-Security-Policy" content="
@@ -18,6 +19,7 @@
     <title>@ViewData["Title"] - Home Server</title>
         <!--<link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>-->
     <link rel="stylesheet" rel="preload" href="/dist/bootstrap.min.css"/>
+    <link rel="stylesheet" rel="preload" href="/dist/bootstrap-icons.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="/web.styles.css" asp-append-version="true" />
 </head>
@@ -51,10 +53,10 @@
                         else
                         {
 
-                        if (User.IsInRole("manager"))
+                        if (User.IsInRole(nameof(RoleIds.Manager)))
                         {
                         <li class="nav-item">
-                            <a class='nav-link @(path.StartsWith("/manager")? "active":"") navbar-element'
+                            <a class='nav-link @(path.StartsWith("/usersmanager")? "active":"") navbar-element'
                                 hx-get='@Url.Action(nameof(UsersManagerController.Index),"UsersManager")'
                                 hx-target='#main' hx-swap='innerHTML' hx-push-url="true" hx-indicator="#spinnerOverlay, #main"
                                 asp-controller="Manager" asp-action="Index" asp-area="">Manager</a>

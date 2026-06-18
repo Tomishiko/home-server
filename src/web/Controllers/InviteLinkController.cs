@@ -1,23 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 using web.Models;
 using core.Services;
-using core.utils.extensions;
 using Microsoft.AspNetCore.WebUtilities;
 using core.Models;
 using System.Diagnostics;
 using core.Models.Generic;
+using Microsoft.AspNetCore.Authorization;
+using QRCoder;
+using web.Helpers;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Namotion.Reflection;
+using System.Security.Claims;
+using core.Domain;
 
 namespace web.Controllers;
 
 [Route("invite")]
 public class InviteLinkController : Controller
 {
-    private readonly InvitesService _invites;
+    private readonly IInvitesService _invites;
     private readonly ILogger<InviteLinkController> _logger;
     private readonly IUserService _userService;
     private readonly ILogService _logService;
 
-    public InviteLinkController(InvitesService invites,
+    public InviteLinkController(IInvitesService invites,
                                 ILogger<InviteLinkController> logger,
                                 IUserService userService,
                                 ILogService logService)
@@ -28,61 +34,70 @@ public class InviteLinkController : Controller
         _logService = logService;
     }
 
+    [HttpGet("geninvite")]
+    [Authorize(Policy = "ManagerOnly")]
+    public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
+    {
+
+        if (!long.TryParse(User.FindFirstValue(AppClaimTypes.Identity),
+                           out long userId))
+        {
+            return BadRequest("Bad session metadata");
+        }
+
+        InviteTokenModel token = await _invites.GenNewInviteAsync(userId);
+        string encoded = WebEncoders.Base64UrlEncode(token.Value);
+
+        return Ok(new NewInviteTokenResponse(encoded, token.Expiration));
+    }
+
     [HttpGet("{token}")]
     public async Task<IActionResult> GetRegisterFormInvite(string token)
     {
 
-        UserDto? issuer = await _invites.ValidateToken(token);
-        if (issuer is null)
-        {
-            return BadRequest("Invalid invite token");
-        }
+        var validationResult = await _invites.ValidateToken(token);
 
-        Response.Cookies.Append("regID", token, new CookieOptions
+        if (validationResult is not Success<ValidTokenDetail>)
         {
-            Expires = DateTimeOffset.UtcNow.AddMinutes(5),
-            SameSite = SameSiteMode.Strict,
-            HttpOnly = true,
-            Secure = true,
-            IsEssential = true
-        });
+            return BadRequest("Bad token data");
+        }
 
 
         ViewData["isInvite"] = true;
-        return View("~/Views/Shared/NewUserPage.cshtml");
+        return View("~/Views/UsersManager/NewUserPage.cshtml");
     }
 
-    [HttpPost("register")]
+    [HttpPost("{token}")]
     public async Task<IActionResult> NewUserRegisterFromInvite(
-            [FromForm] RegisterFromInviteRequest request) // TODO: shit is null for some reson
+            [FromForm] RegisterFromInviteRequest request,
+            string token)
     {
-        _logger.LogDebug(request.ToString());
-        if (!Request.Cookies.TryGetValue("regID", out string? invToken)
-            || invToken.IsNullOrEmpty())
-        {
-            return BadRequest("Missing token");
 
+        if (!ModelState.IsValid)
+        {
+            return PartialView("/Views/Partials/_InviteRegisterForm.cshtml", request);
         }
 
-        UserDto? issuer = await _invites.ValidateToken(invToken);
-        if (issuer is null)
-            return BadRequest();
-
-        Debug.Assert(issuer.Username is not null);
-
         var userCreation = new UserCreationDto(request.Username,
-                request.Password, issuer.Username, (byte)RoleIds.User, request.Email);
-        Result<UserDto> result = await _userService.AddUserAsync(userCreation);
-        Response.Cookies.Delete("regID");
-        return result switch
+                                               request.Password,
+                                               string.Empty,
+                                               (byte)RoleIds.User,
+                                               request.Email);
+
+
+        Result<int> result = await _invites.ConsumeToken(token, userCreation);
+
+        switch (result)
         {
-            Success<UserDto> s => CreatedAtAction(nameof(ManagerApiController.GetUser),
-                                               new { id = s.Value.Id },
-                                               s.Value),
-            Failure<UserDto> f => BadRequest(f.Error),
+            case Success<int>:
+                return PartialView("/Views/Partials/_RegistrationConfirm.cshtml");
 
-            _ => StatusCode(500)
-        };
+            case Failure<int> f:
+                ModelState.AddModelError("Username", f.Error.Message);
+                return PartialView("/Views/Partials/_InviteRegisterForm.cshtml");
 
+            default:
+                return StatusCode(500);
+        }
     }
 }

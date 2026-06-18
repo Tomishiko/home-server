@@ -126,15 +126,20 @@ public class ManagerApiController : ControllerBase
         }
 
     }
+
     [HttpGet("geninvite")]
     public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
     {
-        Debug.Assert(User.Identity?.Name is not null);
-        InviteTokenModel token = await _invitesService.GenNewInviteAsync(User.Identity.Name);
+        if (!long.TryParse(User.FindFirstValue(AppClaimTypes.Identity), out long userId))
+        {
+            return Forbid("Bad session state");
+        }
+        InviteTokenModel token = await _invitesService.GenNewInviteAsync(userId);
         string encoded = WebEncoders.Base64UrlEncode(token.Value);
 
         return Ok(new NewInviteTokenResponse(encoded, token.Expiration));
     }
+
     [HttpGet("init-xsrf")]
     [AllowAnonymous]
     public IActionResult InitXsrf([FromServices] IAntiforgery antiforgery)

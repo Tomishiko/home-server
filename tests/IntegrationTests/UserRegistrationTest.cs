@@ -12,6 +12,7 @@ using System.Net.Http.Json;
 using Microsoft.IdentityModel.Tokens;
 using core.Services;
 using core.Models;
+using core.Models.Generic;
 
 namespace Tests.Integration;
 
@@ -42,6 +43,7 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
             Username = "testusername"
         };
         var response = await client.PostAsJsonAsync("/api/user", body);
+        var content = await response.Content.ReadAsStringAsync();
         await using var scope = _factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var user = await db.Users.Where(u => u.Uname == body.Username)
@@ -83,6 +85,7 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
         var form = new FormUrlEncodedContent(loginData);
 
         var loginResponse = await client.PostAsync("/auth", form);
+
         loginResponse.Should().Be200Ok()
                      .And.HaveHeader("Set-Cookie")
                      .And.Match("auth*");
@@ -100,10 +103,11 @@ public sealed class UserRegistrationTest : IClassFixture<WebAppFactory>, IAsyncL
 
         await using var scope = _factory.Services.CreateAsyncScope();
         var invites = scope.ServiceProvider.GetRequiredService<IInvitesService>();
-        var issuer = await invites.ValidateToken(content.Token);
+        var result = await invites.ValidateToken(content.Token);
 
-        issuer.Should().NotBeNull();
-        issuer.Username.Should().Be(MockAuthenticationHandler.MockedUsername);
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.IssuerName.Should().Be(MockAuthenticationHandler.MockedUsername);
 
 
     }

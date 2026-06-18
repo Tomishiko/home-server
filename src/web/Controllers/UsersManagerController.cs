@@ -48,7 +48,7 @@ public class UsersManagerController : Controller
     }
 
     [HttpGet]
-    public IActionResult AddUserPage()
+    public IActionResult AddUser()
     {
         ViewData["isInvite"] = false;
         return _isHtmx
@@ -104,7 +104,7 @@ public class UsersManagerController : Controller
         await _userService.RemoveUserById(id, currentUserName);
 
 
-        return _isHtmx ? PartialView("_ManageUsers", _userService.GetAllUsersJoinedAsync(ct))
+        return _isHtmx ? PartialView("_UsersTable", _userService.GetAllUsersJoinedAsync(ct))
             : Index(ct);
     }
 }

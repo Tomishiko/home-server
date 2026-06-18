@@ -1,26 +1,24 @@
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Contracts;
+using core.Models;
 
 namespace core.Domain;
 
-[Table("invites")]
 public sealed class InviteEntity : BaseEntity
 {
-    //[Column("token_hash")]
     public byte[] TokenHash { get; set; } = null!;
 
-    [Column("created_by")]
-    public long CreatedBy { get; set; }
+    public long CreatedById { get; set; }
 
-    [Column("created_at")]
     public DateTime CreatedAt { get; private set; }
 
-    [Column("expires_at")]
     public DateTime ExpiresAt { get; set; }
 
-    [Column("used_at")]
     public DateTime? UsedAt { get; set; }
 
-    [Column("used_by")]
-    public long? UsedBy { get; set; }
+    public long? UsedById { get; set; }
+
+    // Nav properties
+    public UserEntity? UsedBy { get; set; }
+    public UserEntity? CreatedBy { get; set; }
 }
 

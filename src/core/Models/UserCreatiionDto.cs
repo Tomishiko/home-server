@@ -1,6 +1,6 @@
 namespace core.Models;
 
-public readonly record struct UserCreationDto(
+public record UserCreationDto(
     string Username,
     string Password,
     string CreatedBy,

@@ -13,7 +13,7 @@ BEGIN
         RAISE EXCEPTION 'User with ID % not found', p_user_id;
     END IF;
 
-    INSERT INTO logs(username, eventname, time)
+    INSERT INTO logs(username, event_name, created_at)
     VALUES (
         p_issuer_name,
         format('Deleted user: %s (Email: %s)', v_user_row.uname, v_user_row.email),

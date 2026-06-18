@@ -60,6 +60,7 @@ public static class Utility
             return null;
         return userId;
     }
+
     public static ClaimsIdentity BuildClaims(UserDto user)
     {
 
@@ -67,7 +68,8 @@ public static class Utility
         {
             new (AppClaimTypes.Name, user.Username),
             new (AppClaimTypes.Role, user.Role),
-            new (AppClaimTypes.Identity, user.Id.ToString())
+            new (AppClaimTypes.Identity, user.Id.ToString(),
+                 ClaimValueTypes.Integer64)
         };
 
         return new ClaimsIdentity(
