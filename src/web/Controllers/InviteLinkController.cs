@@ -38,7 +38,6 @@ public class InviteLinkController : Controller
     [Authorize(Policy = "ManagerOnly")]
     public async Task<ActionResult<InviteTokenModel>> GetNewInviteToken()
     {
-        return View("/Views/Partials/_RegistrationConfirm.cshtml");
 
         if (!long.TryParse(User.FindFirstValue(AppClaimTypes.Identity),
                            out long userId))
@@ -91,7 +90,7 @@ public class InviteLinkController : Controller
         switch (result)
         {
             case Success<int>:
-                return Ok(); // TODO: return some kind of confirmation page here
+                return PartialView("/Views/Partials/_RegistrationConfirm.cshtml");
 
             case Failure<int> f:
                 ModelState.AddModelError("Username", f.Error.Message);
