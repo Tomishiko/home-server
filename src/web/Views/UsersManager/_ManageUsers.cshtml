@@ -9,40 +9,17 @@
     <a href="#" hx-get='@Url.Action(nameof(UsersManagerController.AddUser), "UsersManager")'
        hx-target="#main" hx-swap="innerHTML" hx-push-url="true"
        class="btn btn-dark border-secondary mb-3">Create New User</a>
+    <button class="btn btn-dark border-secondary mb-3" id="qrbutton" ><i class="bi bi-qr-code"></i></button>
 
-<div class="table-responsive">
-    <table class="table table-bordered text-nowrap">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @await foreach (var user in Model)
-            {
-                <tr>
-                    <td>@user.Id</td>
-                    <td>@user.Username</td>
-                    <td>@user.Role</td>
-                    <td>@user.Email</td>
-                    <td>
-                        <a href="@Url.Action("Edit", "Manager", new { id = user.Id })"
-                           class="btn btn-dark btn-outline-warning">Edit</a>
-                        <a href=""
-                           hx-delete="@Url.Action(nameof(UsersManagerController.DeleteUser), "UsersManager", new { id = user.Id, uname = user.Username })"
-                           hx-target="#content" hx-swap="innerHTML"
-                           hx-confirm="@($"Are you sure you want to delete {user.Username} and all private files associated with this user?")"
-                           class="btn btn-delete btn-dark btn-outline-danger">Delete</a>
-
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
     @Html.AntiForgeryToken()
 </div>
+
+@await Html.PartialAsync("_UsersTable.cshtml",Model)
+
+<dialog id="dialog" >
+  <div class="dialog-qr-wrapper">
+    <div id="qrcode"></div>
+    <h5 class="text-secondary">Click to copy invite link</h5>
+    <span id="popup-tooltip" class="bg-dark text-white rounded py-1 px-2 small shadow-sm">Copied!</span>
+  </div>
+</dialog>

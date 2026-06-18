@@ -1,5 +1,5 @@
 insert into roles(name)
-values ('user'), ('manager');
+values ('User'), ('Manager');
 
 insert into users(uname,password,email,role_id)
 values

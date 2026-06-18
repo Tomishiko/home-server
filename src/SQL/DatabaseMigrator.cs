@@ -18,8 +18,7 @@ public static class DatabaseMigrator
 
         if (!result.Successful)
         {
-            Console.WriteLine($"Failed Script: {result.ErrorScript.Name}");
-            throw result.Error;
+            throw new Exception($"Failed Script: {result.ErrorScript.Name}", result.Error);
         }
     }
 }

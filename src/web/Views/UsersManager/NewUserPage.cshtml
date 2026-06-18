@@ -21,10 +21,14 @@
     </div>
 </div>
 
-@{
-    if (ViewData["isInvite"] is bool isInvite)
+@if (ViewData["isInvite"] is bool isInvite)
+{
+    if (isInvite)
     {
-        if (isInvite) await Html.PartialAsync("/Views/Partials/_InviteRegisterForm.cshtml");
-        else await Html.PartialAsync("_NewUserManagerForm.cshtml");
+        @await Html.PartialAsync("/Views/Partials/_InviteRegisterForm.cshtml")
+    }
+    else
+    {
+        @await Html.PartialAsync("_NewUserManagerForm.cshtml")
     }
 }

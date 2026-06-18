@@ -17,11 +17,11 @@ public class LogsConfiguration : BaseConfiguration<LogsEntity>
                .HasMaxLength(50);
 
         builder.Property(x => x.Event)
-               .HasColumnName("eventname")
+               .HasColumnName("event_name")
                .IsRequired();
 
         builder.Property(x => x.Time)
-               .HasColumnName("time")
+               .HasColumnName("created_at")
                .IsRequired();
 
         builder.HasIndex(x => x.Time);

@@ -1,0 +1,13 @@
+CREATE OR REPLACE FUNCTION get_valid_token_details(IN token BYTEA)
+RETURNS TABLE (token_id INT,issuer_id BIGINT,issuer_name VARCHAR(255))
+LANGUAGE sql
+STABLE
+AS $$
+    RETURN QUERY
+    SELECT invites.id, users.id, users.uname FROM invites
+    INNER JOIN users on users.id = invites.created_by
+    WHERE invites.token_hash = token
+    AND invites.expires_at > now()
+    AND invites.used_at IS NULL;
+
+$$;

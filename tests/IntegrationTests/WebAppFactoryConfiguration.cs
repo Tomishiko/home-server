@@ -81,7 +81,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
                 .Setup(x => x.Create(It.IsAny<string>(), It.IsAny<long>()))
                 .Returns(writerMock.Object);
             services.AddTransient(_ => factoryMock.Object);
-            services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
+            services.AddDbContext<IApplicationDbContext, PostgresDbContext>(options =>
             {
                 //Uncomment for more logs from DB
 

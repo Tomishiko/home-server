@@ -4,12 +4,14 @@ using core.Interfaces;
 using Npgsql;
 using NpgsqlTypes;
 using System.Data.Common;
+using core.Models;
+using core.Models.Generic;
 
 namespace Data.Core;
 
-public class ApplicationDbContext : DbContext, IApplicationDbContext
+public class PostgresDbContext : DbContext, IApplicationDbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    public PostgresDbContext(DbContextOptions<PostgresDbContext> options) : base(options)
     {
 
     }
@@ -20,12 +22,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<FileEntity> Files { get; set; }
     public DbSet<InviteEntity> Invites { get; set; }
     public DbSet<FileUploadStateEntity> FileUploadState { get; set; }
+    public DbSet<ValidTokenDetail> ValidTokenDetails { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(PostgresDbContext).Assembly);
 
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -77,7 +80,30 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                             .AsNoTracking()
                             .SingleOrDefaultAsync(ct);
         return issuer;
+    }
 
+    public async Task<Result<int>> ConsumeInviteTokenStoredProcAsync(byte[] tokenHash, UserCreationDto newUser)
+    {
+        try
+        {
+
+            int newUserId = await Database.SqlQuery<int>(
+                $"""
+                SELECT consume_invitation_token(
+                    {tokenHash},
+                    {newUser.Username},
+                    {newUser.Password},
+                    {newUser.Email}
+                )
+                """
+            ).FirstOrDefaultAsync();
+
+            return newUserId;
+        }
+        catch (PostgresException ex) when (ex.SqlState == "02000")
+        {
+            return new Error(ex.MessageText);
+        }
 
     }
 }

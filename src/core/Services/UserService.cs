@@ -6,6 +6,7 @@ using core.Interfaces;
 using core.Models.Generic;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace core.Services;
 
@@ -47,12 +48,29 @@ public class UserService : BaseDataService, IUserService
 
     public async Task<Result<UserDto>> AddUserAsync(UserCreationDto dto)
     {
+
+
+        var stageResult = await StageNewUser(dto);
+
+        if (stageResult.IsFailure)
+        {
+            return stageResult.Error;
+        }
+
+        await SaveChangesAsync();
+
+        return stageResult.Value.Entity.ToDto();
+    }
+
+    public async Task<Result<EntityEntry<UserEntity>>> StageNewUser(UserCreationDto dto)
+    {
+
         ArgumentException.ThrowIfNullOrEmpty(dto.Username);
         ArgumentException.ThrowIfNullOrEmpty(dto.Password);
         ArgumentException.ThrowIfNullOrEmpty(dto.CreatedBy);
 
 
-        _logger.LogInformation($"Request to create new user from {dto.CreatedBy}");
+        _logger.LogInformation("Request to create new user from {Username}", dto.CreatedBy);
 
         bool unameExists = await _context.Users.AnyAsync(u => u.Uname == dto.Username);
         if (unameExists)
@@ -76,11 +94,7 @@ public class UserService : BaseDataService, IUserService
         };
 
         _context.Logs.Add(logEntity);
-        _context.Users.Add(userEntity);
-        await SaveChangesAsync();
-
-
-        return new Success<UserDto>(userEntity.ToDto());
+        return _context.Users.Add(userEntity);
     }
 
     public async Task<Result<UserDto>> RemoveUserById(long id, string issuer)

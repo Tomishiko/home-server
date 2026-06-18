@@ -51,7 +51,7 @@ public static class IdentityServiceExtensions
                                 .Build()
                               )
             .AddPolicy("ManagerOnly", policy => policy.RequireAuthenticatedUser()
-                                                      .RequireRole("manager")
+                                                      .RequireRole(nameof(RoleIds.Manager))
                                                       .RequireClaim(AppClaimTypes.Name)
                                                       .RequireClaim(AppClaimTypes.Identity));
         return services;

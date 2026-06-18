@@ -1,9 +1,9 @@
 DROP TABLE IF exists users;
 
-CREATE TABLE users(
-    id bigint not null generated always as identity primary key,
-    uname varchar(255) not null,
-    password varchar(255) not null,
-    email varchar(255),
-    role_id bigint references roles (id)
+CREATE TABLE users (
+    id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    uname VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,        -- Stores hashed pwds
+    email VARCHAR(255) NOT NULL UNIQUE,
+    role_id INT REFERENCES roles(id) DEFAULT 1
 );

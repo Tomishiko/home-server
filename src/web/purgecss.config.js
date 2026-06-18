@@ -24,6 +24,7 @@ export const safelist = {
   ],
   // Greedy matches protect entire complex selectors (like attribute selectors)
   greedy: [
-    /bi/ // ◄ Forces it to keep the crucial [class^="bi-"] font-family blocks
+    /bi/,
+    /input-group/// ◄ Forces it to keep the crucial [class^="bi-"] font-family blocks
   ]
 };

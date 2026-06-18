@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS invites;
 
 CREATE TABLE invites (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    token_hash BYTEA NOT NULL UNIQUE,
+    token_hash BYTEA NOT NULL,
     role VARCHAR(50) NULL,
     created_by BIGINT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

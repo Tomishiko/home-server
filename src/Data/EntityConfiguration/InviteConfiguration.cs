@@ -17,8 +17,13 @@ public class InviteConfiguration : BaseConfiguration<InviteEntity>
                .HasColumnType("bytea")
                .IsRequired();
 
-        builder.Property(x => x.CreatedBy)
+        builder.Property(x => x.CreatedById)
                .HasColumnName("created_by");
+
+        builder.HasOne(x => x.CreatedBy)
+               .WithMany()
+               .HasForeignKey(x => x.CreatedById)
+               .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.CreatedAt)
                .HasColumnName("created_at")
@@ -26,13 +31,20 @@ public class InviteConfiguration : BaseConfiguration<InviteEntity>
                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(x => x.ExpiresAt)
-               .HasColumnName("expires_at");
+               .HasColumnName("expires_at")
+               .HasColumnType("timestamptz");
 
         builder.Property(x => x.UsedAt)
-               .HasColumnName("used_at");
+               .HasColumnName("used_at")
+               .HasColumnType("timestamptz");
 
-        builder.Property(x => x.UsedBy)
+        builder.Property(x => x.UsedById)
                .HasColumnName("used_by");
+
+        builder.HasOne(x => x.UsedBy)
+               .WithMany()
+               .HasForeignKey(x => x.UsedById)
+               .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(x => x.TokenHash).IsUnique();
     }

@@ -15,6 +15,7 @@
         <PackageReference Include="Npgsql.DependencyInjection" Version="10.0.2" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
+        <PackageReference Include="QRCoder" Version="1.8.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.1" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />

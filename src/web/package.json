@@ -2,7 +2,7 @@
     "type": "module",
     "scripts": {
         "dev": "bun build Scripts/main.ts --outdir=wwwroot/js --splitting --format=esm --watch",
-        "build-css": "purgecss -c purgecss.config.js",
+        "build-css": "purgecss -c ./purgecss.config.js",
         "build-js": "bun build Scripts/main.ts --outdir=wwwroot/js --splitting --format=esm",
         "build": "bun run build-js && bun run build-css"
     },
